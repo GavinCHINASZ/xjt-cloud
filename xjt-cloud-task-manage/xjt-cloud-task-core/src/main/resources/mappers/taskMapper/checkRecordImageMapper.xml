@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.CheckRecordImageDao">
+    <resultMap id="checkRecordImageResultMap" type="com.xjt.cloud.task.core.entity.check.CheckRecordImage">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="task_id" property="taskId" jdbcType="BIGINT"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="check_record_id" property="checkRecordId" jdbcType="BIGINT"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 批量保存 -->
+    <insert id="saveCheckRecordImageList" parameterType="CheckRecordImage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_check_record_image( `check_record_id`, `image_url`, `task_id`, `check_point_id`, `type`)
+        VALUES
+        <foreach item="item" collection="list" index="index" separator="," >
+            ( #{item.checkRecordId}, #{item.imageUrl}, #{item.taskId}, #{item.checkPointId}, #{item.type})
+        </foreach>
+    </insert>
+
+    <!-- 查询条件图片 -->
+    <select id="findCheckRecordImageList" parameterType="CheckRecordImage" resultType="java.lang.String">
+        SELECT cri.image_url
+        FROM t_check_record_image cri
+        WHERE
+        cri.type = #{type}
+        <if test="taskId != null">
+            AND cri.task_id = #{taskId}
+        </if>
+
+        <if test="type == 0 and checkRecordId != null">
+            AND cri.check_record_id = #{checkRecordId}
+        </if>
+
+        <if test="type == 1 and checkPointId != null">
+            AND cri.check_point_id = #{checkPointId}
+        </if>
+
+        <if test="checkRecordIdList != null and checkRecordIdList.length > 0">
+            AND cri.check_record_id IN
+            <foreach collection="checkRecordIdList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY cri.image_url
+    </select>
+
+    <!-- 查询条件图片 -->
+    <select id="findCheckRecordImageEntityList" parameterType="CheckRecordImage" resultType="CheckRecordImage">
+        SELECT cri.image_url imageUrl, cri.check_record_id checkRecordId
+        FROM t_check_record_image cri
+        WHERE cri.type = #{type}
+        <if test="taskId != null">
+            AND cri.task_id = #{taskId}
+        </if>
+
+        <if test="type == 0 and checkRecordId != null">
+            AND cri.check_record_id = #{checkRecordId}
+        </if>
+
+        <if test="type == 1 and checkPointId != null">
+            AND cri.check_point_id = #{checkPointId}
+        </if>
+
+        <if test="checkRecordIdList != null and checkRecordIdList.length > 0">
+            AND cri.check_record_id IN
+            <foreach collection="checkRecordIdList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY cri.image_url
+    </select>
+
+</mapper>

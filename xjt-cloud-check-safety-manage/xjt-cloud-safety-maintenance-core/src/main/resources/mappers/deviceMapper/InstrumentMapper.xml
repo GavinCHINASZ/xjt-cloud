@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.device.InstrumentDao">
+    <resultMap id="instrumentResultMap" type="com.xjt.cloud.safety.core.entity.device.Instrument">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+        <result column="calibration_code" property="calibrationCode" jdbcType="VARCHAR"/>
+        <result column="term_validity" property="termValidity" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 保存仪器管理 -->
+    <insert id="saveInstrument" keyProperty="id" useGeneratedKeys="true" parameterType="Instrument">
+        INSERT INTO s_instrument (project_id, device_name, device_code, calibration_code, term_validity, status, create_time, create_user_id, create_user_name)
+        VALUES (#{projectId}, #{deviceName}, #{deviceCode}, #{calibrationCode}, #{termValidity},1, NOW(), #{createUserId}, #{createUserName});
+    </insert>
+
+    <!-- 修改仪器管理 -->
+    <update id="modifyInstrument" parameterType="Instrument">
+        UPDATE s_instrument
+        <set>
+            <if test="deviceName != null">
+                device_name = #{deviceName},
+            </if>
+            <if test="deviceCode != null">
+                device_code = #{deviceCode},
+            </if>
+            <if test="calibrationCode != null">
+                calibration_code = #{calibrationCode},
+            </if>
+            <if test="termValidity != null">
+                term_validity = #{termValidity},
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status},
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="ids != null">
+            id IN
+            <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <sql id="selInstrumentColumn">
+        i.id,i.project_id, i.device_name, i.device_code, i.calibration_code, i.term_validity, i.status, i.create_time,
+        i.create_user_id, i.create_user_name
+    </sql>
+    <!-- 查询仪器信息列表 -->
+    <select id="findInstrumentList"  parameterType="Instrument" resultMap="instrumentResultMap">
+        SELECT <include refid="selInstrumentColumn"/>,pi.id projectInstrumentId FROM s_instrument i
+        LEFT JOIN s_check_project_instrument pi ON pi.instrument_id = i.id
+        <if test="checkProjectId != null">
+            AND pi.check_project_id = #{checkProjectId}
+        </if>
+        WHERE i.status &lt;= 98 AND i.project_id = #{projectId}
+        <if test="checkProjectId == null">
+            GROUP BY i.id
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询仪器信息列表总数 -->
+    <select id="findInstrumentListCount" parameterType="Instrument" resultType="java.lang.Integer">
+        SELECT
+        <if test="checkProjectId == null">
+            COUNT(DISTINCT i.id)
+        </if>
+        <if test="checkProjectId != null">
+            COUNT(*)
+        </if>
+        FROM s_instrument i
+        LEFT JOIN s_check_project_instrument pi ON pi.instrument_id = i.id
+        <if test="checkProjectId != null">
+            AND pi.check_project_id = #{checkProjectId}
+        </if>
+        WHERE i.status &lt;= 98 AND i.project_id = #{projectId}
+    </select>
+
+    <!--  ////////////////////////////////////////////// 评估项目仪器管理 /////////////////// -->
+    <!-- 保存评估项目仪器管理 -->
+    <insert id="saveCheckProjectInstrument" parameterType="Instrument">
+        INSERT INTO s_check_project_instrument (project_id, check_project_id, instrument_id, create_time)
+        VALUES
+        <foreach collection="ids" item="item" index="index" separator="," close=";">
+            (#{projectId}, #{checkProjectId}, #{item},  NOW())
+        </foreach>
+    </insert>
+    <delete id="delCheckProjectInstrument" parameterType="Instrument">
+        DELETE FROM s_check_project_instrument WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="checkProjectId != null">
+            check_project_id = #{checkProjectId}
+        </if>
+        <if test="ids != null">
+            id IN
+            <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+    </delete>
+</mapper>

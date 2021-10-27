@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.fault.core.dao.project.RoleDao">
+
+    <resultMap id="projectRoleResultMap" type="com.xjt.cloud.fault.core.entity.project.Role">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
+        <result column="source_id" property="sourceId" jdbcType="BIGINT"/>
+        <result column="is_admin" property="isAdmin" jdbcType="INTEGER"/>
+        <result column="is_ordinary" property="isOrdinary" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="roleSql">
+        id, role_name, source_id, is_admin, is_ordinary
+    </sql>
+
+    <sql id="roleWhere">
+        WHERE 1 = 1
+        <if test="id != null and id != 0">
+            AND id =#{id}
+        </if>
+        <if test="sourceId != null and sourceId != 0">
+            AND source_id =#{sourceId}
+        </if>
+    </sql>
+
+    <select id="findRoleList" parameterType="Role" resultMap="projectRoleResultMap">
+        SELECT <include refid="roleSql"/>
+        FROM project_manage.p_role
+        <include refid="roleWhere"/>
+    </select>
+
+</mapper>

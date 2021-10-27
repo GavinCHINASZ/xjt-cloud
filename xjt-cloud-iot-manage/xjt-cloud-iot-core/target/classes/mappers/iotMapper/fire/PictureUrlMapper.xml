@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.fire.PictureUrlDao">
+
+    <resultMap id="fireAlarmRecordResultMap" type="com.xjt.cloud.iot.core.entity.fire.PictureUrl">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="event_id" property="eventId" jdbcType="BIGINT"/>
+        <result column="picture_url" property="pictureUrl" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="saveEventHandlePictures" parameterType="FireAlarmEvent">
+        INSERT INTO f_picture_url
+        (event_id, picture_url)
+        VALUES
+        <foreach collection="pictureUrlArr" item="item" separator="," close=";">
+            (#{id}, #{item})
+        </foreach>
+    </insert>
+
+    <select id="findPictureUrlByEventId" resultType="java.lang.String">
+        SELECT DISTINCT picture_url
+        FROM f_picture_url
+        WHERE event_id = #{eventId}
+    </select>
+
+    <delete id="deletePictureUrlByEventId">
+        DELETE FROM f_picture_url WHERE  event_id = #{eventId}
+    </delete>
+
+</mapper>

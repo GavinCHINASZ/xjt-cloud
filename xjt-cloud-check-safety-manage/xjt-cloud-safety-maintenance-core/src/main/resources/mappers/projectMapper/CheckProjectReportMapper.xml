@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.project.CheckProjectReportDao">
+
+    <resultMap id="checkProjectResultMap" type="com.xjt.cloud.safety.core.entity.project.CheckProjectReport">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="check_project_status" property="checkProjectStatus" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="check_project_number" property="checkProjectNumber" jdbcType="VARCHAR"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="check_version" property="checkVersion" jdbcType="INTEGER"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_name" property="checkProjectName" jdbcType="VARCHAR"/>
+        <result column="report_name" property="reportName" jdbcType="VARCHAR"/>
+        <result column="report_number" property="reportNumber" jdbcType="VARCHAR"/>
+        <result column="is_modify" property="isModify" jdbcType="INTEGER"/>
+        <result column="modify_reason" property="modifyReason" jdbcType="VARCHAR"/>
+        <result column="file_url" property="fileUrl" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+
+    <!--新增评估项目报表记录-->
+    <insert id="saveCheckProjectReport" parameterType="CheckProjectReport" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO p_project_report_info(report_name, check_version, report_number, create_time, check_project_status, is_modify,
+            modify_reason,project_id,check_project_id,file_url)
+        VALUES(#{reportName}, #{checkVersion}, #{reportNumber},  NOW(), #{checkProjectStatus}, #{isModify},
+            #{modifyReason},#{projectId},#{checkProjectId},#{fileUrl});
+    </insert>
+
+    <!--查询评估项目报表记录列表-->
+    <select id="findCheckProjectReportList" parameterType="CheckProjectReport" resultMap="checkProjectResultMap">
+        SELECT id, report_name, check_version, report_number, create_user_id,create_user_name, create_time, check_project_status, is_modify,
+            modify_reason,project_id,check_project_id,file_url
+        FROM p_project_report_info
+        WHERE 1=1
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="modifyReason != null">
+            AND modify_reason = #{modifyReason}
+        </if>
+        <if test="checkProjectId != null">
+            AND check_project_id = #{checkProjectId}
+        </if>
+        <if test="reportName != null">
+            AND report_name LIKE CONCAT('%',#{reportName},'%')
+        </if>
+        <if test="checkProjectStatus != null and checkProjectStatus != 0">
+            AND check_project_status = #{checkProjectStatus}
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询评估项目信息列表数量-->
+    <select id="findCheckProjectReportListCount" parameterType="CheckProjectReport" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM p_project_report_info
+        WHERE 1=1
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="checkProjectId != null">
+            AND check_project_id = #{checkProjectId}
+        </if>
+        <if test="reportName != null">
+            AND report_name LIKE CONCAT('%',#{reportName},'%')
+        </if>
+        <if test="checkProjectStatus != null and checkProjectStatus != 0">
+            AND check_project_status = #{checkProjectStatus}
+        </if>
+    </select>
+
+    <!--更新修改原因-->
+    <update id="modifyCheckProjectReport" parameterType="CheckProjectReport">
+        UPDATE p_project_report_info
+            <set>
+                <if test="modifyReason != null">
+                    modify_reason = #{modifyReason},
+                </if>
+                <if test="fileUrl != null">
+                    file_url = #{fileUrl},
+                </if>
+                <if test="isModify != null">
+                    is_modify = #{isModify},
+                </if>
+                <if test="reportNumber != null and reportNumber != ''">
+                    report_number = #{reportNumber},
+                </if>
+                <if test="checkProjectStatus != null and checkProjectStatus != ''">
+                    check_project_status = #{checkProjectStatus},
+                </if>
+                <if test="createUserId != null and createUserId != ''">
+                    create_user_id = #{createUserId},
+                </if>
+                <if test="createUserName != null and createUserName != ''">
+                    create_user_name = #{createUserName},
+                </if>
+            </set>
+        WHERE
+            <if test="id != null">
+                id = #{id}
+            </if>
+    </update>
+</mapper>

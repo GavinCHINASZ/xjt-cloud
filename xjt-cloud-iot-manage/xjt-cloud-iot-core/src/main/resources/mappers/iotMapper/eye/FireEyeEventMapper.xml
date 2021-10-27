@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.eye.FireEyeEventDao">
+
+    <resultMap id="fireEyeEventResultMap" type="com.xjt.cloud.iot.core.entity.eye.FireEyeEvent">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_type" property="deviceType" jdbcType="INTEGER"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="check_point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="building_floor_name" property="buildingFloorName" jdbcType="VARCHAR"/>
+
+        <result column="fire_eye_device_id" property="fireEyeDeviceId" jdbcType="BIGINT"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <result column="video_name" property="videoName" jdbcType="VARCHAR"/>
+        <result column="channel_no" property="channelNo" jdbcType="INTEGER"/>
+        <result column="event_type" property="eventType" jdbcType="INTEGER"/>
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER" />
+        <result column="recover_time" property="recoverTime" jdbcType="TIMESTAMP" />
+        <result column="ip_address" property="ipAddress" jdbcType="VARCHAR"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+        <result column="event_handle_time" property="eventHandleTime" jdbcType="TIMESTAMP"/>
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="fireEyeEventSql">
+        fee.id, fee.project_id, fee.check_point_id, fee.device_id, fee.sensor_no, fee.video_name, fee.recover_status, fee.recover_time, fee.event_type,
+        fee.channel_no, fee.create_time, fee.ip_address, fee.image_url, fee.fire_eye_device_id, fee.last_modify_time
+    </sql>
+
+    <sql id="findFireEyeEntWhere">
+        WHERE 1 = 1
+        <if test="id != null and id > 0">
+            AND fee.id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            AND fee.id in
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="projectId != null and projectId > 0">
+            AND fee.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND fee.project_id in
+            <foreach collection="projectIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="fireEyeDeviceId != null and fireEyeDeviceId > 0">
+            AND fee.fire_eye_device_id = #{fireEyeDeviceId}
+        </if>
+        <if test="deviceId != null">
+            AND fee.device_id = #{deviceId}
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND fee.sensor_no = #{sensorNo}
+        </if>
+        <if test="recoverStatus != null">
+            AND fee.recover_status = #{recoverStatus}
+        </if>
+        <if test="recoverStatusArray != null and recoverStatusArray.length > 0">
+            AND fee.recover_status IN
+            <foreach item="item" collection="recoverStatusArray" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="channelNo != null">
+            AND fee.channel_no = #{channelNo}
+        </if>
+        <if test="videoName != null and videoName != ''">
+            AND fee.video_name = #{videoName}
+        </if>
+
+        <if test="eventType != null">
+            AND fee.event_type = #{eventType}
+        </if>
+        <if test="eventTypeArray != null and eventTypeArray.length > 0">
+            AND fee.event_type IN
+            <foreach item="item" collection="eventTypeArray" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="startTime != null and endTime != null">
+            AND fee.create_time BETWEEN #{startTime} AND #{endTimeDesc}
+        </if>
+        <if test="createTime != null and endTime != null">
+            AND fee.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="videoName != null and videoName != ''">
+            AND (fee.video_name LIKE CONCAT('%', #{videoName}, '%') OR cp.point_location LIKE CONCAT('%', #{videoName}, '%'))
+        </if>
+
+        <if test="handleStatuss != null">
+            <foreach item="item" collection="handleStatuss" >
+                <if test="item == 1">AND feeh.create_time IS NOT NULL</if>
+                <if test="item == 2">AND feeh.create_time IS NULL</if>
+            </foreach>
+        </if>
+        <if test="handleStatus != null and handleStatus != 0">
+            <if test="handleStatus == 1">AND feeh.create_time IS NOT NULL</if>
+            <if test="handleStatus == 2">AND feeh.create_time IS NULL</if>
+        </if>
+
+        <if test="checkPointQrNo != null and checkPointQrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{checkPointQrNo},'%')
+        </if>
+
+        <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+            AND feeh.device_fault_type_id = #{deviceFaultTypeId}
+        </if>
+    </sql>
+
+    <!-- 新增 保存-->
+    <insert id="save" parameterType="FireEyeEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO e_fire_eye_event( project_id, check_point_id, device_id, create_time, sensor_no, video_name, event_type, channel_no,
+            ip_address, image_url, fire_eye_device_id, recover_status, recover_time)
+         VALUES (#{projectId}, #{checkPointId}, #{deviceId}, NOW(), #{sensorNo}, #{videoName}, #{eventType}, #{channelNo},
+            #{ipAddress}, #{imageUrl}, #{fireEyeDeviceId}, #{recoverStatus}, #{recoverTime});
+    </insert>
+
+    <!-- 查询事件列表 -->
+    <select id="findFireEyeEventList" parameterType="FireEyeEvent" resultMap="fireEyeEventResultMap">
+        SELECT <include refid="fireEyeEventSql"/>,
+            fed.video_location videoLocation,
+            d.qr_no deviceQrNo, dt.device_sys_name deviceName, dt.device_type,
+            cp.point_location, cp.qr_no check_point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id,
+            MAX(feeh.create_time) event_handle_time, IF(feeh.id IS NULL, 1, 2) confirm,
+            feeh.description handleDescription, feeh.create_user_name handleUserName,
+            MAX(IF(feeh.id IS NULL, 2, 1)) eventExistStatus, MAX(IF(feeh.id IS NULL, 2, 1)) handleStatus
+            ,dft.fault_type
+        FROM e_fire_eye_event fee
+        LEFT JOIN e_fire_eye_device fed ON fee.fire_eye_device_id = fed.id
+        LEFT JOIN device_manage.d_device d ON fee.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = fee.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.event_id, ta.device_type, ta.description, ta.create_time, ta.create_user_name
+            FROM iot_manage.e_fire_eye_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id
+                FROM iot_manage.e_fire_eye_event_handle
+                WHERE project_id = #{projectId}
+                <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                    AND device_fault_type_id = #{deviceFaultTypeId}
+                </if>
+                <if test="handleDeviceType != null">
+                    AND device_type = #{handleDeviceType}
+                </if>
+                <if test="createTime != null">
+                    AND create_time >= #{createTime}
+                </if>
+                GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) feeh ON fee.id = feeh.event_id
+
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = feeh.device_fault_type_id
+
+        <include refid="findFireEyeEntWhere"/>
+        GROUP BY fee.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询事件数量 -->
+    <select id="findFireEyeEventListCount" parameterType="FireEyeDevice" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM e_fire_eye_event fee
+        LEFT JOIN device_manage.d_device d ON fee.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = fee.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+
+        LEFT JOIN iot_manage.e_fire_eye_event_handle feeh ON fee.id = feeh.event_id
+        <include refid="findFireEyeEntWhere"/>
+    </select>
+
+    <!-- 查询最后一条未恢复事件 -->
+    <select id="findFireEyeLastNotRecoverEvent" parameterType="FireEyeEvent" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM e_fire_eye_event fee
+        WHERE sensor_no = #{sensorNo} AND channel_no = #{channelNo} AND event_type = #{eventType} AND recover_status = 0
+    </select>
+
+    <!-- 查询事件数量 -->
+    <select id="findFireEyeEventSummary" parameterType="FireEyeDevice" resultType="FireEyeEventReport">
+        SELECT(
+                SELECT COUNT(DISTINCT t.id) deviceCount
+                FROM(
+                    SELECT fed.id
+                    FROM iot_manage.e_fire_eye_device fed
+                    WHERE fed.project_id = #{projectId}
+                    GROUP BY fed.device_id
+                ) t
+            ) deviceCount,
+            COUNT(DISTINCT fee.id) totalCount,
+        ifnull(SUM(IF(fee.event_type = 1, 1, 0)),0) smokeWarningCount,
+        ifnull(SUM(IF(fee.event_type = 2, 1, 0)),0) smokeCount,
+        ifnull(SUM(IF(fee.event_type = 4, 1, 0)),0) flameWarningCount,
+        ifnull(SUM(IF(fee.event_type = 8, 1, 0)),0) flameCount,
+        ifnull(SUM(IF(fee.event_type = 16, 1, 0)),0) occlusionCount,
+        ifnull(SUM(IF(fee.event_type = 32, 1, 0)),0) faultEventCount
+        FROM iot_manage.e_fire_eye_event fee
+        <include refid="findFireEyeEntWhere"/>
+    </select>
+
+    <!-- 更新 火眼事件 -->
+    <update id="updateFireEyeEvent" parameterType="FireEyeEvent">
+        UPDATE e_fire_eye_event
+        <set>
+            <if test="eventType != null and eventType > 0">
+                event_type = #{eventType},
+            </if>
+            <if test="videoName != null and videoName != ''">
+                video_name = #{videoName},
+            </if>
+            <if test="recoverStatus != null">
+                recover_status = #{recoverStatus},
+            </if>
+            <if test="recoverStatus != null and recoverStatus == 1">
+                recover_time = NOW()
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="sensorNo != null">
+            sensor_no = #{sensorNo}
+        </if>
+        <if test="byRecoverStatus != null">
+            AND recover_status = #{byRecoverStatus}
+        </if>
+    </update>
+
+    <!-- 查询 火眼事件记录按时间汇总（曲线图）-->
+    <select id="findFireEyeEventReportCount" parameterType="FireEyeEvent" resultType="FireEyeEventReport">
+        SELECT IFNULL(w.totalCount, 0) totalCount,
+            IFNULL(w.flameCount, 0) flameCount,
+            IFNULL(w.smokeCount, 0) smokeCount,
+            IFNULL(w.flameWarningCount, 0) flameWarningCount,
+            IFNULL(w.smokeWarningCount, 0) smokeWarningCount,
+            IFNULL(w.occlusionCount, 0) occlusionCount,
+            IFNULL(w.faultEventCount, 0) faultEventCount,
+            <include refid="formatTimeCol"/> timeDesc
+        FROM(
+            SELECT COUNT(w.id) totalCount,
+                SUM(IF(w.event_type = 8, 1, 0)) flameCount,
+                SUM(IF(w.event_type = 2, 1,0)) smokeCount,
+                SUM(IF(w.event_type = 4, 1, 0)) flameWarningCount,
+                SUM(IF( w.event_type = 1, 1, 0)) smokeWarningCount,
+                SUM(IF(w.event_type = 16, 1, 0)) occlusionCount,
+                SUM(IF(w.event_type = 32, 1, 0)) faultEventCount,
+            <include refid="formatTime"/>
+            FROM iot_manage.e_fire_eye_event w
+            INNER JOIN iot_manage.e_fire_eye_device wd ON wd.id = w.fire_eye_device_id
+            WHERE 1 = 1
+            <if test="projectId != null and projectId != 0">
+                AND w.project_id = #{projectId}
+            </if>
+            <if test="projectIds != null">
+                AND w.project_id IN
+                <foreach collection="projectIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="createTime != null">
+                AND w.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+            </if>
+            GROUP BY createTime
+        ) w
+        RIGHT JOIN (
+            <include refid="formatTimeRow"/>
+        ) dayList ON <include refid="formatTimeOn"/>
+        ORDER BY timeDesc
+    </select>
+
+    <sql id="formatTimeCol">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTimeOrderBy">
+        <if test="groupType != null and groupType == 1">
+            str_to_date(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            str_to_date(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            str_to_date(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            str_to_date(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTimeOn">
+        <if test="groupType != null and groupType == 1">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%H')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTime">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(w.create_time,'%H') createTime
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(w.create_time,'%Y-%m-%d') createTime
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(w.create_time,'%Y-%m') createTime
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(w.create_time,'%Y') createTime
+        </if>
+    </sql>
+
+    <sql id="formatTimeRow">
+        SELECT
+        <if test="groupType != null and groupType == 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d %H') createTime
+        </if>
+        <if test="groupType != null and groupType != 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d') createTime
+        </if>
+        FROM (
+            SELECT @date := DATE_ADD(#{createTime}, interval -1 ${timeType})
+            FROM b_base_data LIMIT #{dateTimeCount}
+        ) days
+    </sql>
+
+    <!-- 新增 保存-->
+    <insert id="saveFireEventByDevice" parameterType="FireEyeDevice">
+        INSERT INTO e_fire_eye_event( project_id, check_point_id, device_id, create_time, sensor_no, video_name, event_type, channel_no,
+            ip_address, image_url, fire_eye_device_id, recover_status, recover_time)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+              (#{item.projectId}, #{item.checkPointId}, #{item.deviceId}, NOW(), #{item.sensorNo}, #{item.videoName}, #{item.eventType}, #{item.channelNo},
+                #{item.ipAddress}, #{item.imageUrl}, #{item.fireEyeDeviceId}, #{item.recoverStatus}, #{item.recoverTime})
+        </foreach>
+    </insert>
+</mapper>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-api/xjt-cloud-iot-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-api/xjt-cloud-iot-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-core/xjt-cloud-iot-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-core/xjt-cloud-iot-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-netty/xjt-cloud-iot-netty.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-netty/xjt-cloud-iot-netty.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-web/xjt-cloud-iot-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-web/xjt-cloud-iot-web.iml" />
+    </modules>
+  </component>
+</project>

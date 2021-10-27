@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.device.DeviceTypeDao" >
+
+    <resultMap id="deviceTypeResultMap" type="com.xjt.cloud.admin.manage.entity.device.DeviceType" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="parent_id" property="parentId" jdbcType="BIGINT" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="use_method" property="useMethod" jdbcType="VARCHAR" />
+        <result column="description" property="description" jdbcType="VARCHAR" />
+        <result column="pressure_monitor" property="pressureMonitor" jdbcType="INTEGER" />
+        <result column="sys_pressure" property="sysPressure" jdbcType="INTEGER" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="pin_yin_initials" property="pinYinInitials" jdbcType="VARCHAR" />
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR" />
+        <result column="min_value" property="minValue" jdbcType="INTEGER" />
+        <result column="max_value" property="maxValue" jdbcType="INTEGER" />
+        <result column="item_type" property="itemType" jdbcType="INTEGER" />
+        <result column="limit_config" property="limitConfig" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findDeviceTypeWhere">
+        <if test="type != null and type == 1">
+            AND ds.type = #{type}
+        </if>
+        <if test="type != null and type == 9">
+            AND dt.type = #{type}
+        </if>
+        <if test="deviceSysName != null and deviceSysName !=''">
+            AND ds.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="deviceTypeName != null and deviceTypeName !=''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceTypeName},'%')
+        </if>
+        <if test="projectName != null and projectName !=''">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+        <if test="checkItemVsType != null and checkItemVsType > 0">
+            AND dci.check_item_vs_type = #{checkItemVsType}
+        </if>
+        <if test="parentId != null">
+            AND dt.parent_id = #{parentId}
+        </if>
+        <if test="deviceType != null">
+            AND dt.device_type = #{deviceType}
+        </if>
+        <if test="pinYinInitials != null and pinYinInitials != ''">
+            AND dt.pin_yin_initials LIKE CONCAT(#{pinYinInitials},'%')
+        </if>
+        <if test="itemType != null">
+            AND dci.type = #{itemType}
+        </if>
+    </sql>
+
+    <!-- 查询设备系统名称是否存-->
+    <select id="findDeviceSysList" parameterType="java.lang.String" resultMap="deviceTypeResultMap">
+        SELECT
+        <if test="type != null and type == 1">
+            ds.*
+        </if>
+        <if test="type != null and type == 9">
+            dt.*
+        </if>
+        FROM device_manage.d_device_type ds
+        LEFT JOIN device_manage.d_device_type dt ON dt.parent_id = ds.id AND dt.type = 9 AND dt.status &lt;= 98
+        LEFT JOIN device_manage.d_device_check_item dci ON  dt.id = dci.device_type_id AND dt.type = 9 AND dt.status &lt;= 98
+        LEFT JOIN project_manage.p_project p ON dci.project_id = p.id AND dci.check_item_vs_type = 3 AND p.deleted = false
+        WHERE ds.status &lt;= 98 <include refid="findDeviceTypeWhere"/>
+        GROUP BY
+        <if test="type != null and type == 1">
+            ds.id
+        </if>
+        <if test="type != null and type == 9">
+            dt.id
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询未删除设备类型信息 （parent_id ！＝ 0为类型信息）总记录数-->
+    <select id="findDeviceSysListTotalCount" parameterType="DeviceType" resultType="java.lang.Integer">
+        SELECT
+        <if test="type != null and type == 1">
+            COUNT(DISTINCT ds.id)
+        </if>
+        <if test="type != null and type == 9">
+            COUNT(DISTINCT dt.id)
+        </if>
+        FROM device_manage.d_device_type ds
+        LEFT JOIN device_manage.d_device_type dt ON dt.parent_id = ds.id AND dt.type = 9 AND dt.status &lt;= 98
+        LEFT JOIN device_manage.d_device_check_item dci ON  dt.id = dci.device_type_id AND dt.type = 9 AND dt.status &lt;= 98
+        LEFT JOIN project_manage.p_project p ON dci.project_id = p.id AND dci.check_item_vs_type = 3 AND p.deleted = false
+        WHERE  ds.status &lt;= 98
+        <include refid="findDeviceTypeWhere"/>
+    </select>
+
+    <!-- 查询未删除设备类型信息 （parent_id ！＝ 0为类型信息）-->
+    <select id="findDeviceType" parameterType="DeviceType" resultMap="deviceTypeResultMap">
+        SELECT *
+        FROM device_manage.d_device_type dt
+        WHERE dt.id = #{id} LIMIT 1
+    </select>
+
+    <!--添加设备类型信息-->
+    <insert id="saveDeviceSys" parameterType="DeviceType" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO device_manage.d_device_type (parent_id, device_sys_name, use_method, description, pressure_monitor, sys_pressure, status,
+        type,pin_yin_initials, img_url,limit_config)
+        VALUES (#{parentId}, #{deviceSysName}, #{useMethod}, #{description}, #{pressureMonitor}, #{sysPressure}, 1,
+        #{type}, #{pinYinInitials}, #{imgUrl},#{limitConfig});
+    </insert>
+
+    <!--修改设备类型信息-->
+    <update id="modifyDeviceSys" parameterType="DeviceType">
+        UPDATE device_manage.d_device_type
+        <set>
+            <if test="parentId != null">
+                parent_id = #{parentId} ,
+            </if>
+            <if test="limitConfig != null">
+                limit_config = #{limitConfig} ,
+            </if>
+            <if test="deviceSysName != null and deviceSysName != ''">
+                device_sys_name = #{deviceSysName} ,
+            </if>
+            <if test="useMethod != null">
+                use_method = #{useMethod} ,
+            </if>
+            <if test="description != null">
+                description = #{description} ,
+            </if>
+            <if test="pressureMonitor != null">
+                pressure_monitor = #{pressureMonitor} ,
+            </if>
+            <if test="sysPressure != null">
+                sys_pressure = #{sysPressure} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="pinYinInitials != null and pinYinInitials != ''">
+                pin_yin_initials = #{pinYinInitials},
+            </if>
+            <if test="imgUrl != null">
+                img_url = #{imgUrl},
+            </if>
+            <if test="deviceType != null and deviceType != 0">
+                device_type = #{deviceType},
+            </if>
+        </set>
+        <where>
+            <if test="id != null and id != 0">
+                AND id = #{id}
+            </if>
+            <if test="parentId != null and parentId != 0">
+                AND parent_id = #{parentId}
+            </if>
+        </where>
+    </update>
+
+    <select id="findProjectDeviceTypeList" parameterType="DeviceType" resultType="DeviceType">
+        SELECT dt.id,dt.device_sys_name deviceSysName
+        FROM device_manage.d_device_type dt
+        INNER JOIN device_manage.d_device d ON dt.id = d.device_type_id AND d.status &lt;= 98
+        INNER JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id AND cp.status &lt;= 98
+        WHERE  dt.status &lt;= 98 AND d.project_id = #{projectId}
+        <if test="buildingId != null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        GROUP BY dt.id
+    </select>
+
+    <select id="findProjectCheckPointList" parameterType="CheckPoint" resultType="CheckPoint">
+        SELECT cp.id,cp.qr_no qrNo
+        FROM device_manage.d_check_point cp
+        INNER JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+        WHERE  cp.status &lt;= 98 AND cp.project_id = #{projectId}
+        <if test="buildingId != null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND d.device_type_id = #{deviceTypeId}
+        </if>
+        GROUP BY cp.id
+    </select>
+
+    <select id="findProjectDeviceList" parameterType="Device" resultType="Device">
+        SELECT d.id,d.device_type deviceType,d.qr_no qrNo
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id AND cp.status &lt;= 98
+        WHERE  d.status &lt;= 98 AND d.project_id = #{projectId}
+        <if test="buildingId != null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND d.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="checkPointId != null and checkPointId != 0">
+            AND cp.id = #{checkPointId}
+        </if>
+        GROUP BY d.id
+    </select>
+</mapper>

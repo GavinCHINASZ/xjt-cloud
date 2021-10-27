@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.TaskCheckPointDao" >
+    <resultMap id="taskCheckPointResultMap" type="com.xjt.cloud.task.core.entity.TaskCheckPoint" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="task_id" property="taskId" jdbcType="BIGINT" />
+        <result column="task_parent_id" property="taskParentId" jdbcType="BIGINT" />
+        <result column="task_name" property="taskName" jdbcType="VARCHAR" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="building_id" property="buildingId" jdbcType="VARCHAR"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="VARCHAR"/>
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="check_point_name" property="checkPointName" jdbcType="VARCHAR"/>
+        <result column="point_name" property="checkPointName" jdbcType="VARCHAR"/>
+        <result column="task_check_point_status" property="taskCheckPointStatus" jdbcType="INTEGER"/>
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR"/>
+        <result column="org_id" property="orgId" jdbcType="VARCHAR"/>
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="org_name" property="orgName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 查询任务巡更点列表-->
+    <select id="findTaskCheckPoint" parameterType="TaskCheckPoint" resultMap="taskCheckPointResultMap">
+        SELECT
+            id, project_id, check_point_id, check_point_name
+        FROM t_task_check_point
+        <where>
+            1 = 1
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="taskId != null">
+                and task_id = #{taskId}
+            </if>
+            <if test="projectId != null">
+                and project_id = #{projectId}
+            </if>
+            <if test="checkPointId != null">
+                and check_point_id = #{checkPointId}
+            </if>
+            limit 1;
+        </where>
+    </select>
+
+    <select id="findCheckPointListByTaskId" parameterType="java.lang.Long" resultMap="taskCheckPointResultMap">
+        SELECT
+            id, check_point_id, check_point_name, project_id
+        FROM t_task_check_point
+        WHERE  task_id = #{taskId}
+    </select>
+
+    <!--添加任务巡更点-->
+    <insert id="saveTaskCheckPoint" parameterType="TaskCheckPoint" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_task_check_point
+            (task_id, project_id,check_point_name, check_point_id)
+        VALUES
+            (#{taskId}, #{projectId}, #{checkPointName}, #{checkPointId});
+    </insert>
+
+    <!--修改任务巡更点-->
+    <update id="modifyTaskCheckPoint" parameterType="TaskCheckPoint">
+        UPDATE t_task_check_point
+        <set>
+            <if test="checkPointId != null">
+                check_point_id = #{checkPointId} ,
+            </if>
+            <if test="checkPointName != null and checkPointName != ''">
+                check_point_name = #{checkPointName} ,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="findCheckPointDeviceList" resultType="CheckPoint">
+        SELECT
+            tcp.check_point_id checkPointId,cp.qr_no qrNo,d.device_type_id deviceTypeId,
+            cp.building_id buildingId,cp.building_floor_id buildingFloorId
+        FROM t_task_check_point tcp
+        LEFT JOIN device_manage.d_check_point cp
+        ON tcp.check_point_id = cp.id
+        INNER JOIN device_manage.d_device d
+        ON d.check_point_id = cp.id
+        WHERE tcp.task_id = #{taskId}
+    </select>
+
+    <delete id="deleteCheckPointByTaskId">
+        DELETE FROM t_task_check_point
+        <where>
+            <if test="taskId != null and taskId != 0">
+                AND task_id = #{taskId}
+            </if>
+            <if test="taskIds != null and taskIds.size > 0">
+                AND task_id IN
+                <foreach item="item" collection="taskIds" index="index" separator=","  open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </delete>
+
+    <delete id="deleteCheckPointByTaskIdAndPointId">
+        DELETE FROM t_task_check_point 
+        WHERE
+        task_id IN
+        <foreach item="item" collection="taskIds" index="index" separator=","  open="(" close=")">
+            #{item}
+        </foreach>
+        AND check_point_id IN
+        <foreach item="item" collection="checkPointIds" index="index" separator=","  open="(" close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!-- 根据巡查点id删除任务中的巡查点 -->
+    <delete id="deleteCheckPointByCheckPointId" parameterType="TaskCheckPoint">
+        DELETE FROM t_task_check_point
+        <where>
+            <if test="taskId != null and taskId != 0">
+                AND check_point_id = #{checkPointId}
+            </if>
+            <if test="checkPointIds != null and checkPointIds.length > 0">
+                AND check_point_id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator=","  open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </delete>
+
+    <select id="findTaskCheckPointPage" parameterType="Task" resultMap="taskCheckPointResultMap">
+        SELECT
+        tcp.id, tcp.check_point_id, tcp.project_id, cp.point_name, cp.building_id,
+        cp.building_floor_id, cp.point_location,cp.img_url,b.building_name,f.floor_name,
+        cp.qr_no, cp.org_id, tcp.task_check_point_status,o.org_name
+        FROM t_task_check_point tcp
+        LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+        LEFT JOIN project_manage.p_building b ON cp.building_id = b.id
+        LEFT JOIN project_manage.p_building_floor f ON f.id = cp.building_floor_id
+        LEFT JOIN project_manage.p_organization o ON o.id = cp.org_id
+        WHERE
+            tcp.task_id = #{id}
+            <if test="name != null">
+                AND (cp.qr_no  LIKE CONCAT('%',#{name},'%') OR cp.point_name LIKE  CONCAT('%',#{name},'%'))
+            </if>
+            <if test="buildingId !=null and buildingId != 0">
+                AND cp.building_id = #{buildingId}
+            </if>
+            <if test="buildingFloorId !=null and buildingFloorId != 0">
+                AND cp.building_floor_id = #{buildingFloorId}
+            </if>
+            <if test="taskCheckPointStatus != null">
+                AND tcp.task_check_point_status=#{taskCheckPointStatus}
+            </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findTaskCheckPointPageCount" parameterType="TaskCheckPoint" resultType="java.lang.Integer">
+        SELECT
+            COUNT(*)
+        FROM
+        t_task_check_point tcp
+        INNER JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+        WHERE
+        tcp.task_id = #{id}
+        <if test="name != null">
+            AND (cp.qr_no  LIKE CONCAT('%',#{name},'%') OR cp.point_name LIKE  CONCAT('%',#{name},'%'))
+        </if>
+        <if test="buildingId !=null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId !=null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="taskCheckPointStatus != null">
+            AND tcp.task_check_point_status=#{taskCheckPointStatus}
+        </if>
+    </select>
+    
+    <!--更新任务巡查点状态-->
+    <update id="updateTaskDeviceCheckPointStatus" parameterType="TaskCheckPoint">
+        update t_task_check_point o set o.task_check_point_status = #{taskCheckPointStatus} where o.id in
+        <foreach item="item" collection="list" index="index" separator=","  open="(" close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!--通过巡查点ID和任务ID查询任务巡查点-->
+    <select id="findCheckPointIdAndTaskId" parameterType="java.lang.Long" resultMap="taskCheckPointResultMap">
+        SELECT tcp.id, tcp.task_id, tcp.check_point_id, tcp.check_point_name, tcp.project_id, tcp.task_check_point_status,
+            dcp.building_id, dcp.building_floor_id, dcp.qr_no, dcp.org_id, dcp.point_location, dcp.img_url,
+            b.building_name, bf.floor_name, o.org_name
+        FROM t_task_check_point tcp
+        INNER JOIN device_manage.d_check_point dcp ON dcp.id = tcp.check_point_id
+        LEFT JOIN project_manage.p_building b ON b.id = dcp.building_id
+        LEFT JOIN project_manage.p_building_floor bf ON bf.id = dcp.building_floor_id
+        LEFT JOIN project_manage.p_organization o ON dcp.org_id = o.id AND o.org_type = 3
+        WHERE tcp.check_point_id = #{checkPointId} AND tcp.task_id = #{taskId};
+    </select>
+
+    <!-- 统计任务巡查点数 -->
+    <select id="findCheckOverviewList" parameterType="Task" resultMap="taskCheckPointResultMap">
+        SELECT n.task_id, n.task_name, n.task_parent_id, n.create_time,
+            n.id, n.check_point_id, n.project_id, n.task_check_point_status,
+            n.point_name, n.building_id, n.building_floor_id, n.point_location, n.img_url, n.qr_no, n.org_id
+        FROM(
+            SELECT t.id task_id, t.task_name, t.parent_id task_parent_id, t.create_time,
+                tcp.id, tcp.check_point_id, tcp.project_id, tcp.task_check_point_status,
+                cp.point_name, cp.building_id, cp.building_floor_id, cp.point_location, cp.img_url, cp.qr_no, cp.org_id
+            FROM t_task t
+            LEFT JOIN t_task_check_point tcp ON t.id = tcp.task_id
+            INNER JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+            WHERE t.project_id = #{projectId} AND t.task_status > 0
+            <if test="typeTask != null">
+                AND t.type_task = #{typeTask}
+            </if>
+            <if test="delete != null">
+                AND t.deleted = #{delete}
+            </if>
+            <if test="createTime != null and lastModifyTime != null">
+                AND t.create_time between #{createTime} and #{lastModifyTime}
+            </if>
+            <if test="periodStartTime != null and periodEndTime != null">
+                AND t.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+            </if>
+            <if test="checkPointName != null and checkPointName != ''">
+                AND tcp.check_point_name LIKE CONCAT('%', #{checkPointName}, '%')
+            </if>
+            <if test="checkPointQrNo != null and checkPointQrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%', #{checkPointQrNo}, '%')
+            </if>
+            <if test="taskCheckPointStatus != null">
+                AND tcp.task_check_point_status = #{taskCheckPointStatus}
+            </if>
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) n
+        <if test="name != null and name != ''">
+            LEFT JOIN t_executor e ON n.task_id = e.task_id
+            WHERE e.executor_name LIKE CONCAT('%',#{name},'%')
+        </if>
+    </select>
+
+    <!-- PC月度工单统计 巡查点数量 -->
+    <select id="countTaskCheckPointNum" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT tcp.check_point_id)
+        FROM t_task_check_point tcp
+        WHERE tcp.task_id = #{taskId}
+    </select>
+
+    <!-- APP月度工单统计 巡查点概览列表 数量 -->
+    <select id="findByTaskCount" parameterType="Task" resultType="java.lang.Integer">
+        SELECT COUNT(n.check_point_id)
+        FROM (
+            SELECT COUNT(DISTINCT tcp.check_point_id) check_point_id
+            FROM t_task t
+            INNER JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            <where>
+                t.deleted = #{delete}
+                <if test="projectId != null">
+                    AND t.project_id = #{projectId}
+                </if>
+                <if test="taskStatusArr != null and taskStatusArr.length > 0">
+                    AND t.task_status IN
+                    <foreach item="item" collection="taskStatusArr" index="index" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="taskName != null and taskName != ''">
+                    AND t.task_name LIKE CONCAT('%',#{taskName},'%')
+                </if>
+                <if test="createTime != null and lastModifyTime != null">
+                    AND t.create_time between #{createTime} and #{lastModifyTime}
+                </if>
+                <if test="periodStartTime != null and periodEndTime != null">
+                    AND t.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+                </if>
+                <if test="taskCheckPointStatus != null">
+                    AND tcp.task_check_point_status = #{taskCheckPointStatus}
+                </if>
+                <if test="checkState != null and checkState == 1">
+                    AND tcp.task_check_point_status != 0
+                </if>
+                AND t.task_status &gt; 0
+            </where>
+            GROUP BY tcp.check_point_id
+        ) n
+    </select>
+
+    <!-- APP月度工单统计 巡查点概览列表 -->
+    <select id="findCheckOverviewCount" parameterType="Task" resultType="java.lang.Integer">
+        SELECT COUNT(n.id)
+        FROM (
+            SELECT t.id task_id, tcp.id
+            FROM t_task t
+            left join  t_task_check_point tcp ON t.id = tcp.task_id
+            LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+            <where>
+                t.project_id = #{projectId} AND t.task_status > 0
+                <if test="typeTask != null">
+                    AND t.type_task = #{typeTask}
+                </if>
+                <if test="delete != null">
+                    AND t.deleted = #{delete}
+                </if>
+                <if test="createTime != null and lastModifyTime != null">
+                    AND t.create_time between #{createTime} and #{lastModifyTime}
+                </if>
+                <if test="periodStartTime != null and periodEndTime != null">
+                    AND t.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+                </if>
+                <if test="checkPointName != null and checkPointName != ''">
+                    AND tcp.check_point_name LIKE CONCAT('%', #{checkPointName}, '%')
+                </if>
+                <if test="checkPointQrNo != null and checkPointQrNo != ''">
+                    AND cp.qr_no LIKE CONCAT('%', #{checkPointQrNo}, '%')
+                </if>
+                <if test="taskCheckPointStatus != null">
+                    AND tcp.task_check_point_status = #{taskCheckPointStatus}
+                </if>
+            </where>
+        ) n
+        <if test="name != null and name != ''">
+            LEFT JOIN t_executor e ON n.task_id = e.task_id
+            WHERE e.executor_name LIKE CONCAT('%',#{name},'%')
+        </if>
+    </select>
+
+    <!--统计已检巡查点数-->
+    <select id="countCheckedPointNum" resultType="java.lang.Integer">
+        SELECT
+            count(DISTINCT t.check_point_id)
+        FROM t_task_check_point t
+        WHERE t.task_id = #{taskId}
+        AND t.task_check_point_status in (1,2)
+    </select>
+
+    <select id="findTaskCheckPoints" parameterType="java.lang.Long" resultType="java.lang.Long">
+        SELECT
+            t.check_point_id
+        FROM t_task_check_point t
+        WHERE t.task_id = #{taskId}
+        GROUP BY t.check_point_id
+    </select>
+
+    <select id="findCheckPointListByTaskIdSubway" parameterType="CheckPoint" resultType="CheckPoint">
+        select
+            cp.id, cp.building_id buildingId, cp.building_floor_id buildingFloorId,cp.qr_no qrNo,cp.point_location pointLocation,
+            cp.point_name pointName,cp.project_id projectId, cp.org_id orgId,cp.memo,cp.manage_region manageRegion,
+            cp.lng,cp.lat,cp.img_url, cp.create_user_name,
+            tcp.task_check_point_status checkstatus,
+            tcp.last_modify_time statusUpdateTime
+        FROM t_task_check_point tcp
+        INNER JOIN device_manage.d_check_point cp
+        ON cp.id = tcp.check_point_id
+        LEFT JOIN project_manage.p_floor_point_position fpp
+        ON cp.id = fpp.check_point_id
+        AND fpp.floor_id = cp.building_floor_id
+        WHERE
+        cp.status &lt;= 98 AND tcp.task_id = #{taskId}
+        <if test="buildingId != null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="qrNoOrName != null and qrNoOrName != ''">
+            AND (cp.point_name LIKE CONCAT('%',#{qrNoOrName},'%') OR cp.qr_no LIKE CONCAT('%',#{qrNoOrName},'%'))
+        </if>
+        <if test="pointLayout != null and pointLayout != 0">
+            <if test="pointLayout == 1">
+                AND fpp.id &gt;= 1
+            </if>
+            <if test="pointLayout == 2">
+                AND fpp.id IS NULL
+            </if>
+        </if>
+        GROUP BY tcp.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+</mapper>

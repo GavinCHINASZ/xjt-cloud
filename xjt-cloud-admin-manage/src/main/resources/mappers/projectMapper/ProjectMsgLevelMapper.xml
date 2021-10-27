@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.project.ProjectMsgLevelDao">
+
+    <resultMap id="projectMsgLevelResultMap" type="com.xjt.cloud.admin.manage.entity.project.ProjectMsgLevel">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="model_name" property="modelName" jdbcType="VARCHAR"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="event_type_level_1" property="eventTypeLevel1" jdbcType="VARCHAR"/>
+        <result column="event_type_level_2" property="eventTypeLevel2" jdbcType="VARCHAR"/>
+        <result column="event_type_level_3" property="eventTypeLevel3" jdbcType="VARCHAR"/>
+        <result column="event_type_level_4" property="eventTypeLevel4" jdbcType="VARCHAR"/>
+
+        <result column="event_type_name_level_1" property="eventTypeNameLevel1" jdbcType="VARCHAR"/>
+        <result column="event_type_name_level_2" property="eventTypeNameLevel2" jdbcType="VARCHAR"/>
+        <result column="event_type_name_level_3" property="eventTypeNameLevel3" jdbcType="VARCHAR"/>
+        <result column="event_type_name_level_4" property="eventTypeNameLevel4" jdbcType="VARCHAR"/>
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="projectMsgLevelSqlColumns">
+        pml.id, pml.project_id, pml.model_name, pml.type, pml.status,
+        pml.event_type_level_1, pml.event_type_level_2, pml.event_type_level_3, pml.event_type_level_4, pml.create_time,
+        pml.event_type_name_level_1, pml.event_type_name_level_2, pml.event_type_name_level_3, pml.event_type_name_level_4
+    </sql>
+
+    <sql id="findProjectMsgLevelWhere">
+        WHERE pml.status &lt;= 98
+        <if test="id != null and id != 0">
+            AND pml.id = #{id}
+        </if>
+        <if test="projectId != null">
+            AND pml.project_id = #{projectId}
+        </if>
+    </sql>
+
+    <!-- 查询 项目信息级别配置表 列表 -->
+    <select id="findProjectMsgLevelList" resultMap="projectMsgLevelResultMap" parameterType="ProjectMsgLevel">
+        SELECT <include refid="projectMsgLevelSqlColumns"/>
+        FROM project_manage.p_project_msg_level pml
+        <include refid="findProjectMsgLevelWhere"/>
+    </select>
+
+    <!-- 更新 消息等级 -->
+    <update id="updateProjectMsgLevelList" parameterType="ProjectMsgLevel">
+        UPDATE project_manage.p_project_msg_level
+        <set>
+            <if test="modelName != null and modelName != ''">
+                model_name = #{modelName},
+            </if>
+            <if test="type != null and type != 0">
+                type = #{type},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="eventTypeLevel1 != null and eventTypeLevel1 != ''">
+                event_type_level_1 = #{eventTypeLevel1},
+            </if>
+            <if test="eventTypeLevel2 != null and eventTypeLevel2 != ''">
+                event_type_level_2 = #{eventTypeLevel2},
+            </if>
+            <if test="eventTypeLevel3 != null and eventTypeLevel3 != ''">
+                event_type_level_3 = #{eventTypeLevel3},
+            </if>
+            <if test="eventTypeLevel4 != null and eventTypeLevel4 != ''">
+                event_type_level_4 = #{eventTypeLevel4},
+            </if>
+
+            <if test="eventTypeNameLevel1 != null and eventTypeNameLevel1 != ''">
+                event_type_name_level_1 = #{eventTypeNameLevel1},
+            </if>
+            <if test="eventTypeNameLevel2 != null and eventTypeNameLevel2 != ''">
+                event_type_name_level_2 = #{eventTypeNameLevel2},
+            </if>
+            <if test="eventTypeNameLevel3 != null and eventTypeNameLevel3 != ''">
+                event_type_name_level_3 = #{eventTypeNameLevel3},
+            </if>
+            <if test="eventTypeNameLevel4 != null and eventTypeNameLevel4 != ''">
+                event_type_name_level_4 = #{eventTypeNameLevel4}
+            </if>
+        </set>
+        WHERE
+        <if test="projectId != null">
+            project_id = #{projectId}
+        </if>
+    </update>
+
+    <!-- 新增 消息等级 -->
+    <insert id="saveProjectMsgLevelList" parameterType="ProjectMsgLevel">
+        INSERT INTO project_manage.p_project_msg_level(project_id, model_name, `type`, status, event_type_level_1, event_type_level_2, event_type_level_3,
+            event_type_level_4, create_time, event_type_name_level_1, event_type_name_level_2, event_type_name_level_3, event_type_name_level_4)
+        VALUES (#{projectId}, #{modelName}, #{type}, #{status}, #{eventTypeLevel1}, #{eventTypeLevel2}, #{eventTypeLevel3},
+            #{eventTypeLevel4}, NOW(), #{eventTypeNameLevel1}, #{eventTypeNameLevel2}, #{eventTypeNameLevel3}, #{eventTypeNameLevel4});
+    </insert>
+
+</mapper>

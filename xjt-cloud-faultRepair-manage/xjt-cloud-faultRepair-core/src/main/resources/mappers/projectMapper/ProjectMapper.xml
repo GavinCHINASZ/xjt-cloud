@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.fault.core.dao.project.ProjectDao">
+
+    <resultMap id="projectResultMap" type="com.xjt.cloud.fault.core.entity.project.Project">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <result column="project_status" property="projectStatus" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="fire_safety_owner" property="fireSafetyOwner" jdbcType="VARCHAR"/>
+        <result column="fire_safety_owner_phone" property="fireSafetyOwnerPhone" jdbcType="VARCHAR"/>
+        <result column="fire_safety_manager" property="fireSafetyManager" jdbcType="VARCHAR"/>
+        <result column="fire_safety_manager_phone" property="fireSafetyManagerPhone" jdbcType="VARCHAR"/>
+        <result column="isOwner" property="isOwner" jdbcType="BOOLEAN"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="owner_id" property="ownerId" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        p.id,p.project_name,p.description ,p.create_user_id,p.create_time,project_status,address,company_name,
+        p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone,
+        if((p.owner_id = ou.user_id), true, false) as isOwner, p.image_url
+    </sql>
+
+    <sql id="selectColumns">
+        p.id,p.project_name,p.description ,p.create_user_id,p.create_time,project_status,address,company_name,
+        p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone,p.image_url
+    </sql>
+
+    <!-- 查询项目 -->
+    <select id="findById" parameterType="java.lang.Long" resultType="Project">
+        SELECT id, project_name projectName
+        FROM project_manage.p_project
+        WHERE id = #{id}
+    </select>
+
+</mapper>

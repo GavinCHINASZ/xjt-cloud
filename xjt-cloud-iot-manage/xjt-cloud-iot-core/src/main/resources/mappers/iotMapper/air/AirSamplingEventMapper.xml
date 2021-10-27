@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.air.AirSamplingEventDao">
+
+    <resultMap id="airSamplingEventResultMap" type="com.xjt.cloud.iot.core.entity.air.AirSamplingEvent">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_coding" property="deviceCoding" jdbcType="VARCHAR"/>
+        <result column="pipeline_max_value" property="pipelineMaxValue" jdbcType="INTEGER"/>
+        <result column="pipeline_min_value" property="pipelineMinValue" jdbcType="INTEGER"/>
+        <result column="pipeline_value_1" property="pipelineValue1" jdbcType="INTEGER"/>
+        <result column="pipeline_value_2" property="pipelineValue2" jdbcType="INTEGER"/>
+        <result column="pipeline_status_1" property="pipelineStatus1" jdbcType="INTEGER"/>
+        <result column="pipeline_status_2" property="pipelineStatus2" jdbcType="INTEGER"/>
+        <result column="smog_value" property="smogValue" jdbcType="INTEGER"/>
+        <result column="event_type" property="eventType" jdbcType="INTEGER"/>
+        <result column="deviation_set" property="deviationSet" jdbcType="INTEGER"/>
+        <result column="deviation_value" property="deviationValue" jdbcType="INTEGER"/>
+        <result column="deviation_status" property="deviationStatus" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="data_update_time" property="dataUpdateTime" jdbcType="TIMESTAMP"/>
+        <result column="time_desc" property="timeDesc" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findAirSamplingWhere">
+        <if test="qrNo != null and qrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND asd.project_id = #{projectId}
+        </if>
+        <if test="deviceCoding != null and deviceCoding != ''">
+            AND asd.device_coding LIKE CONCAT('%',#{deviceCoding},'%')
+        </if>
+        <if test="airSamplingId != null and airSamplingId != 0">
+            AND ase.air_sampling_id = #{airSamplingId}
+        </if>
+        <if test="pipelineStatus1 != null and pipelineStatus1 != 0">
+            AND ase.pipeline_status_1 = #{pipelineStatus1}
+        </if>
+        <if test="pipelineStatus2 != null and pipelineStatus2 != 0">
+            AND ase.pipeline_status_2 =  #{pipelineStatus2}
+        </if>
+        <if test="pipelineStatus != null and pipelineStatus != 0">
+            <if test="pipelineStatus == 1">
+                AND ase.pipeline_status_1 =  1 AND ase.pipeline_status_2 =  1
+            </if>
+            <if test="pipelineStatus == 2">
+                AND (ase.pipeline_status_1 >=  2 OR ase.pipeline_status_2 >=  2)
+            </if>
+        </if>
+        <if test="pipelineStatuss1 != null">
+            AND ase.pipeline_status_1 IN
+            <foreach item="item" collection="pipelineStatuss1" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pipelineStatuss2 != null">
+            AND ase.pipeline_status_2 IN
+            <foreach item="item" collection="pipelineStatuss2" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="createTime != null">
+            AND ase.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+    </sql>
+
+    <!--根据条件查询查询空气采样记录列表-->
+    <select id="findAirSamplingEventList" parameterType="AirSamplingRecord" resultMap="airSamplingEventResultMap">
+        SELECT ase.*,asd.device_coding,
+        cp.qr_no qrNo,cp.point_location pointLocation,cp.building_id buildingId,cp.building_floor_id buildingFloorId
+        FROM a_air_sampling_event ase
+        INNER JOIN a_air_sampling_device asd ON ase.air_sampling_id = asd.id AND asd.status &lt;= 98
+        INNER JOIN device_manage.d_check_point cp ON cp.id = asd.check_point_id AND cp.status &lt;= 98
+        WHERE ase.status &lt;= 98
+        <include refid="findAirSamplingWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--根据条件查询查询空气采样记录列表总数-->
+    <select id="findAirSamplingEventListTotalCount" parameterType="AirSamplingRecord" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT ase.id)
+        FROM a_air_sampling_event ase
+        INNER JOIN a_air_sampling_device asd ON ase.air_sampling_id = asd.id AND asd.status &lt;= 98
+        INNER JOIN device_manage.d_check_point cp ON cp.id = asd.check_point_id AND cp.status &lt;= 98
+        WHERE ase.status &lt;= 98
+        <include refid="findAirSamplingWhere"/>
+    </select>
+
+    <!--根据条件查询查询空气采样记录列表-->
+    <select id="findAirSamplingEventPie" parameterType="AirSamplingRecord" resultType="AirSamplingEventReport">
+        SELECT COUNT(DISTINCT ase.id) totalNum,
+        SUM(IF(ase.event_type=1,1,0)) pipelineSuper1,
+        SUM(IF(ase.event_type=2,1,0)) pipelineUltraLow1,
+        SUM(IF(ase.event_type=3,1,0)) pipelineSuper2,
+        SUM(IF(ase.event_type=4,1,0)) pipelineUltraLow2
+        FROM a_air_sampling_event ase
+        INNER JOIN a_air_sampling_device asd ON ase.air_sampling_id = asd.id AND asd.status &lt;= 98
+        INNER JOIN device_manage.d_check_point cp ON cp.id = asd.check_point_id AND cp.status &lt;= 98
+        WHERE ase.status &lt;= 98
+        <include refid="findAirSamplingWhere"/>
+    </select>
+
+    <!-- 查询空气采样记录　曲线图-->
+    <select id="findAirSamplingEventGraph" parameterType="WaterRecord" resultType="AirSamplingEventReport">
+        SELECT IFNULL(ase.pipelineSuper1,0) pipelineSuper1,IFNULL(ase.pipelineUltraLow1,0) pipelineUltraLow1,
+            IFNULL(ase.pipelineSuper2,0) pipelineSuper2, IFNULL(ase.pipelineUltraLow2,0) pipelineUltraLow2,<include refid="formatTimeCol"></include> timeDesc
+            FROM (
+            SELECT SUM(IF(ase.event_type=1,1,0)) pipelineSuper1,SUM(IF(ase.event_type=2,1,0)) pipelineUltraLow1,
+                SUM(IF(ase.event_type=3,1,0)) pipelineSuper2,SUM(IF(ase.event_type=4,1,0)) pipelineUltraLow2,
+            <include refid="formatTime"></include>
+            FROM a_air_sampling_event ase
+            INNER JOIN a_air_sampling_device asd ON ase.air_sampling_id = asd.id AND asd.status &lt;= 98
+            INNER JOIN device_manage.d_check_point cp ON cp.id = asd.check_point_id AND cp.status &lt;= 98
+            WHERE ase.status &lt;= 98
+            <include refid="findAirSamplingWhere"/>
+            GROUP BY createTime
+        ) ase
+        RIGHT JOIN (
+        <include refid="formatTimeRow"></include>
+        ) dayList
+        ON <include refid="formatTimeOn"></include>
+        ORDER BY timeDesc
+    </select>
+
+    <sql id="formatTimeCol">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTime">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(ase.create_time,'%H') createTime
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(ase.create_time,'%Y-%m-%d') createTime
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(ase.create_time,'%Y-%m') createTime
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(ase.create_time,'%Y') createTime
+        </if>
+    </sql>
+
+    <sql id="formatTimeRow">
+        SELECT
+        <if test="groupType != null and groupType == 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d %H') createTime
+        </if>
+        <if test="groupType != null and groupType != 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d') createTime
+        </if>
+        FROM (
+        SELECT @date := DATE_ADD(#{createTime}, interval -1 ${timeType})
+        FROM b_base_data LIMIT #{dateTimeCount}
+        ) days
+    </sql>
+
+    <sql id="formatTimeOn">
+        <if test="groupType != null and groupType == 1">
+            ase.createTime = DATE_FORMAT(dayList.createTime,'%H')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            ase.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            ase.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            ase.createTime = DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <insert id="saveAirSamplingEvent" parameterType="AirSamplingRecord">
+        INSERT INTO a_air_sampling_event (project_id, air_sampling_id, status, pipeline_min_value, pipeline_max_value, pipeline_value_1, pipeline_value_2,
+        event_type, create_time, smog_value,record_id)
+        VALUES
+        (#{projectId}, #{airSamplingId}, 1, #{pipelineMinValue}, #{pipelineMaxValue}, #{pipelineValue1}, #{pipelineValue2},
+        #{eventType}, NOW(), #{smogValue},#{recordId});
+    </insert>
+</mapper>

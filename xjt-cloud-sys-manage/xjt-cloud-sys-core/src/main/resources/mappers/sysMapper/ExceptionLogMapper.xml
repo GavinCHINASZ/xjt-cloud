@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.sys.core.dao.sys.ExceptionLogDao" >
+
+    <insert id="saveExceptionLog" parameterType="ExceptionLog" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO s_exception_log (type, create_time, url, parameters, err_log) VALUES
+        (#{type}, NOW(), #{url}, #{parameters}, #{errLog});
+    </insert>
+</mapper>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.message.core.dao.message.MsgPushManageDao">
+
+    <resultMap id="msgPushManageResultMap" type="com.xjt.cloud.message.core.entity.MsgPushManage">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <id column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <id column="name" property="name" jdbcType="VARCHAR"/>
+        <id column="msg_type" property="msgType" jdbcType="INTEGER"/>
+        <id column="push_type" property="pushType" jdbcType="INTEGER"/>
+        <id column="isChecked" property="isChecked" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 查询消息推送管理 -->
+    <select id="findMsgPushManageList" parameterType="MsgPushManage" resultMap="msgPushManageResultMap">
+        SELECT mpt.parent_id,mpt.id,mpt.`name`,mpt.msg_type,mpt.push_type,
+            if(mt.msg_push_type_id ,1,0) as isChecked
+        FROM m_msg_push_type mpt
+        LEFT JOIN(
+            SELECT
+                mpm.project_id,
+                SUBSTRING_INDEX( SUBSTRING_INDEX( mpm.msg_push_type_ids, ';', ht.id), ';',- 1 ) AS
+                msg_push_type_id
+            FROM m_msg_push_manage mpm
+            JOIN iot_manage.b_base_data ht
+            ON ht.id
+              <![CDATA[ <= ]]>
+            ( length( mpm.msg_push_type_ids ) - length( REPLACE ( mpm.msg_push_type_ids, ';', '' ) ) + 1 )
+            WHERE mpm.project_id = #{projectId}
+        ) mt ON mpt.id = mt.msg_push_type_id
+        WHERE mpt.deleted = 0
+        GROUP BY mpt.id
+    </select>
+
+    <!-- 删除消息推送管理 -->
+    <delete id="deleteMsgPushManage" parameterType="MsgPushManage">
+        DELETE FROM m_msg_push_manage
+        WHERE project_id = #{projectId}
+    </delete>
+
+    <!-- 保存消息推送管理 -->
+    <insert id="saveMsgPushManage" parameterType="MsgPushManage">
+        INSERT INTO m_msg_push_manage (`project_id`,`phone_user_ids`,`sms_user_ids`,`msg_push_type_ids`)
+        VALUES
+        (#{projectId},#{phoneUserIds},#{smsUserIds},#{msgPushTypeIds});
+    </insert>
+
+    <!-- 查询发送短信提醒用户 -->
+    <select id="findSmsUsers" parameterType="MsgPushManage" resultType="User">
+        SELECT ou.id as id, ou.user_id as userId, ou.user_name as userName
+        FROM (
+            SELECT substring_index( substring_index( mpm.sms_user_ids, ';', b.id), ';',- 1 ) as userId
+            FROM m_msg_push_manage mpm
+            JOIN iot_manage.b_base_data b ON b.id <![CDATA[ <= ]]> ( length( mpm.sms_user_ids ) - length( REPLACE ( mpm.sms_user_ids, ';', '' ) ) + 1 )
+            WHERE mpm.project_id = #{projectId}
+        ) m
+        INNER JOIN project_manage.p_org_user ou ON m.userId = ou.user_id AND ou.project_id = #{projectId}
+    </select>
+
+    <!--查询发送语音提醒用户-->
+    <select id="findPhoneUsers" parameterType="MsgPushManage" resultType="User">
+        SELECT ou.id AS id, ou.user_id AS userId, ou.user_name AS userName
+        FROM (
+            SELECT substring_index( substring_index( mpm.phone_user_ids, ';', b.id), ';',- 1 ) AS userId
+            FROM m_msg_push_manage mpm
+            JOIN iot_manage.b_base_data b ON b.id   <![CDATA[ <= ]]>  ( length( mpm.phone_user_ids ) - length( REPLACE ( mpm.phone_user_ids, ';', '' ) ) + 1 )
+            WHERE mpm.project_id = #{projectId}
+        ) m
+        INNER JOIN project_manage.p_org_user ou ON m.userId = ou.user_id AND ou.project_id = #{projectId}
+    </select>
+
+    <!-- 查询 消息推送管理 数量 -->
+    <select id="findMsgPushManageNum" parameterType="MsgPushManage" resultType="java.lang.Integer">
+        SELECT COUNT(mpt.id)
+        FROM (
+            SELECT substring_index(substring_index(mpm.msg_push_type_ids, ';', b.id), ';', -1) AS msg_push_type_ids
+            FROM message_manage.m_msg_push_manage mpm
+            JOIN iot_manage.b_base_data b ON b.id <![CDATA[ <= ]]> (length(mpm.msg_push_type_ids) - length(REPLACE (mpm.msg_push_type_ids, ';', '')) + 1)
+            WHERE mpm.project_id = #{projectId}
+        ) m
+        INNER JOIN message_manage.m_msg_push_type mpt ON mpt.id = m.msg_push_type_ids AND mpt.sign = #{sign} AND mpt.push_type = #{pushType}
+    </select>
+
+</mapper>

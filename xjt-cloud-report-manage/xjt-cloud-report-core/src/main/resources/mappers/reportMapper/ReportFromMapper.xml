@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.report.ReportFromDao" >
+
+    <resultMap id="reportFromResultMap" type="com.xjt.cloud.report.core.entity.report.ReportFrom" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="header_name" property="headerName" jdbcType="VARCHAR" />
+        <id column="weather" property="weather" jdbcType="VARCHAR" />
+        <id column="personnel" property="personnel" jdbcType="VARCHAR" />
+        <id column="company" property="company" jdbcType="VARCHAR" />
+        <id column="director" property="director" jdbcType="VARCHAR" />
+        <id column="owners" property="owners" jdbcType="VARCHAR" />
+        <id column="engineer" property="engineer" jdbcType="VARCHAR" />
+
+        <id column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <id column="create_user_name" property="createUserUame" jdbcType="VARCHAR" />
+        <id column="update_user_id" property="updateUserId" jdbcType="BIGINT" />
+        <id column="update_user_name" property="updateUserName" jdbcType="VARCHAR" />
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <id column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="selColumns">
+        rf.id, rf.project_id, rf.header_name, rf.weather, rf.personnel, rf.company, rf.director, rf.owners, rf.engineer, rf.create_user_id, rf.update_user_name, rf.update_user_id,
+        rf.create_user_name, rf.create_time, rf.last_modify_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="id != null and id > 0">
+            AND rf.id = #{id}
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND rf.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND rf.create_time LIKE CONCAT(DATE_FORMAT(#{createTime}, '%Y-%m-%d') , '%')
+        </if>
+    </sql>
+
+    <!-- 查看 日报报表 -->
+    <select id="findReportFromList" parameterType="ReportFrom" resultMap="reportFromResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM report_manage.r_report_from rf
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 新增 日报报表 -->
+    <insert id="saveReportFrom" parameterType="ReportFrom" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO report_manage.r_report_from(project_id, header_name, weather, personnel, company, director, owners, engineer,
+            create_user_id, update_user_name, update_user_id, create_user_name, create_time)
+        VALUES (#{projectId}, #{headerName}, #{weather}, #{personnel}, #{company}, #{director}, #{owners}, #{engineer},
+            #{createUserId}, #{updateUserName}, #{updateUserId}, #{createUserName}, NOW());
+    </insert>
+
+    <!-- 查看 日报报表 -->
+    <select id="findReportFromOne" parameterType="ReportFrom" resultMap="reportFromResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM report_manage.r_report_from rf
+        <include refid="findWhere"/>
+        ORDER BY rf.create_time DESC
+        LIMIT 1;
+    </select>
+
+    <!-- 查询 填写过的日报 日期 -->
+    <select id="findReportFromDate" parameterType="ReportFrom" resultMap="reportFromResultMap">
+        SELECT DISTINCT DATE_FORMAT(rf.create_time, '%Y-%m-%d') create_time
+        FROM report_manage.r_report_from rf
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 查询 填写过的日报 日期 -->
+    <select id="findReportFromById" parameterType="java.lang.Long" resultMap="reportFromResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM report_manage.r_report_from rf
+        WHERE rf.id = #{id}
+        LIMIT 1;
+    </select>
+
+</mapper>

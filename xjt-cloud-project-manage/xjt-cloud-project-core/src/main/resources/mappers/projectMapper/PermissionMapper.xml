@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.PermissionDao">
+
+
+    <resultMap id="permissionResultMap" type="com.xjt.cloud.project.core.entity.Permission">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="permission_name" property="permissionName" jdbcType="VARCHAR"/>
+        <result column="per_type" property="perType" jdbcType="BIGINT"/>
+        <result column="permission_type" property="permissionType" jdbcType="BIGINT"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="sign" property="sign" jdbcType="VARCHAR"/>
+
+
+    </resultMap>
+
+    <sql id="selColumns">
+        p.id,p.permission_name,p.parent_id,p.per_type,p.url,p.permission_type,p.image_url,p.sign
+    </sql>
+
+    <!--查询项目权限-->
+    <select id="findByPermission" parameterType="Permission" resultMap="permissionResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM p_permission p LEFT JOIN p_role_permission rp ON p.id = rp.permission_id WHERE p.status = 1 AND rp.status = 1
+        <if test="perType!=null">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="permissionType!=null">
+            AND p.permission_type = #{permissionType} AND p.status = 1
+        </if>
+        <if test="roleId!=null and roleId!=0">
+            AND rp.role_id = #{roleId}
+        </if>
+        <if test="ids!=null">
+            AND p.id IN
+            <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+        GROUP BY p.id ORDER BY p.sort ASC
+    </select>
+
+    <!--查询项目权限-->
+    <select id="findByPermissionCV5" parameterType="Permission" resultMap="permissionResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM p_permission p LEFT JOIN p_role_permission rp ON p.id = rp.permission_id WHERE p.status = 1 AND rp.status = 1
+        <if test="perType!=null">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="permissionType!=null">
+            AND p.permission_type = #{permissionType} AND p.status = 1
+        </if>
+        <if test="projectId!=null and projectId!=0">
+            AND rp.source_id = #{projectId}
+        </if>
+        <if test="roleId!=null and roleId!=0">
+            AND rp.role_id = #{roleId}
+        </if>
+        <if test="ids!=null">
+            AND p.id IN
+            <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+        GROUP BY p.id ORDER BY p.sort ASC
+    </select>
+
+    <!--查询权限父类-->
+    <select id="findByPermissionParentId" parameterType="Permission" resultMap="permissionResultMap">
+        SELECT
+        <include refid="selColumns"/>,IF(isnull(rp.id),false,true) permission
+        FROM p_permission p
+        LEFT JOIN ( SELECT * FROM p_role_permission WHERE source_id = #{projectId} GROUP BY permission_id)  t ON p.id = t.permission_id
+        LEFT JOIN p_role_permission rp ON p.id = rp.permission_id AND rp.role_id = #{roleId}
+        WHERE p.status = 1 AND ((t.id IS NOT NULL AND t.status = 1) OR (p.type = 2 AND (t.status IS NULL OR t.status = 1)))
+        <if test="perType!=null">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="parentId!=null">
+            AND p.parent_id = #{parentId}
+        </if>
+        ORDER BY p.sort ASC
+    </select>
+
+    <!--用户角色权限-->
+    <select id="findByUserPermission" parameterType="Permission" resultMap="permissionResultMap">
+        SELECT        <include refid="selColumns"/>
+        FROM p_role_permission rp
+        INNER JOIN p_permission p ON rp.permission_id = p.id AND p.per_type = 2 AND p.status = 1 AND rp.status = 1
+        INNER JOIN p_role r ON r.id = rp.role_id AND r.source_type = 2
+        INNER JOIN p_org_user_role our ON our.role_id = r.id
+        <if test="userId!=null">
+            AND our.user_id =#{userId}
+        </if>
+        GROUP BY p.id
+        ORDER BY p.sort ASC
+
+    </select>
+
+    <!--用户角色权限-->
+    <select id="findByUserPermissionCV5" parameterType="Permission" resultMap="permissionResultMap">
+        SELECT        <include refid="selColumns"/>
+        FROM p_role_permission rp
+        INNER JOIN p_permission p ON rp.permission_id = p.id AND p.per_type = 2 AND p.status = 1 AND rp.status = 1
+        INNER JOIN p_role r ON r.id = rp.role_id AND r.source_type = 2
+        INNER JOIN p_org_user_role our ON our.role_id = r.id
+        <if test="projectId!=null">
+            AND r.source_id = #{projectId}
+        </if>
+        <if test="userId!=null">
+            AND our.user_id =#{userId}
+        </if>
+        GROUP BY p.id
+        ORDER BY p.sort ASC
+
+    </select>
+
+    <!--查询所有权限父目录及自己-->
+    <select id="findByPermissionSet" parameterType="java.util.List" resultType="java.lang.Long">
+        SELECT y.id FROM p_permission y
+        WHERE y.id IN
+        ( SELECT  DISTINCT o.id  FROM p_permission p  INNER JOIN p_permission o ON p.id = o.id OR p.parent_id = o.id
+            WHERE p.id  IN
+             <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+             </foreach>
+         )
+        OR y.id IN
+         ( SELECT  DISTINCT o.parent_id  FROM p_permission p  INNER JOIN p_permission o ON  p.parent_id = o.id
+            WHERE p.id IN
+            <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        )
+
+    </select>
+
+    <!--查询用户在项目中拥有的权限-->
+    <select id="findByOrgUserProjectPermission" parameterType="OrgUser" resultType="java.lang.String">
+        SELECT
+        DISTINCT p.sign
+        FROM p_org_user_role our
+        INNER JOIN p_role_permission rp ON our.role_id = rp.role_id AND rp.status = 1
+        INNER JOIN p_permission p ON p.id = rp.permission_id
+        WHERE
+        our.project_id = #{projectId}
+        AND our.user_id = #{userId}
+        AND p.status = 1
+        AND p.sign  IS NOT NULL
+    </select>
+
+    <!--查询用户在项目中拥有的权限-->
+    <select id="findByOrgUserProjectPermissionCV5" parameterType="OrgUser" resultType="java.lang.String">
+        SELECT
+        DISTINCT p.sign
+        FROM p_org_user_role our
+        INNER JOIN p_role_permission rp ON our.role_id = rp.role_id AND our.project_id = rp.source_id AND rp.status = 1
+        INNER JOIN p_permission p ON p.id = rp.permission_id
+        WHERE
+        our.project_id = #{projectId}
+        AND our.user_id = #{userId}
+        AND p.status = 1
+        AND p.sign  IS NOT NULL
+    </select>
+</mapper>

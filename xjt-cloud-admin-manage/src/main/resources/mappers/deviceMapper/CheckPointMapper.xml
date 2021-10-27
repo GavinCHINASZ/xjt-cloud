@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.device.CheckPointDao">
+
+    <resultMap id="checkPointResultMap" type="com.xjt.cloud.admin.manage.entity.device.CheckPoint">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="org_id" property="orgId" jdbcType="BIGINT"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="baidu_lng" property="baiduLng" jdbcType="INTEGER"/>
+        <result column="baidu_lat" property="baiduLat" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="memo" property="memo" jdbcType="VARCHAR"/>
+        <result column="manage_region" property="manageRegion" jdbcType="VARCHAR"/>
+        <result column="deviceStatus" property="deviceStatus" jdbcType="INTEGER"/>
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR"/>
+        <result column="pin_yin_initials" property="pinYinInitials" jdbcType="VARCHAR"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="statusUpdateTime" property="statusUpdateTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+        <result column="task_check_point_status" property="taskCheckPointStatus" jdbcType="INTEGER"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <result column="iot_id" property="iotId" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 查询巡检点列表总行数-->
+    <select id="findCheckPointListCount" parameterType="CheckPoint" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT cp.id)
+        FROM device_manage.d_check_point cp
+        LEFT JOIN project_manage.p_project p ON cp.project_id = p.id
+        WHERE cp.status &lt;= 98 AND p.deleted = false
+        <if test="projectId != null and projectId != 0">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="qrNos != null">
+            AND cp.qr_no IN
+            <foreach collection="qrNos" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 查询巡检点列表总行数-->
+    <select id="findCheckQrNoList" parameterType="CheckPoint" resultType="CheckPoint">
+        SELECT group_concat(qr_no) qrNo
+        FROM device_manage.d_check_point cp
+        WHERE cp.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="qrNos != null">
+            AND cp.qr_no IN
+            <foreach collection="qrNos" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 查询巡检点设备列表-->
+    <select id="findCheckPointList" parameterType="CheckPoint" resultType="CheckPoint">
+        SELECT cp.point_name pointName, cp.qr_no qrNo, cp.org_id orgId,org.org_name orgName,co.org_name companyName,
+        cp.point_location pointLocation, cp.manage_region manageRegion,
+        d.qr_no deviceQrNo, d.num, d.memo, d.brand, d.model, d.spec, d.production_date productionDate,cp.create_time,
+        dt.device_sys_name deviceSysName, CONCAT(DATE_FORMAT(d.expiry_date,
+        '%Y-%c-%d'),'至',DATE_FORMAT(d.expiry_date_end, '%Y-%c-%d')) expiryDateStr,
+        d.last_modify_time lastModifyTime,CONCAT(DATE_FORMAT(d.send_modify_time,
+        '%Y-%c-%d'),'至',DATE_FORMAT(d.send_modify_time_end, '%Y-%c-%d')) sendModifyTimeStr,
+        IF(d.device_status=1,'正常', '故障') deviceStatus, cp.building_id buildingId,b.building_name buildingName,
+        cp.building_floor_id buildingFloorId,bf.floor_name buildingFloorName, cp.project_id projectId,p.project_name
+        projectName
+        FROM device_manage.d_check_point cp
+        LEFT JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id AND dt.type = 9
+        LEFT JOIN project_manage.p_project p ON cp.project_id = p.id
+        LEFT JOIN project_manage.p_building b ON cp.building_id = b.id
+        LEFT JOIN project_manage.p_building_floor bf ON cp.building_floor_id = bf.id
+        LEFT JOIN project_manage.p_organization org ON cp.org_id = org.id
+        LEFT JOIN project_manage.p_organization co ON org.parent_id = co.id
+        WHERE cp.status &lt;= 98 AND p.deleted = false
+        <if test="projectId != null and projectId != 0">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="qrNos != null">
+            AND cp.qr_no IN
+            <foreach collection="qrNos" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+
+    </select>
+
+</mapper>

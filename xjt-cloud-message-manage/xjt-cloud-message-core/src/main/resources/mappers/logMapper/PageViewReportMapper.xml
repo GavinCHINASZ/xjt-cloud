@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.message.core.dao.pv.PageViewReportDao">
+
+    <resultMap id="pageViewResultMap" type="com.xjt.cloud.message.core.entity.PageViewReport">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <id column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <id column="client_type" property="clientType" jdbcType="INTEGER"/>
+        <id column="user_id" property="userId" jdbcType="BIGINT"/>
+        <id column="page_type" property="pageType" jdbcType="INTEGER"/>
+        <id column="page_type_name" property="pageTypeName" jdbcType="VARCHAR"/>
+        <id column="page_url" property="pageUrl" jdbcType="VARCHAR"/>
+        <id column="page_level" property="pageLevel" jdbcType="INTEGER"/>
+        <id column="num" property="totalCount" jdbcType="INTEGER"/>
+        <id column="create_date" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        pvr.id, pvr.project_id, prv.client_type, pvr.user_id, pvr.page_type, page_type_name, pvr.page_url, pvr.page_level, pvr.num, pvr.create_date
+    </sql>
+
+    <sql id="findConditions">
+        <if test="id != null and id > 0">
+            AND pvr.id = #{id}
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND pvr.project_id = #{projectId}
+        </if>
+    </sql>
+
+    <!-- 保存 -->
+    <insert id="saveReportByPageView" parameterType="PageView">
+        INSERT INTO log_manage.l_page_view_report(
+            project_id, client_type, user_id, page_type, page_type_name, page_url, page_level, create_date, num
+        )
+
+        SELECT project_id, client_type, user_id, page_type,
+            case page_type when 21 then '月度工单统计'
+                           when 16 then '值班记录'
+                           when 10 then '水压监测'
+                           when 4 then '火警主机'
+                           when 11 then '水浸监测'
+                           when 20 then '极早期预警'
+                           when 8 then '智能烟感'
+                           when 28 then '声光报警'
+                           when 9 then '智能消火栓'
+                           else page_type + '' end,
+            page_url, page_level, create_time, COUNT(id) num
+        FROM log_manage.l_page_view
+        WHERE create_time BETWEEN #{createTime} AND #{lastModifyTime}
+        GROUP BY project_id, client_type, page_url
+    </insert>
+
+</mapper>

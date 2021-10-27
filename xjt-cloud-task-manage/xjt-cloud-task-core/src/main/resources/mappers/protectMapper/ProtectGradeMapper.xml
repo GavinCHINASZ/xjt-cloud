@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.protect.ProtectGradeDao">
+
+    <resultMap id="protectGradeResultMap" type="com.xjt.cloud.task.core.entity.protect.ProtectGrade">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="grade_name" property="gradeName" jdbcType="VARCHAR"/>
+        <result column="grade_code" property="gradeCode" jdbcType="VARCHAR"/>
+        <result column="sign" property="sign" jdbcType="INTEGER"/>
+        <result column="memo" property="memo" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="protectGradeSql">
+        pg.id, pg.parent_id, pg.grade_name, pg.grade_code, pg.sign, pg.memo
+    </sql>
+
+    <sql id="findProtectGradeSql">
+        <where>
+            1 = 1
+            <if test="id != null and id > 0">
+                AND pg.id = #{id}
+            </if>
+            <if test="parentId != null">
+                AND pg.parent_id = #{parentId}
+            </if>
+            <if test="gradeName != null and gradeName != ''">
+                AND pg.grade_name LIKE CONCAT('%',#{gradeName},'%')
+            </if>
+            <if test="gradeCode != null and gradeCode != ''">
+                AND pg.grade_code LIKE CONCAT('%',#{gradeCode},'%')
+            </if>
+            <if test="sign != null and sign > 0">
+                AND pg.sign = #{sign}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询 防护等级 -->
+    <select id="findProtectGrade" parameterType="ProtectGrade" resultMap="protectGradeResultMap">
+        SELECT <include refid="protectGradeSql"/>
+        FROM task_manage.t_protect_grade pg
+        <include refid="findProtectGradeSql"/>
+        LIMIT 1;
+    </select>
+
+    <!-- 查询 防护等级 数量 -->
+    <select id="findProtectGradeListTotalCount" parameterType="ProtectGrade" resultType="java.lang.Integer">
+        SELECT COUNT(pg.id)
+        FROM task_manage.t_protect_grade pg
+        <include refid="findProtectGradeSql"/>
+    </select>
+
+    <!-- 查询 防护等级名称 list -->
+    <select id="findProtectGradeNameList" parameterType="ProtectGrade" resultMap="protectGradeResultMap">
+        SELECT <include refid="protectGradeSql"/>
+        FROM task_manage.t_protect_grade pg
+        <include refid="findProtectGradeSql"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 防护等级 -->
+    <select id="findProtectGradeList" parameterType="ProtectGrade" resultMap="protectGradeResultMap">
+        SELECT <include refid="protectGradeSql"/>
+        FROM task_manage.t_protect_grade pg
+        <include refid="findProtectGradeSql"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 添加 防护等级 -->
+    <insert id="saveProtectGrade" parameterType="ProtectGrade" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO task_manage.t_protect_grade(parent_id, grade_name, grade_code, sign, memo)
+        VALUES (#{parentId}, #{gradeName}, #{gradeCode}, #{sign}, #{memo});
+    </insert>
+
+    <!-- 修改 防护等级 -->
+    <update id="updateProtectGrade" parameterType="ProtectGrade">
+        UPDATE task_manage.t_protect_grade
+        <set>
+            <if test="parentId != null">
+                parent_id = #{parentId},
+            </if>
+            <if test="gradeName != null and gradeName != ''">
+                grade_name = #{gradeName},
+            </if>
+            <if test="gradeCode != null and gradeCode != ''">
+                grade_code = #{gradeCode},
+            </if>
+            <if test="sign != null and sign > 0">
+                sign = #{sign},
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.xjt.cloud.message.commons:xjt-cloud-message-commons:1.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://D:/.m2/repository/com/xjt/cloud/message/commons/xjt-cloud-message-commons/1.0-SNAPSHOT/xjt-cloud-message-commons-1.0-20210202.011435-4.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://D:/.m2/repository/com/xjt/cloud/message/commons/xjt-cloud-message-commons/1.0-SNAPSHOT/xjt-cloud-message-commons-1.0-20210202.011435-4-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://D:/.m2/repository/com/xjt/cloud/message/commons/xjt-cloud-message-commons/1.0-SNAPSHOT/xjt-cloud-message-commons-1.0-20210202.011435-4-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

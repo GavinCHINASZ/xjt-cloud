@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.sys.FaqsDao" >
+    <resultMap id="faqsResultMap" type="com.xjt.cloud.admin.manage.entity.sys.Faqs">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="faqs_type" property="faqsType" jdbcType="INTEGER" />
+        <result column="content_title" property="contentTitle" jdbcType="VARCHAR" />
+        <result column="content" property="content" jdbcType="VARCHAR" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="selColumns">
+        id, faqs_type, content_title, content, status, create_time
+    </sql>
+
+    <sql id="findFaqsWhere">
+        WHERE 1=1
+        <if test="faqsType != null and faqsType != 0">
+            AND faqs_type = #{faqsType}
+        </if>
+        <if test="contentTitle != null and contentTitle != ''">
+            AND content_title LIKE CONCAT('%', #{contentTitle}, '%')
+        </if>
+        <if test="content != null and content != ''">
+            AND content LIKE CONCAT('%', #{content}, '%')
+        </if>
+        <if test="status != null and status != 0">
+            AND status = #{status}
+        </if>
+    </sql>
+
+    <!--查询问题反馈信息列表 -->
+    <select id="findFaqsList" parameterType="Faqs" resultMap="faqsResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM s_faqs
+        <include refid="findFaqsWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询问题反馈信息列表总数量 -->
+    <select id="findFaqsListTotalCount" parameterType="Faqs" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM s_faqs
+        <include refid="findFaqsWhere"/>
+    </select>
+
+    <!--新增问题反馈信息 -->
+    <insert id="saveFaqs" parameterType="Faqs" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO s_faqs (faqs_type, content_title, content)
+        VALUES
+        (#{faqsType}, #{contentTitle}, #{content});
+    </insert>
+
+    <!--修改问题反馈信息 -->
+    <update id="modifyFaqs" parameterType="Faqs">
+        UPDATE s_faqs
+        <set>
+            <if test="faqsType != null and faqsType != 0">
+                faqs_type = #{faqsType},
+            </if>
+            <if test="contentTitle != null and contentTitle != ''">
+                content_title = #{contentTitle},
+            </if>
+            <if test="content != null and content != ''">
+                content = #{content},
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

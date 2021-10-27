@@ -1,0 +1,181 @@
+@CHARSET "UTF-8";
+
+html{
+	width: 100%; height: 100%;
+}
+
+body {
+	height: 100%; width: 100%;
+	font-family: "微软雅黑";
+	font-size: 12px;
+	color: #333;
+	margin: 0px;
+}
+
+body,ul,li,p{	
+	padding: 0px; margin: 0px;
+}
+
+ul,li{
+	list-style: none;
+}
+
+a{
+	text-decoration: none;
+}
+
+div#body{
+	width: 100%; height: 100%;
+	margin: auto;
+	background: #f6fff6;
+	min-width: 1000px;
+	min-height: 600px;
+	overflow: auto;
+}
+
+div#top{
+	width: 100%; height: 40px;
+	padding-top: 10px;
+	background: #cc2f30;
+}
+
+
+div#top h2{
+	height: auto;
+	display: block; float: left;
+	margin: 0px;
+	padding-left: 30px;
+	color: #fff9f9;
+	font-size: 24px;
+}
+
+div#main{
+	width: 100%;
+	border-top   : 6px solid #CCCCCC;
+	border-bottom: 6px solid #CCCCCC;
+}
+
+div#menu{
+	width: 100%; height: 100%;
+	float: left;
+	text-align: center;
+	max-height: 90%;
+	overflow-x: hidden;
+	overflow-y: auto; 
+}
+
+div#menuTitle{
+	width:100%; height:36px;
+	line-height: 36px;
+	border-bottom: 3px solid #cc2f30;
+	font-size: 16px; 
+	background: #cc2f30;
+	color: white;
+}
+
+div#menu ul>li>ul {
+	display: none;
+}
+div#menu ul>li#currentLi>ul {
+	display: block;
+}
+
+#userListDiv>ul{
+	width: 100%;
+	color: #444;
+	font-size: 12px;
+	font-weight: bold;
+	margin-top: 2px;
+}
+#userListDiv li{
+	width: 100%; height: atuo;
+}
+#userListDiv ul li a{
+	width: 100%; height: 36px;
+	line-height: 36px;
+	display: block;
+	color: white;
+	cursor: pointer;
+}
+#userListDiv ul li a{
+	background: url(/resource/images/parentLi_bg1.jpg) no-repeat;
+}
+
+#userListDiv ul li a:hover{
+	background: url(/resource/images/parentLi_bg.jpg) no-repeat;
+}
+#userListDiv ul li ul li a{
+	background: none;
+	color: #333;
+	border: solid 1px #eee;
+}
+#userListDiv ul li ul li #currentA{
+	background: url(/resource/images/parentLi_bg2.jpg) no-repeat;
+}
+#userListDiv ul li ul li a:hover{
+	background: url(/resource/images/parentLi_bg2.jpg) no-repeat;
+}
+
+#userListDiv ul li a span{
+	width: 100%; height: 100%;
+	display: block;
+	background: url(/resource/images/plus.gif) no-repeat 50px 13px;
+}
+
+#userListDiv ul #currentLi a span{
+	background: url(/resource/images/minus.gif) no-repeat 50px 13px;
+}
+
+
+
+div#content{
+	height: 100%;
+	float: left;
+	overflow-x: hidden;
+	overflow-y: auto; 
+}
+
+div#content .searchToolbar{
+	width: 100%;
+}
+
+div#content .searchToolbar h3{
+	height: 30px; 
+	line-height: 30px;
+	margin: 3px;
+	padding-left: 20px;
+	border: solid 1px #bbb;
+	font-size: 16px;
+	background: #ddd;
+}
+
+div#content .searchToolbar form{
+	margin: 5px 0px 0px 15px;
+}
+
+.searchInput{
+	width: 100px; height: 24px;
+	line-height: 24px;
+	margin-left: 5px;
+	padding-left: 25px; 
+	padding-right: 17px;
+	border: none; 
+	background: url(/resource/images/font.png) 0px -2px;
+}
+
+div#foot div{
+	position: absolute;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

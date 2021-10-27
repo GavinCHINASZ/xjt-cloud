@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-message-api/xjt-cloud-message-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-message-api/xjt-cloud-message-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-message-core/xjt-cloud-message-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-message-core/xjt-cloud-message-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-message-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-message-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-message-web/xjt-cloud-message-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-message-web/xjt-cloud-message-web.iml" />
+    </modules>
+  </component>
+</project>

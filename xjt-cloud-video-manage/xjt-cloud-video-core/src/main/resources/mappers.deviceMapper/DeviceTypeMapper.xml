@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.device.DeviceTypeDao" >
+
+    <resultMap id="deviceTypeResultMap" type="com.xjt.cloud.device.core.entity.DeviceType" >
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <id column="parent_id" property="parentId" jdbcType="INTEGER" />
+        <id column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <id column="use_method" property="useMethod" jdbcType="VARCHAR" />
+        <id column="description" property="description" jdbcType="VARCHAR" />
+        <id column="pressure_monitor" property="pressureMonitor" jdbcType="INTEGER" />
+        <id column="sys_pressure" property="sysPressure" jdbcType="INTEGER" />
+        <id column="status" property="status" jdbcType="INTEGER" />
+        <id column="create_time" property="createTime" jdbcType="DATE" />
+    </resultMap>
+
+    <sql id="findDeviceTypeWhere">
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND device_sys_name = #{deviceSysName}
+        </if>
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+    </sql>
+    <sql id="selColumns">
+        id, parent_id, device_sys_name, use_method, description, pressure_monitor, sys_pressure, create_time, status
+    </sql>
+    <!-- 根据项目id查询设备系统-->
+    <select id="findDeviceSysByProjectId" parameterType="TaskDevice" resultType="DeviceType">
+        SELECT
+            DISTINCT t.id,t.device_sys_name
+        FROM device_manage.d_device_type t
+        INNER JOIN (SELECT
+                        DISTINCT t.id,t.parent_id
+                    FROM device_manage.d_device_type t
+                    INNER JOIN device_manage.d_device d
+                    ON t.id = d.device_type_id
+                    WHERE d.project_id = #{projectId}
+                    <if test="deviceName != null and deviceName != ''">
+                        AND d.device_name LIKE CONCAT('%',#{deviceName},'%')
+                    </if>
+                    <if test="checkPointId != null and checkPointId != 0">
+                        AND d.check_point_id = #{checkPointId}
+                    </if>
+                    ) dt
+        ON dt.parent_id = t.id
+    </select>
+    <select id="fingDeviceTypeBySysId" parameterType="TaskDevice" resultType="DeviceType">
+        SELECT
+            COUNT(d.id) totalCount,dt.id,dt.deviceSysName
+        FROM device_manage.d_device d
+        INNER JOIN (SELECT
+                        t.id,t.device_sys_name deviceSysName
+                    FROM device_manage.d_device_type t
+                    WHERE t.parent_id = #{id}) dt
+        ON dt.id = d.device_type_id
+        WHERE d.project_id = #{projectId}
+    </select>
+
+</mapper>

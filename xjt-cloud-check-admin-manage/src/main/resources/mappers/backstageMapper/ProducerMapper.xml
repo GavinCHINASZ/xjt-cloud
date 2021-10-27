@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.backstage.ProducerDao">
+    <resultMap id="producerResultMap" type="com.xjt.cloud.admin.manage.entity.inventory.Producer">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="producer_name" property="producerName" jdbcType="VARCHAR"/>
+        <result column="code_key" property="codeKey" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="findProducerWhere">
+        WHERE status &lt;= 98
+        <if test="producerName != null and producerName != ''">
+            AND producer_name LIKE CONCAT('%',#{producerName},'%')
+        </if>
+    </sql>
+
+    <sql id="selColumns">
+        id, producer_name, contacts, phone, status, memo, create_time,code_key
+    </sql>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findProducerListTotalCount" parameterType="Producer" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM backstage_manage.i_producer
+        <include refid="findProducerWhere"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findProducerList" parameterType="Producer" resultMap="producerResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM backstage_manage.i_producer
+        <include refid="findProducerWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findProducer" parameterType="Producer" resultMap="producerResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM backstage_manage.i_producer
+        <include refid="findProducerWhere"/>
+        LIMIT 1
+    </select>
+
+    <!--添加设备巡检项-->
+    <insert id="saveProducer" parameterType="Producer" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO backstage_manage.i_producer (producer_name, contacts, phone, status,code_key, memo, create_time)
+         VALUES (#{producerName}, #{contacts}, #{phone}, 1, #{codeKey},#{memo}, NOW());
+    </insert>
+
+    <!--修改设备巡检项-->
+    <update id="modifyProducer" parameterType="Producer">
+        UPDATE backstage_manage.i_producer
+        <set>
+            <if test="producerName != null and producerName != ''">
+                producer_name = #{producerName} ,
+            </if>
+            <if test="contacts != null and contacts != ''">
+                contacts = #{contacts} ,
+            </if>
+            <if test="phone != null and phone != ''">
+                phone = #{phone} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="codeKey != null and codeKey != ''">
+                code_key = #{codeKey} ,
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo} ,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

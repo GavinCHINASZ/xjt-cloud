@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.maintenance.core.dao.project.AppModuleDao">
+
+    <resultMap id="appModuleResultMap" type="com.xjt.cloud.maintenance.core.entity.project.AppModule">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="module_type" property="appModuleType" jdbcType="VARCHAR"/>
+        <result column="module_type" property="webModuleType" jdbcType="VARCHAR"/>
+        <result column="type" property="type" jdbcType="BIGINT"/>
+
+    </resultMap>
+
+    <sql id="selColumns">
+        id,project_id,user_id,module_type
+    </sql>
+
+    <!--保存-->
+    <insert id="save" parameterType="AppModule" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO `p_app_module`(`project_id`, `user_id`, `module_type`, `type`)
+        VALUES
+        ( #{projectId}, #{userId}, #{moduleType}, #{type})
+    </insert>
+
+    <!--删除-->
+    <delete id="delete" parameterType="AppModule">
+        DELETE  FROM p_app_module where user_id = #{userId} and project_id = #{projectId} and type = #{type}
+    </delete>
+
+    <!--查询-->
+    <select id="findByModule" parameterType="AppModule" resultMap="appModuleResultMap">
+        SELECT <include refid="selColumns"/>  FROM p_app_module where user_id = #{userId} and project_id = #{projectId} and type = #{type} limit 1
+    </select>
+
+</mapper>

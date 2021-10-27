@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="xjt-cloud-iot-core" />
+        <module name="xjt-cloud-iot-web" />
+        <module name="xjt-cloud-iot-netty" />
+        <module name="xjt-cloud-iot-api" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="xjt-cloud-iot-api" target="1.8" />
+      <module name="xjt-cloud-iot-core" target="1.8" />
+      <module name="xjt-cloud-iot-manage" target="1.8" />
+      <module name="xjt-cloud-iot-netty" target="1.8" />
+      <module name="xjt-cloud-iot-web" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="xjt-cloud-iot-api" options="-parameters" />
+      <module name="xjt-cloud-iot-core" options="-parameters" />
+      <module name="xjt-cloud-iot-netty" options="-parameters" />
+      <module name="xjt-cloud-iot-web" options="-parameters" />
+    </option>
+  </component>
+</project>

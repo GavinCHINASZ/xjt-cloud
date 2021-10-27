@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xjt.cloud.admin.manage.dao.sys.QuartzConfigDao">
+
+    <resultMap id="BaseResultMap" type="com.xjt.cloud.admin.manage.entity.QuartzConfig">
+      <id column="id" jdbcType="BIGINT" property="id" />
+      <result column="group_name" jdbcType="VARCHAR" property="group" />
+      <result column="task_name" jdbcType="VARCHAR" property="name" />
+      <result column="cron" jdbcType="VARCHAR" property="cron" />
+      <result column="status" jdbcType="INTEGER" property="status" />
+      <result column="msg" jdbcType="VARCHAR" property="msg" />
+      <result column="quartz_class" jdbcType="VARCHAR" property="quartzClass" />
+    </resultMap>
+
+    <sql id="selColumns">
+         id, group_name, task_name, cron, status, msg, quartz_class
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="status == null">
+            AND status &lt;= 98
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </sql>
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+      DELETE FROM quartz_config
+      WHERE id = #{id,jdbcType=BIGINT}
+    </delete>
+
+    <!-- 新增 -->
+    <insert id="insert" parameterType="QuartzConfig">
+      INSERT INTO quartz_config (`group_name`, `task_name`,
+        cron, `status`, msg,
+        quartz_class)
+      VALUES (#{group,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR},
+        #{cron,jdbcType=VARCHAR}, #{status,jdbcType=INTEGER}, #{msg,jdbcType=VARCHAR},
+        #{quartzClass,jdbcType=VARCHAR})
+    </insert>
+
+    <!-- 更新 -->
+    <update id="updateByPrimaryKey" parameterType="QuartzConfig">
+        UPDATE sys_manage.quartz_config
+        <set>
+            <if test="group != null and group != ''">
+                group_name = #{group},
+            </if>
+            <if test="name != null and name != ''">
+                task_name = #{name},
+            </if>
+            <if test="cron != null and cron != ''">
+                cron = #{cron},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="msg != null and msg != ''">
+                msg = #{msg},
+            </if>
+            <if test="quartzClass != null and quartzClass != ''">
+                quartz_class = #{quartzClass}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+      SELECT id, `group_name`, `task_name`, cron, `status`, msg, quartz_class
+      FROM quartz_config
+      WHERE id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+      SELECT id, `group_name`, `task_name`, cron, `status`, msg, quartz_class
+      FROM quartz_config
+    </select>
+
+    <select id="saveTaskLog" parameterType="QuartzConfig">
+      INSERT INTO quartz_log (group_name, task_name,  task_log, create_time)
+      VALUES
+      ( #{group},#{name},#{taskLog}, NOW()  );
+    </select>
+
+    <!-- 查询定时任务列表 -->
+    <select id="findQuartzConfigList" parameterType="QuartzConfig" resultMap="BaseResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM sys_manage.quartz_config
+        <include refid="findWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询定时任务数量 -->
+    <select id="findQuartzConfigListTotalCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM sys_manage.quartz_config
+        <include refid="findWhere"/>
+    </select>
+
+</mapper>

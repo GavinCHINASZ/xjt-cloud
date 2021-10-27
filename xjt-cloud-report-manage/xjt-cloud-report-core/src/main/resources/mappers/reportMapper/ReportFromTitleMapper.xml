@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.report.ReportFromTitleDao" >
+
+    <resultMap id="reportFromTitleResultMap" type="com.xjt.cloud.report.core.entity.report.ReportFromTitle" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="title_name" property="titleName" jdbcType="VARCHAR" />
+        <id column="sort" property="sort" jdbcType="INTEGER" />
+
+        <id column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <id column="create_user_name" property="createUserUame" jdbcType="VARCHAR" />
+        <id column="update_user_id" property="updateUserId" jdbcType="BIGINT" />
+        <id column="update_user_name" property="updateUserName" jdbcType="VARCHAR" />
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <id column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="selColumns">
+        id, project_id, title_name, sort, create_user_id, create_user_name, create_time, update_user_name, update_user_id, last_modify_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE
+        1 = 1
+        <if test="projectId != null and projectId > 0">
+            AND project_id = #{projectId}
+        </if>
+        <if test="id != null and id > 0">
+            AND id = #{id}
+        </if>
+    </sql>
+
+    <!-- 查看 日报报表 标题 -->
+    <select id="findReportFromTitleList" parameterType="ReportFromTitle" resultMap="reportFromTitleResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM report_manage.r_report_from_title
+        <include refid="findWhere"/>
+
+    </select>
+
+    <!-- 新增 标题 -->
+    <insert id="saveReportFromTitle" parameterType="ReportFromTitle" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO report_manage.r_report_from_title(project_id, title_name, sort, create_user_id, create_user_name, create_time, update_user_name, update_user_id)
+        VALUES (#{projectId}, #{titleName}, #{sort}, #{createUserId}, #{createUserName}, NOW(), #{updateUserName}, #{updateUserId});
+    </insert>
+
+    <!-- 删除 标题 -->
+    <delete id="deletedReportFromTitle" parameterType="ReportFromTitle">
+        DELETE FROM report_manage.r_report_from_title
+        <where>
+            <if test="id != null and id != 0">
+                AND id = #{id}
+            </if>
+            <if test="projectId != null and projectId > 0">
+                AND project_id = #{projectId}
+            </if>
+        </where>
+    </delete>
+
+    <!-- 修改任务 -->
+    <update id="updateReportFromTitle" parameterType="ReportFromTitle">
+        UPDATE report_manage.r_report_from_title
+        <set>
+            <if test="titleName != null and titleName != ''">
+                title_name = #{titleName},
+            </if>
+            <if test="sort != null and sort > 0">
+                sort = #{sort}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

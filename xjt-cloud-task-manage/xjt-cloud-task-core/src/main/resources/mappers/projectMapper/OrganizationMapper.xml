@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.project.TaskOrganizationDao" >
+
+    <resultMap id="orgResultMap" type="com.xjt.cloud.task.core.entity.TaskOrganization" >
+        <result column="id" property="id" jdbcType="BIGINT" />
+        <result column="org_name" property="orgName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <!-- 根据公司ID和项目id关联查询实体<if test="parentId != null and parentId != 0">
+                    AND s.parent_id = #{parentId}
+               </if>-->
+    <select id="findOrganizationByCompanyId" parameterType="TaskDevice" resultType="TaskOrganization">
+        SELECT s.id,s.org_name orgName,COUNT(cp.id) totalCount
+        FROM project_manage.p_organization  s
+        LEFT JOIN device_manage.d_check_point cp
+        ON s.id = cp.org_id
+        <where>
+            s.deleted = 0 AND cp.status &lt;= 98
+           <if test="projectId != null and projectId != 0">
+                AND s.project_id = #{projectId}
+           </if>
+           <if test="companyId != null and companyId != 0">
+                AND s.ower_company = #{companyId}
+           </if>
+           <if test="qrNo != null and qrNo != ''">
+               AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+           </if>
+           <if test="orgName != null and orgName != ''">
+               AND s.org_name LIKE CONCAT('%',#{orgName},'%')
+           </if>
+           <if test="pointName != null and pointName != ''">
+               AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+           </if>
+           <if test="parentId != null and parentId != 0">
+               AND s.parent_id = #{parentId}
+           </if>
+        </where>
+        GROUP BY s.id
+    </select>
+
+    <!-- 一个参数1表示半选,-1表示全选,0表示未选(CASE WHEN min(sel) = -1 and min(notSel) = -2 THEN 1 WHEN min(sel) = -1 and min(notSel) = 0 THEN -1 WHEN min(sel) = 0 THEN 0 END) sel-->
+    <!--两个参数 sel为-1,notSel为0表示全选-->
+    <!--sel为0表示未选-->
+    <!--sel为-1,notSel为-2表示半选-->
+    <select id="findOrganizationSelOrNotSel" parameterType="TaskDevice" resultType="TaskOrganization">
+        SELECT
+            s.id,orgName,SUM(totalCount) totalCount,min(sel) sel,min(notSel) notSel
+        FROM(
+            SELECT
+                s.id,s.org_name orgName,COUNT(cp.id) totalCount,if(cp.id = t.id,-1,0) sel,if(isnull(t.id),-2,0) notSel
+            FROM project_manage.p_organization  s
+            LEFT JOIN device_manage.d_check_point cp
+            ON s.id = cp.org_id
+            LEFT JOIN (
+                select cp.id  from device_manage.d_check_point cp
+                where cp.status &lt;= 98
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id = #{projectId}
+                </if>
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            ) t on cp.id = t.id
+            <where>
+                 s.deleted = 0 AND cp.status &lt;= 98
+                <if test="projectId != null and projectId != 0">
+                    AND s.project_id = #{projectId}
+                </if>
+                <if test="companyId != null and companyId != 0">
+                    AND s.ower_company = #{companyId}
+                </if>
+                <if test="qrNo != null and qrNo != ''">
+                    AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+                </if>
+                <if test="orgName != null and orgName != ''">
+                    AND s.org_name LIKE CONCAT('%',#{orgName},'%')
+                </if>
+                <if test="pointName != null and pointName != ''">
+                    AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+                </if>
+                <if test="parentId != null and parentId != 0">
+                    AND s.parent_id = #{parentId}
+                </if>
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id = #{projectId}
+                </if>
+            </where>
+            GROUP BY s.id,sel,notSel
+        ) s
+        GROUP BY s.id
+    </select>
+
+    <!-- 按部门添加设备：根据条件筛选公司 -->
+    <select id="findOrgByTaskDevice" parameterType="TaskDevice" resultType="TaskOrganization">
+            SELECT
+                so.id,so.org_name orgName,so.parent_id parentId
+            FROM device_manage.d_check_point p
+            LEFT JOIN project_manage.p_organization  so
+            ON p.org_id = so.id AND so.org_type = 3
+            <if test="deviceName != null and deviceName != ''">
+                LEFT JOIN device_manage.d_device d
+                ON d.check_point_id = p.id
+                LEFT JOIN device_manage.d_device_type dt
+                ON dt.id = d.device_type_id
+            </if>
+            <where>
+                p.status &lt; 99 AND so.deleted = 0
+                <if test="checkPointId != null and checkPointId != 0">
+                    AND  p.id = #{checkPointId}
+                </if>
+                <if test="qrNo != null and qrNo != ''">
+                    AND p.qr_no LIKE CONCAT('%',#{qrNo},'%')
+                </if>
+                <if test="deviceName != null and deviceName != ''">
+                    AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
+                    AND d.status &lt; 99
+                </if>
+                <if test="orgName != null and orgName != ''">
+                    AND so.org_name LIKE CONCAT('%',#{orgName},'%')
+                </if>
+                <if test="projectId != null and projectId != 0">
+                    AND p.project_id = #{projectId}
+                </if>
+                <if test="pointName != null and pointName != ''">
+                    AND p.point_name LIKE CONCAT('%',#{pointName},'%')
+                </if>
+            </where>
+            GROUP BY so.id
+    </select>
+
+    <select id="findOrgSelOrNotSel" parameterType="TaskDevice" resultType="TaskOrganization">
+        SELECT so.id,so.orgName,so.parentId,min(sel) sel,min(notSel) notSel
+        FROM(
+            SELECT so.id,so.org_name orgName,so.parent_id parentId,if(p.id = t.id,-1,0) sel,if(isnull(t.id),-2,0) notSel
+            FROM device_manage.d_check_point p
+            LEFT JOIN project_manage.p_organization  so
+            ON p.org_id = so.id AND so.org_type = 3
+            <if test="deviceName != null and deviceName != ''">
+                LEFT JOIN device_manage.d_device d ON d.check_point_id = p.id
+                LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+            </if>
+            left join (
+                SELECT cp.id
+                FROM device_manage.d_check_point cp
+                where cp.status &lt;= 98
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id = #{projectId}
+                </if>
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            ) t on p.id = t.id
+            <where>
+                p.status &lt; 99 AND so.deleted = 0
+                <if test="checkPointId != null and checkPointId != 0">
+                    AND  p.id = #{checkPointId}
+                </if>
+                <if test="qrNo != null and qrNo != ''">
+                    AND p.qr_no LIKE CONCAT('%',#{qrNo},'%')
+                </if>
+                <if test="deviceName != null and deviceName != ''">
+                    AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
+                    AND d.status &lt; 99
+                </if>
+                <if test="orgName != null and orgName != ''">
+                    AND so.org_name LIKE CONCAT('%',#{orgName},'%')
+                </if>
+                <if test="projectId != null and projectId != 0">
+                    AND p.project_id = #{projectId}
+                </if>
+                <if test="pointName != null and pointName != ''">
+                    AND p.point_name LIKE CONCAT('%',#{pointName},'%')
+                </if>
+            </where>
+            GROUP BY so.id
+        )so
+        GROUP BY so.id
+    </select>
+
+    <select id="findCompanyByProjectId"  parameterType="TaskDevice" resultType="TaskOrganization">
+        SELECT co.id,co.org_name orgName
+        FROM project_manage.p_organization co
+        WHERE co.org_type = 2 AND co.deleted = 0
+        <if test="projectId != null and projectId != 0">
+            AND co.project_id = #{projectId}
+        </if>
+        <if test="companyId != null and companyId != 0">
+            AND co.id = #{companyId}
+        </if>
+    </select>
+
+    <select id="findCompanyByProjectIdSelOrNotSel" parameterType="TaskDevice" resultType="TaskOrganization">
+        SELECT co.id,co.orgName,min(sel) sel,min(notSel) notSel
+        FROM(
+            SELECT co.id,co.org_name orgName,if(cp.id = t.id,-1,0) sel,if(isnull(t.id),-2,0) notSel
+            FROM project_manage.p_organization co
+            INNER JOIN project_manage.p_organization rgo ON co.id = rgo.ower_company AND rgo.deleted = 0 AND rgo.org_type = 3
+            INNER JOIN device_manage.d_check_point cp ON cp.org_id = rgo.id AND cp.status &lt;= 98
+            <if test="projectId != null and projectId != 0">
+                AND cp.project_id = #{projectId}
+            </if>
+            LEFT JOIN (
+                select cp.id  from device_manage.d_check_point cp
+                where cp.status &lt;= 98
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id = #{projectId}
+                </if>
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            ) t ON cp.id = t.id
+            WHERE co.org_type = 2 AND co.deleted = 0
+            <if test="projectId != null and projectId != 0">
+                AND co.project_id = #{projectId}
+            </if>
+            <if test="companyId != null and companyId != 0">
+                AND co.id = #{companyId}
+            </if>
+            GROUP BY co.id,sel,notSel
+        )co
+        GROUP BY co.id
+    </select>
+
+    <!-- 根据项目id关联查询公司-->
+    <select id="findOrgNameByCheckPointId" resultType="java.lang.String">
+        SELECT o.org_name orgName
+        FROM project_manage.p_organization  o
+        LEFT JOIN device_manage.d_check_point p ON p.org_id = o.id
+        WHERE p.id = #{checkPointId}
+        AND p.status &lt; 99
+    </select>
+
+    <!-- 根据项目id关联查询公司-->
+    <select id="findOrganizationByProjectId" resultType="TaskOrganization">
+        SELECT DISTINCT co.id, co.org_name orgName
+        FROM project_manage.p_organization co
+        LEFT JOIN (
+            SELECT DISTINCT o.id,o.parent_id
+             FROM project_manage.p_organization  o
+             LEFT JOIN (
+                SELECT p.org_id
+                FROM device_manage.d_check_point p
+                WHERE p.status &lt; 99
+                AND p.project_id = #{projectId}
+             ) t ON t.org_id = o.id
+        ) c
+        ON c.parent_id = co.id
+        WHERE co.project_id = #{projectId}
+        AND co.org_type = 2
+    </select>
+
+    <!--根据id查询组织部门-->
+    <select id="findOrganizationById" resultType="TaskOrganization">
+        SELECT so.id, so.org_name orgName, so.parent_id parentId, so.com_type type
+        FROM project_manage.p_organization  so
+        WHERE so.id = #{id}
+    </select>
+
+    <!--按部门添加设备：根据条件筛选公司-->
+    <select id="findCompanyByTaskDevice" parameterType="TaskDevice" resultType="TaskOrganization">
+        SELECT co.id, co.org_name orgName, co.parent_id parentId
+        FROM device_manage.d_check_point p
+        LEFT JOIN project_manage.p_organization so ON p.org_id = so.id AND so.org_type = 3
+        LEFT JOIN project_manage.p_organization co ON co.id = so.ower_company AND co.org_type = 2
+        LEFT JOIN device_manage.d_device d ON d.check_point_id = p.id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        <where>
+            p.status &lt; 99
+            AND d.status &lt; 99
+            <if test="checkPointId != null and checkPointId != 0">
+                AND  p.id = #{checkPointId}
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND p.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
+            </if>
+            <if test="orgName != null and orgName != ''">
+                AND so.org_name LIKE CONCAT('%',#{orgName},'%')
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND p.project_id = #{projectId}
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND p.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+        </where>
+        GROUP BY co.id
+    </select>
+
+    <!-- 根据项目id关联查询公司-->
+    <select id="findCompanyByCompanyId" resultType="TaskOrganization">
+        SELECT co.id,co.org_name orgName
+        FROM project_manage.p_organization co
+        WHERE co.id = #{id}
+        AND co.org_type = 2
+        LIMIT 1
+    </select>
+
+    <select id="findCompanyByCompanyIdSelOrNotSel" parameterType="TaskDevice" resultType="TaskOrganization">
+        SELECT t.id,t.orgName, min(sel) sel, min(notSel) notSel
+        FROM(
+            SELECT co.id,co.org_name orgName,if(cp.id = t.id,-1,0) sel,if(isnull(t.id),-2,0) notSel
+            FROM project_manage.p_organization co
+            INNER JOIN project_manage.p_organization org ON org.ower_company = co.id
+            LEFT JOIN device_manage.d_check_point cp ON cp.org_id = org.id
+            LEFT JOIN (
+                SELECT cp.id
+                FROM device_manage.d_check_point cp
+                WHERE cp.status &lt;= 98
+                AND cp.project_id = #{projectId}
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            ) t ON cp.id = t.id
+            WHERE co.id = #{companyId}
+            AND co.org_type = 2
+            GROUP BY co.id,sel,notSel
+        )t
+        GROUP BY t.id
+    </select>
+
+    <select id="findUserOrgName" resultType="TaskOrganization" parameterType="java.lang.Long">
+        SELECT o.id,o.org_name orgName
+        FROM project_manage.p_org_user ou
+        INNER JOIN project_manage.p_organization o ON ou.org_id = o.id
+        WHERE ou.user_id = #{userId}
+        AND ou.project_id = #{projectId}
+        LIMIT 1
+    </select>
+</mapper>

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.maintenance.core.dao.device.CheckPointDao">
+    <resultMap id="checkPointResultMap" type="com.xjt.cloud.maintenance.core.entity.device.CheckRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="device_sys_id" property="deviceSysId" jdbcType="BIGINT"/>
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <result column="device_sys_code" property="deviceSysCode" jdbcType="VARCHAR"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="device_type_name" property="deviceTypeName" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="device_type_code" property="deviceTypeCode" jdbcType="VARCHAR"/>
+        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+        <result column="device_check_item_id" property="deviceCheckItemId" jdbcType="VARCHAR"/>
+        <result column="check_result" property="checkResult" jdbcType="INTEGER"/>
+        <result column="check_num" property="checkNum" jdbcType="INTEGER"/>
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="memo" property="memo" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR"/>
+        <result column="manufacturer" property="manufacturer" jdbcType="VARCHAR"/>
+        <result column="product_model" property="productModel" jdbcType="VARCHAR"/>
+        <result column="relevant_file_path" property="relevantFilePath" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        cp.id, cp.project_id, cp.check_project_id, cp.device_sys_id, cp.device_sys_name, cp.device_sys_code, cp.device_type_id, cp.device_type_name,
+        cp.device_type_code,  cp.status, cp.create_time, cp.memo, cp.check_num, cp.building_id, cp.device_code,
+        cp.address, cp.building_floor_id, cp.img_url, cp.manufacturer, cp.product_model, cp.relevant_file_path
+    </sql>
+
+    <sql id="findCheckPointWhere">
+        WHERE cp.status &lt;= 98
+        <if test="projectId != null and projectId > 0">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="checkProjectId != null and checkProjectId > 0">
+            AND cp.check_project_id = #{checkProjectId}
+        </if>
+        <if test="deviceSysId != null and deviceSysId > 0">
+            AND cp.device_sys_id = #{deviceSysId}
+        </if>
+
+        <if test="deviceTypeId != null and deviceTypeId > 0">
+            AND cp.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="deviceTypeName != null and deviceTypeName != ''">
+            AND cp.device_type_name LIKE CONCAT('%',#{deviceTypeName},'%')
+        </if>
+
+        <if test="deviceCode != null and deviceCode != ''">
+            AND cp.device_code LIKE CONCAT('%',#{deviceCode},'%')
+        </if>
+
+        <if test="buildingId != null and buildingId > 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="checkResult != null and checkResult > 0">
+            AND cr.check_result = #{checkResult}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId > 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="startTime != null and endTime != null">
+            AND cp.create_time BETWEEN #{startTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="checkProjectName != null and checkProjectName != ''">
+            AND pcp.check_project_name LIKE CONCAT('%',#{checkProjectName},'%')
+        </if>
+    </sql>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findCheckPointListCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT cp.id)
+        FROM t_check_point cp
+        LEFT JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+        LEFT JOIN d_device_check_item dci ON cr.device_check_item_id = dci.id
+        LEFT JOIN maintenance_manage.p_check_project pcp ON pcp.id = cp.check_project_id
+        <include refid="findCheckPointWhere"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findCheckPointList" parameterType="CheckRecord" resultMap="checkPointResultMap">
+        SELECT<include refid="selColumns"/>,
+            MAX(if(cr.check_result = 2, 2, 1)) check_result,
+            MAX(cr.create_time) checkDate,
+            pcp.check_project_name checkProjectName
+        FROM t_check_point cp
+        LEFT JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+        LEFT JOIN d_device_check_item dci ON cr.device_check_item_id = dci.id
+        LEFT JOIN maintenance_manage.p_check_project pcp ON pcp.id = cp.check_project_id
+        <include refid="findCheckPointWhere"/>
+        GROUP BY cp.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--添加设备巡检项-->
+    <insert id="saveCheckPoint" parameterType="CheckRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_check_point (project_id, check_project_id, device_sys_id, device_sys_name, device_sys_code, device_type_id, device_type_name,
+            device_type_code, memo, check_num, building_id, img_url, manufacturer, product_model, relevant_file_path, device_code,
+            address, building_floor_id)
+        VALUES (#{projectId}, #{checkProjectId}, #{deviceSysId}, #{deviceSysName}, #{deviceSysCode}, #{deviceTypeId}, #{deviceTypeName},
+            #{deviceTypeCode}, #{memo}, #{checkNum}, #{buildingId}, #{imgUrl}, #{manufacturer}, #{productModel}, #{relevantFilePath}, #{deviceCode},
+            #{address}, #{buildingFloorId});
+    </insert>
+
+    <!--修改设备巡检项-->
+    <update id="modifyCheckPoint" parameterType="CheckRecord">
+        UPDATE t_check_point
+        <set>
+            <if test="deviceSysId != null and deviceSysId != 0">
+                device_sys_id = #{deviceSysId},
+            </if>
+            <if test="deviceSysName != null and deviceSysName != ''">
+                device_sys_name = #{deviceSysName},
+            </if>
+            <if test="deviceSysCode != null and deviceSysCode != ''">
+                device_sys_code = #{deviceSysCode},
+            </if>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                device_type_id = #{deviceTypeId},
+            </if>
+            <if test="deviceTypeName != null and deviceTypeName != ''">
+                device_type_name = #{deviceTypeName},
+            </if>
+            <if test="deviceTypeCode != null and deviceTypeCode != ''">
+                device_type_code = #{deviceTypeCode},
+            </if>
+            <if test="deviceCode != null and deviceCode != ''">
+                device_code = #{deviceCode},
+            </if>
+            <if test="checkNum != null and checkNum != 0">
+                check_num = #{checkNum},
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo},
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status},
+            </if>
+            <if test="buildingId != null and buildingId != 0">
+                building_id = #{buildingId},
+            </if>
+            <if test="buildingFloorId != null and buildingFloorId != 0">
+                building_floor_id = #{buildingFloorId},
+            </if>
+            <if test="address != null and address != ''">
+                address = #{address},
+            </if>
+            <if test="imgUrl != null and imgUrl != ''">
+                img_url = #{imgUrl},
+            </if>
+            <if test="manufacturer != null and manufacturer != ''">
+                manufacturer = #{manufacturer},
+            </if>
+            <if test="productModel != null and productModel != ''">
+                product_model = #{productModel},
+            </if>
+            <if test="relevantFilePath != null and relevantFilePath != ''">
+                relevant_file_path = #{relevantFilePath}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="checkPointId != null and checkPointId != 0">
+            id = #{checkPointId}
+        </if>
+        <if test="checkPointIds != null and checkPointIds.length > 0">
+            id IN
+            <foreach collection="checkPointIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 查询 列表数量-->
+    <select id="findCheckPointSysListCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT t.device_sys_id)
+        FROM (
+            SELECT cp.device_sys_id
+            FROM t_check_point cp
+            INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+            INNER JOIN d_device_check_item dci ON cr.device_check_item_id = dci.id
+            INNER JOIN maintenance_manage.p_check_project pcp ON pcp.id = cp.check_project_id
+            <include refid="findCheckPointWhere"/>
+            GROUP BY cp.device_sys_id
+        ) t
+    </select>
+
+    <!-- 查询 列表-->
+    <select id="findCheckPointSysList" parameterType="CheckRecord" resultMap="checkPointResultMap">
+        SELECT<include refid="selColumns"/>, COUNT(DISTINCT cp.device_type_id) deviceNum,
+            MAX(if(cr.check_result = 2, 2, 1)) check_result,
+            MAX(cr.create_time) checkDate,
+            pcp.check_project_name checkProjectName
+        FROM t_check_point cp
+        LEFT JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+        LEFT JOIN d_device_check_item dci ON cr.device_check_item_id = dci.id
+        LEFT JOIN maintenance_manage.p_check_project pcp ON pcp.id = cp.check_project_id
+        <include refid="findCheckPointWhere"/>
+        GROUP BY cp.device_sys_id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+</mapper>

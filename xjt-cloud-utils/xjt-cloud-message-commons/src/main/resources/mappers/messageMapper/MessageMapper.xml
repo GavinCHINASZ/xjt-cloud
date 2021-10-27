@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.message.manage.dao.message.MessageDao" >
+    <!--添加消息-->
+    <insert id="batchSaveUserMsg" parameterType="Message" >
+        INSERT INTO message_manage.m_user_message (user_id, project_id, message_id,message_status,create_time,message_type,event_level) VALUES
+        <foreach collection="userIds" item="userId" separator="," close=";">
+            ( #{userId}, #{projectId}, #{id},1,now(),#{messageType},#{eventLevel})
+        </foreach>
+    </insert>
+    <!--添加消息-->
+    <insert id="saveUserMsg" parameterType="Message" >
+        INSERT INTO message_manage.${tableName} (user_id, project_id, message_id,message_status,create_time,message_type,event_level) VALUES
+        ( #{userId}, #{projectId}, #{id},1,now(),#{messageType},#{eventLevel})
+    </insert>
+    <!--保存项目消息-->
+    <insert id="saveProjectMsg" parameterType="Message" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO message_manage.m_message
+        ( `message_type`, `project_id`,`title`,`content`, `url`, `record_id`, `data`,`create_time`,`project_name`,
+        `event_type`, `font_color`,  `building_id`,event_level,type,screen_status) VALUES
+            ( #{messageType}, #{projectId}, #{title}, #{content},  #{url}, #{recordId}, #{data}, NOW(),#{projectName},
+            #{eventType}, #{fontColor},#{buildingId},#{eventLevel},#{type},1)
+    </insert>
+
+    <!--查询用户手机号-->
+    <select id="findUserPhone" parameterType="java.lang.String" resultType="java.lang.String">
+	    SELECT u.phone from sys_manage.s_user u where u.phone  is not null and u.id in
+        <foreach collection="list" item="userId" separator="," open ="(" close=")" >
+            #{userId}
+        </foreach>
+    </select>
+
+    <!-- ///////////////////////////////////////////////////兼容5.0版本消息DAO //////////////////////////  -->
+    <!--添加消息-->
+    <insert id="batchSaveCV5" parameterType="Message" >
+        INSERT INTO ${databasesName}.${tableName}
+        ( `message_type`, `project_id`,`title`,`content`,`own_user_id`, `url`, `message_status`,`record_id`, `data`,`create_time`,`project_name`, `event_type`, `font_color`, `building_id`) VALUES
+        <foreach collection="userIds" item="userId" separator="," close=";">
+            ( #{messageType}, #{projectId}, #{title}, #{content}, #{userId}, #{url}, 1,#{recordId}, #{data}, NOW(),#{projectName},#{eventType},#{fontColor},#{buildingId})
+        </foreach>
+    </insert>
+    <!--保存项目消息-->
+    <insert id="saveProjectMsgCV5" parameterType="Message">
+        INSERT INTO ${databasesName}.${tableName}
+        ( `message_type`, `project_id`,`title`,`content`,`own_user_id`, `url`, `message_status`,`record_id`, `data`,`create_time`,`project_name`, `event_type`, `font_color`, `source_type`, `building_id`) VALUES
+            ( #{messageType}, #{projectId}, #{title}, #{content}, null, #{url}, 1,#{recordId}, #{data}, NOW(),#{projectName},#{eventType}, #{fontColor},1,#{buildingId})
+    </insert>
+    <!--查询项目短信接收人-->
+    <select id="findProjectSMSUserCV5" parameterType="java.lang.Long"  resultType="java.lang.String">
+        SELECT
+        m.sms_user_ids
+        fROM
+        (
+        SELECT
+        mpm.sms_user_ids,substring_index( substring_index( mpm.msg_push_type_ids, ';', b.id), ';',- 1 ) as type_id
+        FROM
+        message_manage.m_msg_push_manage mpm
+        JOIN iot_manage.b_base_data b ON b.id  <![CDATA[ <= ]]>  ( length( mpm.msg_push_type_ids ) - length( REPLACE ( mpm.msg_push_type_ids, ';', '' ) ) + 1 )
+        WHERE
+        mpm.project_id = #{projectId}
+        ) AS m
+        left join message_manage.m_msg_push_type mpt on mpt.id = m.type_id and mpt.push_type = 1
+        WHERE
+        mpt.sign in
+        <foreach collection="signs" item="sign" separator=","  open ="(" close=")">
+            #{sign}
+        </foreach>
+        and mpt.deleted = 0 limit 1
+    </select>
+    <!--查询项目电话接收人-->
+    <select id="findProjectPhoneUserCV5" parameterType="java.lang.Long"  resultType="java.lang.String">
+        SELECT
+        m.phone_user_ids
+        fROM
+        (
+        SELECT
+        mpm.phone_user_ids,substring_index( substring_index( mpm.msg_push_type_ids, ';', b.id + 1 ), ';',- 1 ) as type_id
+        FROM
+        message_manage.m_msg_push_manage mpm
+        JOIN iot_manage.b_base_data b ON b.id  <![CDATA[ <= ]]>  ( length( mpm.msg_push_type_ids ) - length( REPLACE ( mpm.msg_push_type_ids, ';', '' ) ) + 1 )
+        WHERE
+        mpm.project_id = #{projectId}
+        ) AS m
+        left join message_manage.m_msg_push_type mpt on mpt.id = m.type_id and mpt.push_type = 2
+        WHERE
+        mpt.sign in
+        <foreach collection="signs" item="sign" separator=","  open ="(" close=")">
+            #{sign}
+        </foreach>
+        and mpt.deleted = 0 limit 1
+    </select>
+
+    <!--查询项目大屏消息设置-->
+    <select id="findProjectScreenMsgSetCV5" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT ss.msg_types from project_manage.p_screen_set ss WHERE ss.project_id = #{projectId} ORDER BY ss.last_modify_time DESC LIMIT 1;
+    </select>
+</mapper>

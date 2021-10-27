@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.air.AirSamplingDeviceDao">
+
+    <resultMap id="airSamplingDeviceResultMap" type="com.xjt.cloud.iot.core.entity.air.AirSamplingDevice">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_coding" property="deviceCoding" jdbcType="VARCHAR"/>
+        <result column="pipeline_max_value" property="pipelineMaxValue" jdbcType="INTEGER"/>
+        <result column="pipeline_min_value" property="pipelineMinValue" jdbcType="INTEGER"/>
+        <result column="pipeline_value_1" property="pipelineValue1" jdbcType="INTEGER"/>
+        <result column="pipeline_value_2" property="pipelineValue2" jdbcType="INTEGER"/>
+        <result column="pipeline_status_1" property="pipelineStatus1" jdbcType="INTEGER"/>
+        <result column="pipeline_status_2" property="pipelineStatus2" jdbcType="INTEGER"/>
+        <result column="smog_value" property="smogValue" jdbcType="INTEGER"/>
+        <result column="deviation_set" property="deviationSet" jdbcType="INTEGER"/>
+        <result column="deviation_value_1" property="deviationValue1" jdbcType="INTEGER"/>
+        <result column="deviation_value_2" property="deviationValue2" jdbcType="INTEGER"/>
+        <result column="deviation_status" property="deviationStatus" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="data_update_time" property="dataUpdateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--根据条件查询空气采样设备统计报表-->
+    <select id="findAirSamplingDeviceSummaryReport" parameterType="AirSamplingDevice" resultType="AirSamplingDevice">
+        SELECT COUNT(*) totalDevice,
+        SUM(IF(pipeline_status_1 >= 2 OR  pipeline_status_2 >= 2, 1, 0)) faultDevice,
+        SUM(IF(pipeline_status_1 >= 2 , 1, 0)) pipelineFault1,
+        SUM(IF(pipeline_status_2 >= 2, 1, 0))  pipelineFault2
+        FROM iot_manage.a_air_sampling_device
+        WHERE status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND project_id = #{projectId}
+        </if>
+    </select>
+
+    <sql id="findAirSamplingWhere">
+        <if test="qrNo != null and qrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND asd.project_id = #{projectId}
+        </if>
+        <if test="id != null and id != 0">
+            AND asd.id = #{id}
+        </if>
+        <if test="airSamplingId != null and airSamplingId != 0">
+            AND asd.id = #{airSamplingId}
+        </if>
+        <if test="deviceCoding != null and deviceCoding != ''">
+            AND asd.device_coding LIKE CONCAT('%',#{deviceCoding},'%')
+        </if>
+        <if test="pipelineStatus1 != null and pipelineStatus1 != 0">
+            AND asd.pipeline_status_1 >= 2
+        </if>
+        <if test="pipelineStatus2 != null and pipelineStatus2 != 0">
+            AND asd.pipeline_status_2 >= 2
+        </if>
+        <if test="pipelineStatus != null and pipelineStatus != 0">
+            <if test="pipelineStatus == 1">
+                AND asd.pipeline_status_1 =  1 AND asd.pipeline_status_2 =  1
+            </if>
+            <if test="pipelineStatus == 2">
+                AND (asd.pipeline_status_1 >=  2 OR asd.pipeline_status_2 >=  2)
+            </if>
+        </if>
+        <if test="pipelineStatuss1 != null">
+            AND asd.pipeline_status_1 IN
+            <foreach item="item" collection="pipelineStatuss1" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pipelineStatuss2 != null">
+            AND asd.pipeline_status_2 IN
+            <foreach item="item" collection="pipelineStatuss2" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="ids != null">
+            AND asd.id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+    <!--根据条件查询空气采样设备列表-->
+    <select id="findAirSamplingDeviceList" parameterType="AirSamplingDevice" resultMap="airSamplingDeviceResultMap">
+        SELECT asd.*,cp.qr_no qrNo,cp.point_location pointLocation,cp.building_id buildingId,cp.building_floor_id buildingFloorId,d.qr_no deviceQrNo
+        FROM a_air_sampling_device asd
+        INNER JOIN device_manage.d_check_point cp ON cp.id = asd.check_point_id AND cp.status &lt;= 98
+        INNER JOIN device_manage.d_device d ON d.id = asd.device_id AND d.status &lt;= 98
+        WHERE asd.status &lt;= 98
+         <include refid="findAirSamplingWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--根据条件查询空气采样设备列表总数-->
+    <select id="findAirSamplingDeviceListTotalCount" parameterType="AirSamplingDevice" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT asd.id)
+        FROM a_air_sampling_device asd
+        INNER JOIN device_manage.d_check_point cp ON cp.id = asd.check_point_id AND cp.status &lt;= 98
+        WHERE asd.status &lt;= 98
+        <include refid="findAirSamplingWhere"/>
+    </select>
+
+    <!-- 修改空气采样设备信息 -->
+    <update id="modifyAirSamplingDevice" parameterType="AirSamplingDevice" >
+        UPDATE a_air_sampling_device SET
+            pipeline_max_value = #{pipelineMaxValue},
+            pipeline_min_value = #{pipelineMinValue},
+            deviation_set = #{deviationSet}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 修改空气采样设备信息 -->
+    <update id="modifyAirSamplingDeviceData" parameterType="AirSamplingDevice" >
+        UPDATE a_air_sampling_device SET
+            pipeline_value_1 = #{pipelineValue1},
+            pipeline_value_2 = #{pipelineValue2},
+            pipeline_status_1 = #{pipelineStatus1},
+            pipeline_status_2 = #{pipelineStatus2},
+            smog_value = #{smogValue},
+            deviation_value_1 = #{deviationValue1},
+            deviation_value_2 = #{deviationValue2},
+            data_update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- ////////////////////////////////////////////////////////////////// 阈值修改记录 ///////////////////////////////////// -->
+    <!-- 保存空气采样阈值修改记录 -->
+    <insert id="saveAirSamplingDeviceUpdateRecord"  parameterType="AirSamplingDevice">
+        INSERT INTO a_air_sampling_device_edit (air_sampling_id, pipeline_min_value, pipeline_max_value, deviation_set, create_time, create_user_name, create_user_id)
+        VALUES
+        (#{id}, #{pipelineMinValue}, #{pipelineMaxValue}, #{deviationSet}, NOW(), #{createUserName}, #{createUserId});
+    </insert>
+    <!--根据条件查询空气采样设备阈值修改记录列表-->
+    <select id="findAirSamplingDeviceUpdateRecordList" parameterType="AirSamplingDevice" resultMap="airSamplingDeviceResultMap">
+        SELECT asde.*
+        FROM a_air_sampling_device_edit asde
+        WHERE air_sampling_id = #{id}
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--根据条件查询空气采样设备阈值修改记录列表总数-->
+    <select id="findAirSamplingDeviceUpdateRecordListTotalCount" parameterType="AirSamplingDevice" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT asde.id)
+        FROM a_air_sampling_device_edit asde
+        WHERE air_sampling_id = #{id}
+    </select>
+
+</mapper>

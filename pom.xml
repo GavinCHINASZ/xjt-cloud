@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.xjt.cloud</groupId>
+    <artifactId>xjt-cloud</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>xjt-cloud</name>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <modules>
+        <module>xjt-cloud-admin-manage</module>
+        <module>xjt-cloud-cas-server</module>
+        <module>xjt-cloud-client-manage</module>
+        <module>xjt-cloud-device-manage</module>
+        <module>xjt-cloud-faultRepair-manage</module>
+        <module>xjt-cloud-iot-manage</module>
+        <module>xjt-cloud-message-manage</module>
+        <module>xjt-cloud-netty-manage</module>
+        <module>xjt-cloud-other-manage</module>
+        <module>xjt-cloud-project-manage</module>
+        <module>xjt-cloud-report-manage</module>
+        <module>xjt-cloud-sys-manage</module>
+        <module>xjt-cloud-task-manage</module>
+        <module>xjt-cloud-utils</module>
+    </modules>
+
+</project>

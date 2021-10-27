@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.backstage.OutStorageProductDao" >
+    <resultMap id="outStorageProductResultMap" type="com.xjt.cloud.admin.manage.entity.inventory.OutStorageProduct" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="producer_id" property="producerId" jdbcType="BIGINT" />
+        <result column="put_storage_id" property="putStorageId" jdbcType="BIGINT" />
+        <result column="out_storage_id" property="outStorageId" jdbcType="BIGINT" />
+        <result column="producer_name" property="producerName" jdbcType="VARCHAR" />
+        <result column="product_id" property="productId" jdbcType="BIGINT" />
+        <result column="product_name" property="productName" jdbcType="VARCHAR" />
+        <result column="property_1" property="property1" jdbcType="VARCHAR" />
+        <result column="property_2" property="property2" jdbcType="VARCHAR" />
+        <result column="property_3" property="property3" jdbcType="VARCHAR" />
+        <result column="property_4" property="property4" jdbcType="VARCHAR" />
+        <result column="property_5" property="property5" jdbcType="VARCHAR" />
+        <result column="property_6" property="property6" jdbcType="VARCHAR" />
+        <result column="product_status" property="productStatus" jdbcType="INTEGER" />
+        <result column="storage_status" property="storageStatus" jdbcType="INTEGER" />
+        <result column="total_flow" property="totalFlow" jdbcType="INTEGER" />
+        <result column="used_flow" property="usedFlow" jdbcType="INTEGER" />
+        <result column="active_date" property="activeDate" jdbcType="TIMESTAMP" />
+        <result column="open_date" property="openDate" jdbcType="TIMESTAMP" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR" />
+        <result column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR" />
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="point_name" property="pointName" jdbcType="VARCHAR" />
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="iot_id" property="iotId" jdbcType="BIGINT" />
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findOutStorageProductWhere">
+        WHERE  psc.status &lt;= 98
+        <if test="producerName != null and producerName != ''">
+            AND p.producer_name = #{producerName}
+        </if>
+        <if test="producerId != null and producerId != 0">
+            AND ps.producer_id = #{producerId}
+        </if>
+        <if test="productId != null and productId != 0">
+            AND ps.product_id = #{productId}
+        </if>
+        <if test="productStatus != null and productStatus != 0">
+            AND ps.product_status = #{productStatus}
+        </if>
+        <if test="storageStatus != null and storageStatus != 0">
+            AND ps.storage_status = #{storageStatus}
+        </if>
+    </sql>
+
+    <sql id="selColumns">
+        psc.id, psc.put_storage_id, psc.producer_id, psc.product_id, pr.product_name, psc.storage_status, psc.property_1, psc.property_2, psc.property_3,
+        psc.property_4, psc.property_5, psc.property_6, psc.status, psc.product_status, psc.total_flow, psc.used_flow, psc.active_date, psc.open_date,
+        psc.memo, psc.create_time, ps.order_num, p.producer_name, osp.id outStorageProductId, osp.project_id,
+        osp.building_id, osp.building_floor_id, osp.device_id,d.device_type_id,cp.point_name, osp.check_point_id, cp.qr_no, d.qr_no device_qr_no, osp.iot_id ,
+        d.device_type , d.sensor_no
+    </sql>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findOutStorageProductListTotalCount" parameterType="OutStorageProduct" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM (
+            SELECT osp.id outStorageProductId,psc.id FROM backstage_manage.i_put_storage_product psc
+            INNER JOIN backstage_manage.i_producer p ON psc.producer_id = p.id AND p.status &lt;= 98
+            INNER JOIN backstage_manage.i_put_storage ps ON ps.id = psc.put_storage_id AND ps.status &lt;= 98
+            INNER JOIN backstage_manage.i_product pr ON ps.product_id = pr.id AND pr.status &lt;= 98
+                AND p.id = pr.producer_id
+            LEFT JOIN backstage_manage.i_out_storage_product osp ON osp.put_storage_product_id = psc.id AND osp.status &lt;= 98 AND osp.out_storage_id = #{outStorageId}
+            LEFT JOIN device_manage.d_check_point cp ON cp.id = osp.check_point_id AND cp.status &lt;= 98
+            LEFT JOIN device_manage.d_device d ON d.id = osp.device_id AND d.status &lt;= 98
+            <include refid="findOutStorageProductWhere"/>
+            <if test="relationProduct != null and relationProduct">
+                GROUP BY osp.id
+                HAVING outStorageProductId IS NOT NULL
+            </if>
+            <if test="relationProduct != null and !relationProduct">
+                GROUP BY psc.id
+                HAVING outStorageProductId IS NULL
+            </if>
+        ) t
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findOutStorageProductList" parameterType="OutStorageProduct" resultMap="outStorageProductResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM backstage_manage.i_put_storage_product psc
+        INNER JOIN backstage_manage.i_producer p ON psc.producer_id = p.id AND p.status &lt;= 98
+        INNER JOIN backstage_manage.i_put_storage ps ON ps.id = psc.put_storage_id AND ps.status &lt;= 98
+        INNER JOIN backstage_manage.i_product pr ON ps.product_id = pr.id AND pr.status &lt;= 98 AND p.id = pr.producer_id
+        LEFT JOIN backstage_manage.i_out_storage_product osp ON osp.put_storage_product_id = psc.id AND osp.status &lt;= 98
+        <if test="relationProduct != null and relationProduct">
+            AND osp.out_storage_id = #{outStorageId}
+        </if>
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = osp.check_point_id AND cp.status &lt;= 98
+        LEFT JOIN device_manage.d_device d ON d.id = osp.device_id AND d.status &lt;= 98
+        <include refid="findOutStorageProductWhere"/>
+        <if test="relationProduct != null and relationProduct">
+            HAVING outStorageProductId IS NOT NULL
+        </if>
+        <if test="relationProduct != null and !relationProduct">
+            HAVING outStorageProductId IS NULL
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--添加设备巡检项-->
+    <insert id="saveOutStorageProduct" parameterType="OutStorageProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO backstage_manage.i_out_storage_product (out_storage_id, put_storage_id, producer_id, product_id, put_storage_product_id, project_id,
+        building_id, building_floor_id, check_point_id, device_id,  iot_id, status, memo, create_time) VALUES
+        (#{outStorageId}, #{putStorageId}, #{producerId}, #{productId}, #{putStorageProductId}, #{projectId},
+        #{buildingId}, #{buildingFloorId}, #{checkPointId}, #{deviceId},  #{iotId}, 1, #{memo}, NOW());
+    </insert>
+
+    <!--添加设备巡检项-->
+    <insert id="saveBatchOutStorageProduct" parameterType="OutStorageProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO backstage_manage.i_out_storage_product (out_storage_id, put_storage_id, producer_id, product_id, put_storage_product_id, project_id,
+        building_id, building_floor_id, check_point_id, device_id,  iot_id, status, memo, create_time) VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.outStorageId}, #{item.putStorageId}, #{item.producerId}, #{item.productId}, #{item.putStorageProductId}, #{item.projectId},
+            #{item.buildingId}, #{item.buildingFloorId}, #{item.checkPointId}, #{item.deviceId},  #{item.iotId}, 1, #{item.memo}, NOW());
+        </foreach>
+    </insert>
+
+    <!--修改设备巡检项-->
+    <update id="modifyOutStorageProduct" parameterType="OutStorageProduct">
+        UPDATE backstage_manage.i_out_storage_product
+        <set>
+            <if test="putStorageId != null and putStorageId != 0">
+                put_storage_id = #{putStorageId} ,
+            </if>
+            <if test="producerId != null and producerId != 0">
+                producer_id = #{producerId} ,
+            </if>
+            <if test="productId != null and productId != 0">
+                product_id = #{productId} ,
+            </if>
+            <if test="putStorageProductId != null and putStorageProductId != 0">
+                put_storage_product_id = #{putStorageProductId} ,
+            </if>
+            <if test="buildingId != null and buildingId != 0">
+                building_id = #{buildingId} ,
+            </if>
+            <if test="buildingFloorId != null and buildingFloorId != 0">
+                building_floor_id = #{buildingFloorId} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="checkPointId != null and checkPointId != 0">
+                check_point_id = #{checkPointId} ,
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                device_id = #{deviceId} ,
+            </if>
+            <if test="iotId != null and iotId != 0">
+                iot_id = #{iotId} ,
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo} ,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

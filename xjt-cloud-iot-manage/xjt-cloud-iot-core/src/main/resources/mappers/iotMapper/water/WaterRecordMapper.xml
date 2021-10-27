@@ -1,0 +1,676 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.water.WaterDeviceRecordDao" >
+
+    <resultMap id="waterRecordResultMap" type="com.xjt.cloud.iot.core.entity.water.WaterRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR" />
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="min_value" property="minValue" jdbcType="INTEGER" />
+        <result column="max_value" property="maxValue" jdbcType="INTEGER" />
+        <result column="present_value" property="presentValue" jdbcType="INTEGER" />
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER" />
+        <result column="signal_intensity" property="signalIntensity" jdbcType="INTEGER" />
+        <result column="signal_status" property="signalStatus" jdbcType="INTEGER" />
+        <result column="electric_quantity" property="electricQuantity" jdbcType="INTEGER" />
+        <result column="electric_quantity_status" property="electricQuantityStatus" jdbcType="INTEGER" />
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER" />
+        <result column="recover_time" property="recoverTime" jdbcType="TIMESTAMP" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="event_type" property="eventType" jdbcType="INTEGER" />
+        <result column="monitor_status" property="monitorStatus" jdbcType="INTEGER" />
+        <result column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <result column="point_name" property="pointName" jdbcType="VARCHAR" />
+        <result column="point_qr_no" property="pointQrNo" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="water_terminal_id" property="waterTerminalId" jdbcType="BIGINT" />
+        <result column="time_desc" property="timeDesc" jdbcType="VARCHAR" />
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+        <result column="event_handle_time" property="eventHandleTime" jdbcType="TIMESTAMP" />
+        <result column="leak_monitor_status" property="leakMonitorStatus" jdbcType="INTEGER" />
+        <result column="strike_monitor_status" property="strikeMonitorStatus" jdbcType="INTEGER" />
+        <result column="open_cover_status" property="openCoverStatus" jdbcType="INTEGER" />
+
+    </resultMap>
+
+    <!-- 保存水设备记录信息-->
+    <insert id="saveWaterRecord" parameterType="WaterRecord" keyProperty="id" useGeneratedKeys="true">
+          INSERT INTO w_water_record (project_id, device_id, water_id, min_value, max_value, present_value, device_status,monitor_status,
+        signal_intensity, signal_status, electric_quantity, electric_quantity_status, raw_data, sensor_no,
+        device_type_id, unit, leak_monitor_status, strike_monitor_status, open_cover_status)
+        VALUES (#{projectId}, #{deviceId}, #{waterId}, #{minValue}, #{maxValue}, #{presentValue}, #{deviceStatus},#{monitorStatus},
+        #{signalIntensity}, #{signalStatus}, #{electricQuantity}, #{electricQuantityStatus}, #{rawData}, #{sensorNo},
+        #{deviceTypeId}, #{unit}, #{leakMonitorStatus}, #{strikeMonitorStatus}, #{openCoverStatus})
+    </insert>
+
+    <!-- 保存水设备事件信息-->
+    <insert id="saveWaterRecordEvent" parameterType="WaterRecord" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO w_water_event (project_id, device_id, water_id, min_value, max_value, present_value, device_status,
+        create_time, sensor_no, device_type_id, type, unit,record_id)
+        VALUES (#{projectId}, #{deviceId}, #{waterId}, #{minValue}, #{maxValue}, #{presentValue}, #{deviceStatus},
+        NOW(), #{sensorNo}, #{deviceTypeId}, #{type}, #{unit}, #{id});
+    </insert>
+
+    <update id="modifyWaterRecordEvent" parameterType="WaterRecord">
+        UPDATE w_water_event SET  recover_status = 1,recover_record_id=#{recoverRecordId},recover_time=NOW() WHERE id = #{id}
+    </update>
+
+    <sql id="selColumns">
+        w.id, w.device_type_id, w.project_id, w.device_id, w.sensor_no, w.status, w.min_value, w.max_value, w.present_value,w.type event_type,we.unit,
+        w.device_status,  w.create_time, dt.device_sys_name,d.qr_no,we.type device_type,cp.building_id,cp.building_floor_id,cp.point_location,
+        cp.qr_no point_qr_no,cp.point_name,we.id waterId
+    </sql>
+
+    <sql id="findWaterEventWhere">
+        WHERE 1=1
+        <if test="deviceStatus != null and deviceStatus != 0">
+            AND w.device_status = #{deviceStatus} AND w.type  = 1
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND w.project_id = #{projectId}
+        </if>
+        <if test="projectIds">
+            AND w.project_id IN
+            <foreach collection="projectIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="signalStatus != null and signalStatus != 0">
+            AND w.device_status = #{signalStatus} AND w.type  = 2
+        </if>
+        <if test="electricQuantityStatus != null and electricQuantityStatus != 0">
+            AND w.device_status = #{electricQuantityStatus} AND w.type  = 3
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND w.sensor_no LIKE CONCAT('%',#{sensorNo},'%')
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        <if test="recordId != null and recordId != 0">
+            AND w.record_id = #{recordId}
+        </if>
+        <if test="ids != null">
+            AND w.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="recoverStatus != null">
+            AND w.recover_status = #{recoverStatus}
+        </if>
+        <if test="recoverStatuss != null">
+            AND w.recover_status IN
+            <foreach collection="recoverStatuss" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="eventIds != null">
+            AND w.id IN
+            <foreach collection="eventIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND we.type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND we.type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="buildingFloorIds != null">
+            AND cp.building_floor_id IN
+            <foreach collection="buildingFloorIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="eventTypeSql != null and eventTypeSql != ''">
+            AND ${eventTypeSql}
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceSysName}, '%')
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND d.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="pointQrNo != null and pointQrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{pointQrNo},'%')
+        </if>
+        <if test="pointName != null and pointName != ''">
+            AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+        </if>
+        <if test="checkPointId != null and checkPointId != 0">
+            AND cp.id = #{checkPointId}
+        </if>
+        <if test="buildingId != null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+            AND weh.device_fault_type_id = #{deviceFaultTypeId}
+        </if>
+
+        <if test="createTime != null and endTime != null">
+            AND w.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="faultStatus != null and deviceType != null and deviceType == 8">
+            <if test="faultStatus == 2">
+                AND w.type IN (5,6,7)
+            </if>
+            <if test="faultStatus == 1">
+                AND w.device_status IN (1)
+            </if>
+        </if>
+        <if test="deviceStatuss != null">
+            AND w.type = 4 AND w.device_status IN
+            <foreach item="item" collection="deviceStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="electricQuantitys != null">
+            AND w.type = 3 AND w.device_status IN
+            <foreach item="item" collection="electricQuantitys" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="eventByAlarmEventsDesc != null">
+            AND ${eventByAlarmEventsDesc}
+        </if>
+        <if test="eventByImpactDamagesDesc != null">
+            AND ${eventByImpactDamagesDesc}
+        </if>
+        <if test="eventByFaultEventsDesc != null">
+            AND ${eventByFaultEventsDesc}
+        </if>
+        <if test="byFaultEventTypeSql != null and byFaultEventTypeSql != ''">
+            AND ${byFaultEventTypeSql}
+        </if>
+        <if test="handleStatuss != null">
+            <foreach item="item" collection="handleStatuss" >
+                <if test="item == 1">AND weh.create_time IS NOT NULL</if>
+                <if test="item == 2">AND weh.create_time IS NULL</if>
+            </foreach>
+        </if>
+        <if test="handleStatus != null and handleStatus != 0">
+            <if test="handleStatus == 1">AND weh.create_time IS NOT NULL</if>
+            <if test="handleStatus == 2">AND weh.create_time IS NULL</if>
+        </if>
+    </sql>
+
+    <!-- 查询水设备事件记录总数-->
+    <select id="findWaterDeviceEventListTotalCount" parameterType="WaterRecord" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT w.id) FROM w_water_event w
+        INNER JOIN w_water_device we ON w.water_id = we.id
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id
+        INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id
+        LEFT JOIN w_water_event_handle weh ON w.id = weh.event_id
+        <include refid="findWaterEventWhere"/>
+    </select>
+    <!-- 查询水设备事件记录列表-->
+    <select id="findWaterDeviceEventList" parameterType="WaterRecord" resultMap="waterRecordResultMap">
+        SELECT <include refid="selColumns"/>,
+            w.recover_status, w.recover_time, we.water_terminal_id,
+            MAX(weh.create_time) event_handle_time, weh.description, weh.create_user_name handleUserName
+            <if test="handleDeviceType != null and handleDeviceType != 0">
+                ,dft.fault_type
+            </if>
+        FROM w_water_event w
+        INNER JOIN w_water_device we ON w.water_id = we.id
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id
+        INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id
+        <if test="handleDeviceType != null and handleDeviceType != 0">
+            LEFT JOIN (
+                SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type, ta.description, ta.create_time, ta.create_user_name
+                FROM w_water_event_handle ta
+                INNER JOIN (
+                    SELECT MAX(id) id
+                    FROM w_water_event_handle WHERE project_id = #{projectId}
+                    <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                        AND device_fault_type_id = #{deviceFaultTypeId}
+                    </if>
+                    AND device_type = #{handleDeviceType}
+                    AND create_time >= #{createTime} GROUP BY event_id
+                ) t ON t.id = ta.id
+            ) weh ON w.id = weh.event_id
+            LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+        </if>
+        <if test="handleDeviceType == null or handleDeviceType == 0">
+            LEFT JOIN w_water_event_handle weh ON w.id = weh.event_id
+        </if>
+        <include refid="findWaterEventWhere"/>
+        GROUP BY w.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询水设备事件记录列表-->
+    <select id="findNewestWaterDeviceEvent" parameterType="WaterRecord" resultMap="waterRecordResultMap">
+        SELECT w.id, w.device_type_id, w.project_id, w.device_id, w.sensor_no, w.status, w.min_value, w.max_value, w.present_value,w.type,
+        w.device_status,  w.create_time, w.recover_status, w.recover_time
+        FROM w_water_event w
+        WHERE
+             w.sensor_no = #{sensorNo} AND recover_record_id = 0
+         AND w.type  = #{eventType}
+        ORDER BY w.create_time DESC LIMIT 1
+    </select>
+
+    <select id="findTimeList" parameterType="WaterRecord" resultType="String">
+        SELECT <include refid="formatTimeCol"></include> timeDesc FROM (<include refid="formatTimeRow"></include>) dayList
+    </select>
+
+    <!-- 查询水设备事件记录按时间汇总（曲线图）-->
+    <select id="findWaterDeviceEventReportCount" parameterType="WaterRecord" resultType="WaterDeviceReport">
+        SELECT  IFNULL(w.waterTotal, 0) waterTotal, IFNULL(w.superHigh, 0) superHigh,IFNULL(w.ultralow, 0) ultralow,IFNULL(w.offLine, 0) offLine,
+        IFNULL(w.lowPower, 0) lowPower,IFNULL(w.leak, 0) leak,
+        IFNULL(w.alarmEvent, 0) alarmEvent, IFNULL(w.impactDamage, 0) impactDamage, IFNULL(w.faultEvent, 0) faultEvent,
+        <include refid="formatTimeCol"></include> timeDesc
+        FROM
+        (
+        SELECT COUNT(w.id) waterTotal,
+        SUM(IF(w.type = 1 AND w.device_status = 2 ,1,0)) superHigh, SUM(IF(w.type = 1 AND w.device_status = 3 ,1,0)) ultralow,
+        SUM(IF(w.type = 4 AND w.device_status = 2 ,1,0)) offLine, SUM(IF( w.type = 3 AND w.device_status = 2 ,1,0)) lowPower,
+        SUM(IF(w.type = 5 AND w.device_status = 2,1,0)) leak,
+        IFNULL(SUM(IF((w.type = 1 AND (w.device_status = 2 OR w.device_status = 3)) OR (w.type = 5 AND (w.device_status = 2
+        OR w.device_status = 3)) ,1,0)),0) alarmEvent,
+        IFNULL(SUM(IF((w.type = 6 AND w.device_status = 2) OR (w.type = 7 AND w.device_status = 2),1,0)),0) impactDamage,
+        IFNULL(SUM(IF((w.type = 5 AND w.device_status = 4) OR (w.type = 6 AND w.device_status = 4),1,0)),0) faultEvent,
+        <include refid="formatTime"></include>
+        FROM  w_water_event w
+        INNER JOIN w_water_device wd ON wd.id = w.water_id
+        WHERE 1 = 1
+        <if test="projectId != null and projectId != 0">
+            AND w.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null">
+            AND w.project_id IN
+            <foreach collection="projectIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND wd.type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND wd.type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="createTime != null">
+            AND w.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        GROUP BY createTime
+        ) w
+        RIGHT JOIN (
+        <include refid="formatTimeRow"></include>
+        ) dayList
+        ON <include refid="formatTimeOn"></include>
+        ORDER BY timeDesc
+    </select>
+    <sql id="formatTimeCol">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+    <sql id="formatTimeOrderBy">
+        <if test="groupType != null and groupType == 1">
+            str_to_date(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            str_to_date(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            str_to_date(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            str_to_date(dayList.createTime,'%Y')
+        </if>
+    </sql>
+    <sql id="formatTimeOn">
+        <if test="groupType != null and groupType == 1">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%H')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+    <sql id="formatTime">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(w.create_time,'%H') createTime
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(w.create_time,'%Y-%m-%d') createTime
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(w.create_time,'%Y-%m') createTime
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(w.create_time,'%Y') createTime
+        </if>
+    </sql>
+    <sql id="formatTimeRow">
+        SELECT
+        <if test="groupType != null and groupType == 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d %H') createTime
+        </if>
+        <if test="groupType != null and groupType != 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d') createTime
+        </if>
+        FROM (
+        SELECT @date := DATE_ADD(#{createTime}, interval -1 ${timeType}) FROM b_base_data LIMIT #{dateTimeCount}) days
+    </sql>
+    <!-- 查询水设备事件记录汇总，饼图-->
+    <select id="findWaterDeviceEventReportTotal" parameterType="WaterRecord" resultType="WaterDeviceReport">
+        SELECT COUNT(w.id) waterTotal, SUM(IF(w.type = 1 AND w.device_status = 2,1,0)) superHigh, SUM(IF(w.type = 1 AND w.device_status = 3,1,0)) ultralow,
+        SUM(IF(w.type = 1 AND w.device_status = 4,1,0)) offLine, SUM(IF(w.type = 3 AND w.device_status = 2,1,0)) lowPower,
+        SUM(IF(w.type = 5 AND w.device_status = 3,1,0)) leak,
+        IFNULL(SUM(IF((w.type = 1 AND (w.device_status = 2 OR w.device_status = 3)) OR (w.type = 5 AND (w.device_status = 2
+        OR w.device_status = 3)) ,1,0)),0) alarmEvent,
+        IFNULL(SUM(IF((w.type = 6 AND w.device_status = 2) OR (w.type = 7 AND w.device_status = 2),1,0)),0) impactDamage,
+        IFNULL(SUM(IF((w.type = 5 AND w.device_status = 4) OR (w.type = 6 AND w.device_status = 4),1,0)),0) faultEvent,
+        wd.water_terminal_id waterTerminalId
+        FROM  w_water_event w
+        INNER JOIN w_water_device wd ON wd.id = w.water_id
+        WHERE w.project_id = #{projectId}
+        <if test="deviceType != null and deviceType != 0">
+            AND wd.type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND wd.type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="createTime != null">
+            AND w.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+
+    </select>
+    <select id="findHydrantFaultMsg" parameterType="WaterRecord" resultType="WaterDeviceReport">
+        SELECT
+            SUM(IF(we.device_status = 3 AND we.type = 5,1,0)) intakeWater,
+            SUM(IF(we.device_status = 2 AND we.type = 6,1,0)) strike,
+            SUM(IF(we.device_status = 2 AND we.type = 7,1,0)) uncap
+        FROM iot_manage.w_water_event we
+        WHERE we.recover_status = 0 AND we.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND we.project_id = #{projectId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND we.device_id = #{deviceId}
+        </if>
+        <if test="createTime != null">
+            AND we.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+    </select>
+    <sql id="selRecordColumns">
+        w.id, w.device_type_id, w.project_id, w.device_id, w.sensor_no, w.status, w.min_value, w.max_value, w.present_value,w.monitor_status,
+        w.device_status,  w.create_time,dt.device_sys_name,d.qr_no,w.signal_intensity,w.unit,DATE_FORMAT(w.create_time,'%H:%i') time_desc,
+        w.signal_status, w.electric_quantity, w.electric_quantity_status,we.type device_type,we.water_terminal_id,
+        cp.building_id,cp.building_floor_id,cp.point_location,cp.qr_no point_qr_no,cp.point_name,w.leak_monitor_status,w.strike_monitor_status,
+        w.open_cover_status
+    </sql>
+    <sql id="findWaterRecordWhere">
+        WHERE 1 = 1
+        <if test="deviceStatus != null and deviceStatus != 0">
+            AND w.device_status = #{deviceStatus}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND w.project_id = #{projectId}
+        </if>
+        <if test="signalStatus != null and signalStatus != 0">
+            AND w.signal_status = #{signalStatus}
+        </if>
+        <if test="electricQuantityStatus != null and electricQuantityStatus != 0">
+            AND w.electric_quantity_status = #{electricQuantityStatus}
+        </if>
+        <if test="monitorStatus != null and monitorStatus != 0">
+            AND w.monitor_status = #{monitorStatus}
+        </if>
+        <if test="leakMonitorStatus != null and leakMonitorStatus != 0">
+            AND w.leak_monitor_status = #{leakMonitorStatus}
+        </if>
+        <if test="strikeMonitorStatus != null and strikeMonitorStatus != 0">
+            AND w.strike_monitor_status = #{strikeMonitorStatus}
+        </if>
+        <if test="openCoverStatus != null and openCoverStatus != 0">
+            AND w.open_cover_status = #{openCoverStatus}
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND w.sensor_no LIKE CONCAT('%',#{sensorNo},'%')
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        <if test="waterId != null and waterId != 0">
+            AND we.id = #{waterId}
+        </if>
+        <if test="terminal != null and terminal != 0">
+            <if test="terminal == 1">
+                AND we.water_terminal_id = 0
+            </if>
+            <if test="terminal == 2">
+                AND we.water_terminal_id >= 1
+            </if>
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND we.type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND we.type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="faultStatuss != null">
+            <foreach collection="faultStatuss" item="item" separator="," >
+                <if test="item == 1">
+                    AND (w.leak_monitor_status = 1 AND w.strike_monitor_status = 1 AND w.open_cover_status = 1)
+                </if>
+                <if test="item == 2">
+                    AND (w.leak_monitor_status = 2 OR w.leak_monitor_status = 3 OR w.leak_monitor_status = 4
+                    OR w.strike_monitor_status = 2 OR w.strike_monitor_status = 4 OR w.open_cover_status = 2)
+                </if>
+            </foreach>
+        </if>
+        <if test="monitorStatuss != null">
+            AND w.monitor_status IN
+            <foreach item="item" collection="monitorStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceStatuss != null">
+            AND w.device_status IN
+            <foreach item="item" collection="deviceStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="signalIntensitys != null">
+            AND w.signal_status IN
+            <foreach item="item" collection="signalIntensitys" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="electricQuantitys != null">
+            AND w.electric_quantity_status IN
+            <foreach item="item" collection="electricQuantitys" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="leakMonitorStatuss != null">
+            AND w.leak_monitor_status IN
+            <foreach item="item" collection="leakMonitorStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="createTime != null and (findLimitEndData == null or findLimitEndData == false)">
+            AND w.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="createTime != null and findLimitEndData == true">
+            AND w.create_time &lt; #{createTime}
+        </if>
+
+        <if test="leakMonitorStatuss != null">
+            AND w.leak_monitor_status IN
+            <foreach item="item" collection="leakMonitorStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="alarmEventsDesc != null">
+            AND ${alarmEventsDesc}
+        </if>
+        <if test="impactDamagesDesc != null">
+            AND ${impactDamagesDesc}
+        </if>
+        <if test="faultEventsDesc != null">
+            AND ${faultEventsDesc}
+        </if>
+    </sql>
+    <!-- 查询水设备记录列表　-->
+    <select id="findWaterDeviceRecordList" parameterType="WaterRecord" resultMap="waterRecordResultMap">
+        SELECT <include refid="selRecordColumns"/>,MAX(IF(weh.id IS NULL,2,1)) handleStatus,MAX(IF(wev.id IS NULL,2,1)) eventExistStatus
+        FROM w_water_record w
+        <if test="findLimitEndData == true">
+            INNER JOIN ( SELECT MAX(id) id FROM w_water_record w
+            WHERE 1=1
+            <if test="projectId != null and projectId != 0">
+                AND project_id = #{projectId}
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                AND device_id = #{deviceId}
+            </if>
+            <if test="createTime != null">
+                AND create_time &lt; #{createTime}
+            </if>
+            ) t ON w.id = t.id
+        </if>
+        INNER JOIN w_water_device we ON w.water_id = we.id
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id
+        INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id
+        LEFT JOIN w_water_event wev ON wev.record_id = w.id
+        LEFT JOIN w_water_event_handle weh ON wev.id = weh.event_id
+        <include refid="findWaterRecordWhere"/>
+        GROUP BY id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+        <if test="findLimitEndData == true">
+            LIMIT 1
+        </if>
+    </select>
+    <!-- 查询水设备记录列表总数　-->
+    <select id="findWaterDeviceRecordListTotalCount" parameterType="WaterRecord" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT w.id)
+        FROM w_water_record w
+        INNER JOIN w_water_device we ON w.water_id = we.id
+        LEFT JOIN w_water_event wev ON wev.record_id = w.id
+        LEFT JOIN w_water_event_handle weh ON wev.id = weh.event_id
+        <include refid="findWaterRecordWhere"/>
+    </select>
+
+    <!-- 查询水设备记录　曲线图-->
+    <select id="findWaterDeviceRecordCurveChart" parameterType="WaterRecord" resultMap="waterRecordResultMap">
+        SELECT w.id, w.min_value, w.max_value,  w.unit,w.signal_intensity, w.electric_quantity,w.device_type,
+        w.present_value,<include refid="formatTimeCol"></include> time_desc
+        FROM (
+        SELECT w.id, w.min_value, w.max_value, w.unit,we.type device_type,
+        IF(MAX(w.present_value) - w.max_value > w.min_value - MIN(w.present_value) ,MAX(w.present_value),
+        IF(w.min_value - MIN(w.present_value) >0,MIN(w.present_value), w.present_value)) present_value,
+        <include refid="formatTime"></include>,
+        MIN(w.signal_intensity) signal_intensity,MIN(w.electric_quantity) electric_quantity,
+        w.leak_monitor_status, w.strike_monitor_status
+        FROM w_water_record w
+        INNER JOIN w_water_device we ON w.water_id = we.id
+        WHERE 1=1
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="waterId != null and waterId != 0">
+            AND w.water_id = #{waterId}
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND w.sensor_no = #{sensorNo}
+        </if>
+        <if test="terminal != null and terminal != 0">
+            <if test="terminal == 1">
+                AND we.water_terminal_id = 0
+            </if>
+            <if test="terminal == 2">
+                AND we.water_terminal_id >= 1
+            </if>
+        </if>
+        <if test="createTime != null">
+            AND w.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        GROUP BY createTime
+        ) w RIGHT JOIN (
+        <include refid="formatTimeRow"></include>
+        ) dayList
+        ON <include refid="formatTimeOn"></include>
+        ORDER BY time_desc
+    </select>
+
+    <!-- 查询水压设备汇总报表-->
+    <select id="findWaterDeviceEventSummaryReport" parameterType="WaterRecord" resultType="WaterDeviceReport">
+        SELECT COUNT(*) waterTotal,
+        IFNULL(SUM(IF(we.type = 1 AND we.device_status = 2 ,1,0)),0) superHigh, IFNULL(SUM(IF(we.type = 1 AND we.device_status = 3 ,1,0)),0) ultralow,
+        IFNULL(SUM(IF(we.type = 4 AND we.device_status = 2 ,1,0)),0) offLine, IFNULL(SUM(IF( we.type = 3 AND we.device_status = 2 ,1,0)),0) lowPower,
+        IFNULL(SUM(IF(we.type = 5 AND we.device_status = 2,1,0)),0) leak,
+        IFNULL(SUM(IF((we.type = 1 AND (we.device_status = 2 OR we.device_status = 3)) OR (we.type = 5 AND (we.device_status = 2
+        OR we.device_status = 3)) ,1,0)),0) alarmEvent,
+        IFNULL(SUM(IF((we.type = 6 AND we.device_status = 2) OR (we.type = 7 AND we.device_status = 2),1,0)),0) impactDamage,
+        IFNULL(SUM(IF((we.type = 5 AND we.device_status = 4) OR (we.type = 6 AND we.device_status = 4),1,0)),0) faultEvent
+        FROM  w_water_event we
+        INNER JOIN w_water_device wd ON wd.id = we.water_id
+        WHERE we.project_id = #{projectId}
+        <if test="deviceType != null and deviceType != 0">
+            AND wd.type = #{deviceType}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND wd.device_id = #{deviceId}
+        </if>
+        <if test="deviceTypes != null">
+            AND wd.type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="createTime != null">
+            AND we.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,838 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.report.IotReportDao" >
+
+    <!-- 查询物联设备运营报表饼图-->
+    <select id="findIotDeviceFailCountPieChart" parameterType="EventFaultReport" resultType="EventFaultReport">
+        SELECT '2' deviceType , COUNT(*) totalCount, IFNULL(SUM(IF(monitor_status >= 2 OR  device_status = 2 OR  electric_quantity_status = 2 ,1,0)),0) faultCount
+        FROM w_water_device
+        WHERE status &lt;= 98 AND type IN (2,13,14) AND sensor_no IS NOT NULL AND sensor_no != '' AND project_id = #{projectId}
+        UNION ALL
+        SELECT '3' deviceType , COUNT(*) totalCount,
+        IFNULL(SUM(IF(monitor_status >= 2 OR  device_status = 2 OR  electric_quantity_status = 2 OR  leak_monitor_status >= 2 ,1,0)),0) faultCount
+        FROM w_water_device
+        WHERE status &lt;= 98 AND type =3 AND project_id = #{projectId}
+        UNION ALL
+        SELECT '11'  deviceType , COUNT(*) totalCount,
+        IFNULL(SUM(IF(recover_status = 2 OR  electric_quantity &lt;= 2000 OR  heartbeat_time IS NULL OR  device_status = 2, 1, 0)),0) faultCount
+        FROM s_smoke_device
+        WHERE deleted = false AND project_id = #{projectId}
+        UNION ALL
+        SELECT '4' deviceType , COUNT(*)  totalCount, IFNULL(SUM(IF(device_status = 2 OR  fire_alarm_status = 2 OR  fault_status = 2, 1, 0)),0) faultCount
+        FROM f_fire_alarm_device
+        WHERE status &lt;= 98 AND project_id = #{projectId}
+        UNION ALL
+        SELECT '5'   deviceType , COUNT(*) totalCount,
+        IFNULL(SUM(IF(device_status = 2 OR  fault_status = 2 OR  fire_alarm1_status = 2 OR  fire_alarm2_status = 2, 1, 0)),0) faultCount
+        FROM v_vesa_device
+        WHERE status &lt;= 98 AND project_id = #{projectId}
+        UNION ALL
+        SELECT '8' deviceType , COUNT(*) totalCount, IFNULL(SUM(IF(monitor_status >= 2 OR  device_status = 2 OR  electric_quantity_status = 2
+            OR  leak_monitor_status >= 2 OR  strike_monitor_status >= 2 OR  open_cover_status = 2 ,1,0)),0) failCount
+        FROM w_water_device
+        WHERE status &lt;= 98 AND type =8 AND project_id = #{projectId}
+        UNION ALL
+        SELECT '7' deviceType , COUNT(*)  totalCount, IFNULL(SUM(IF(event_type = 2 OR  device_state = 2, 1, 0)),0) faultCount
+        FROM l_linkage_device
+        WHERE deleted= false AND project_id = #{projectId}
+    </select>
+
+    <!-- 查询运营报表柱状图-->
+    <select id="findIotDeviceEventCountColumnChart" parameterType="EventFaultReport" resultType="EventFaultReport">
+        SELECT '2' deviceType, CASE WHEN w.type = 1 AND w.device_status = 2 THEN '1' WHEN w.type = 1 AND w.device_status = 3 THEN '2'
+        WHEN w.type = 4 AND w.device_status = 2 THEN '4' WHEN w.type = 3 AND w.device_status = 2 THEN '3' END faultEventType, COUNT(w.id) faultCount
+        FROM w_water_event w
+        INNER JOIN w_water_device wd ON wd.id = w.water_id
+        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type IN(2,13,14) AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType
+        UNION ALL
+        SELECT '3' deviceType, CASE WHEN w.type = 5 AND w.device_status = 2 THEN '1' WHEN w.type = 3 AND w.device_status = 2 THEN '2'
+        WHEN w.type = 4 AND w.device_status = 2 THEN '3' END faultEventType, COUNT(w.id) faultCount
+        FROM w_water_event w
+        INNER JOIN w_water_device wd ON wd.id = w.water_id
+        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 3 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType
+        UNION ALL
+        SELECT '11' deviceType, CASE WHEN se.event_type = 1 THEN '1' WHEN se.event_type = 5 THEN '5' WHEN se.event_type = 4 THEN '4'
+        WHEN se.event_type = 21 THEN '21' END faultEventType, COUNT(se.id) faultCount
+        FROM s_smoke_event se
+        INNER JOIN s_smoke_device sd ON se.smoke_device_id = sd.id
+        WHERE 1=1 AND sd.deleted = false AND se.project_id = #{projectId} AND se.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType
+        UNION ALL
+        SELECT '4' deviceType, CASE WHEN fae.event_type = 1 THEN '1' WHEN fae.event_type >= 2 AND fae.event_type &lt;= 4 THEN '2'
+        WHEN fae.event_type = 6 OR  fae.event_type = 7 OR  fae.event_type = 14 OR  fae.event_type = 15 OR  fae.event_type = 16 THEN '7'
+        WHEN fae.event_type = 21 THEN '21' END faultEventType, COUNT(fae.id) faultCount
+        FROM f_fire_alarm_event fae
+        INNER JOIN f_fire_alarm_device fad ON fae.fire_alarm_device_id = fad.id
+        WHERE 1=1 AND fad.status &lt;=98 AND fae.project_id = #{projectId} AND fae.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType
+        UNION ALL
+        SELECT '5' deviceType, CASE WHEN ve.event_type = 3 THEN '3' WHEN ve.event_type = 4 THEN '4' WHEN ve.event_type = 2 THEN '2'
+        WHEN ve.event_type = 1 THEN '1' WHEN ve.event_type = 0 THEN '0' WHEN ve.event_type = 5 THEN '5' END faultEventType, COUNT(ve.id) faultCount
+        FROM v_vesa_event ve
+        INNER JOIN v_vesa_device vd ON vd.id = ve.vesa_id
+        WHERE 1=1 AND vd.status &lt;=98 AND ve.project_id = #{projectId} AND ve.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType
+        UNION ALL
+        SELECT '8' deviceType, CASE WHEN (w.type = 1 OR  w.type = 5) AND ( w.device_status = 2 OR  w.device_status = 3) THEN '1'
+        WHEN w.device_status = 2 AND ( w.type = 6 OR  w.type = 7) THEN '2' WHEN w.device_status = 4 AND ( w.type = 6 OR  w.type = 7) THEN '3'
+        WHEN w.type = 3 AND w.device_status = 2 THEN '4' WHEN w.type = 4 AND w.device_status = 2 THEN '5' END faultEventType, COUNT(w.id) faultCount
+        FROM w_water_event w
+        INNER JOIN w_water_device wd ON wd.id = w.water_id
+        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 8 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType
+        UNION ALL
+        SELECT '7' deviceType, CASE WHEN le.event_type = 2 THEN '2' WHEN le.event_type = 3 THEN '3' END faultEventType, COUNT(le.id) faultCount
+        FROM l_linkage_event le
+        INNER JOIN l_linkage_device ld ON ld.id = le.linkage_device_id
+        WHERE 1=1 AND ld.deleted = false AND le.project_id = #{projectId} AND le.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType
+        ORDER BY deviceType , faultEventType
+    </select>
+
+    <!-- 查询运营报表设备事件异常信息列表 -->
+    <select id="findIotDeviceEventFailTypeCountList" parameterType="EventFaultReport" resultType="EventFaultReport">
+        SELECT '2' deviceType,
+            CASE WHEN w.type = 1 AND w.device_status = 2 THEN '1' WHEN w.type = 1 AND w.device_status = 3 THEN '2'
+            WHEN w.type = 4 AND w.device_status = 2 THEN '4' WHEN w.type = 3 AND w.device_status = 2 THEN '3' END faultEventType,
+            COUNT(DISTINCT w.id) faultCount,
+            SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated, weh.device_fault_type_id deviceFaultTypeId,
+            dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+        FROM w_water_event w
+        INNER JOIN w_water_device wd ON wd.id = w.water_id
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+            FROM w_water_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 2 AND create_time >= #{beginTime} GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) weh ON w.id = weh.event_id
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type IN(2, 13, 14) AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType, deviceFaultTypeId
+
+        UNION ALL
+        SELECT '3' deviceType,
+            CASE WHEN w.type = 5 AND w.device_status = 2 THEN '1' WHEN w.type = 3 AND w.device_status = 2 THEN '2'
+            WHEN w.type = 4 AND w.device_status = 2 THEN '3' END faultEventType,
+            COUNT(DISTINCT w.id) faultCount,SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated,
+            weh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+        FROM w_water_event w
+        INNER JOIN w_water_device wd ON wd.id = w.water_id
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+            FROM w_water_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 3 AND create_time >= #{beginTime} GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) weh ON w.id = weh.event_id
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 3 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType, deviceFaultTypeId
+
+        UNION ALL
+        SELECT '11' deviceType,
+            CASE WHEN se.event_type = 1 THEN '1' WHEN se.event_type = 5 THEN '5' WHEN se.event_type = 4 THEN '4'
+            WHEN se.event_type = 21 THEN '21' END faultEventType,
+            COUNT(DISTINCT se.id) faultCount,SUM(IF(seh.id IS NOT NULL,1,0)) processed, SUM(IF(seh.id IS NULL,1,0)) untreated,
+            seh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+        FROM s_smoke_event se
+        INNER JOIN s_smoke_device sd ON se.smoke_device_id = sd.id
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.smoke_device_id, ta.event_id, ta.device_type
+            FROM s_smoke_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id FROM s_smoke_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime} GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) seh ON se.id = seh.event_id
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = seh.device_fault_type_id
+        WHERE 1=1 AND sd.deleted = false AND se.project_id = #{projectId} AND se.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType, deviceFaultTypeId
+
+        UNION ALL
+        SELECT '4' deviceType,
+            CASE WHEN fae.event_type = 1 THEN '1' WHEN fae.event_type >= 2 AND fae.event_type &lt;= 4 THEN '2'
+            WHEN fae.event_type = 6 OR  fae.event_type = 7 OR  fae.event_type = 14 OR  fae.event_type = 15 OR  fae.event_type = 16 THEN '7'
+            WHEN fae.event_type = 21 THEN '21' END faultEventType,
+            COUNT(DISTINCT fae.id) faultCount, SUM(IF(faeh.id IS NOT NULL,1,0)) processed, SUM(IF(faeh.id IS NULL,1,0)) untreated,
+            faeh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+        FROM f_fire_alarm_event fae
+        INNER JOIN f_fire_alarm_device fad ON fae.fire_alarm_device_id = fad.id
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.fire_alarm_device_id, ta.event_id, ta.device_type
+            FROM f_fire_alarm_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id FROM f_fire_alarm_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime} GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) faeh ON fae.id = faeh.event_id
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = faeh.device_fault_type_id
+        WHERE 1=1 AND fad.status &lt;=98 AND fae.project_id = #{projectId} AND fae.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType, deviceFaultTypeId
+
+        UNION ALL
+        SELECT '5' deviceType,
+            CASE WHEN ve.event_type = 3 THEN '3' WHEN ve.event_type = 4 THEN '4' WHEN ve.event_type = 2 THEN '2'
+            WHEN ve.event_type = 1 THEN '1' WHEN ve.event_type = 0 THEN '0' WHEN ve.event_type = 5 THEN '5' END faultEventType,
+            COUNT(DISTINCT ve.id) faultCount, SUM(IF(veh.id IS NOT NULL,1,0)) processed, SUM(IF(veh.id IS NULL,1,0)) untreated,
+            veh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+        FROM v_vesa_event ve
+        INNER JOIN v_vesa_device vd ON vd.id = ve.vesa_id
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.vesa_device_id, ta.event_id, ta.device_type
+            FROM v_vesa_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id FROM v_vesa_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime} GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) veh ON ve.id = veh.event_id
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = veh.device_fault_type_id
+        WHERE 1=1 AND vd.status &lt;=98 AND ve.project_id = #{projectId} AND ve.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType, deviceFaultTypeId
+
+        UNION ALL
+        SELECT '8' deviceType,
+            CASE WHEN (w.type = 1 OR  w.type = 5) AND ( w.device_status = 2 OR  w.device_status = 3) THEN '1'
+            WHEN w.device_status = 2 AND ( w.type = 6 OR  w.type = 7) THEN '2' WHEN w.device_status = 4 AND ( w.type = 6 OR  w.type = 7) THEN '3'
+            WHEN w.type = 3 AND w.device_status = 2 THEN '4' WHEN w.type = 4 AND w.device_status = 2 THEN '5' END faultEventType,COUNT(DISTINCT w.id) faultCount,
+            SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated, weh.device_fault_type_id  deviceFaultTypeId,
+            dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+        FROM w_water_event w
+        INNER JOIN w_water_device wd ON wd.id = w.water_id
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+            FROM w_water_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 8 AND create_time >= #{beginTime} GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) weh ON w.id = weh.event_id
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 8 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType, deviceFaultTypeId
+
+        UNION ALL
+        SELECT '7' deviceType,
+            CASE WHEN le.event_type = 2 THEN '2' WHEN le.event_type = 3 THEN '3' END faultEventType,
+            COUNT(DISTINCT le.id) faultCount,
+            SUM(IF(leh.id IS NOT NULL, 1, 0)) processed, SUM(IF(leh.id IS NULL, 1, 0)) untreated, leh.device_fault_type_id deviceFaultTypeId,
+            dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+        FROM l_linkage_event le
+        INNER JOIN l_linkage_device ld ON ld.id = le.linkage_device_id
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.linkage_device_id, ta.event_id, ta.device_type
+            FROM l_linkage_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id FROM l_linkage_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime} GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) leh ON le.id = leh.event_id
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = leh.device_fault_type_id
+        WHERE 1=1 AND ld.deleted = false AND le.project_id = #{projectId} AND le.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        GROUP BY faultEventType, deviceFaultTypeId
+        ORDER BY deviceType , faultEventType, faultEventTypeCode
+    </select>
+
+    <!-- 查询 运营报表 设备事件异常信息列表用于下载 -->
+    <select id="findIotDeviceEventFailTypeCountListDown" parameterType="EventFaultReport" resultType="EventFaultReport">
+        SELECT a.deviceType, b.deviceSum, c.eventSum, a.faultSum,
+            a.faultCount, a.processed, a.untreated, a.faultEventType, a.deviceFaultTypeId, a.faultType, a.faultEventTypeCode, a.repairProposal
+        FROM(
+            SELECT  t.deviceType, SUM(untreated + processed) faultSum,
+                t.faultCount, t.processed, t.untreated, t.faultEventType, t.deviceFaultTypeId, t.faultType, t.faultEventTypeCode, t.repairProposal
+            FROM (
+                SELECT '2' deviceType,
+                    CASE WHEN w.type = 1 AND w.device_status = 2 THEN '1' WHEN w.type = 1 AND w.device_status = 3 THEN '2'
+                    WHEN w.type = 4 AND w.device_status = 2 THEN '4' WHEN w.type = 3 AND w.device_status = 2 THEN '3' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount,
+                    SUM(IF(weh.id IS NOT NULL, 1, 0)) processed, SUM(IF(weh.id IS NULL, 1, 0)) untreated, weh.device_fault_type_id deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 2 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type IN(2, 13, 14) AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '3' deviceType,
+                    CASE WHEN w.type = 5 AND w.device_status = 2 THEN '1' WHEN w.type = 3 AND w.device_status = 2 THEN '2'
+                    WHEN w.type = 4 AND w.device_status = 2 THEN '3' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount,SUM(IF(weh.id IS NOT NULL, 1, 0)) processed, SUM(IF(weh.id IS NULL, 1, 0)) untreated,
+                    weh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 3 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 3 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '11' deviceType,
+                    CASE WHEN se.event_type = 1 THEN '1' WHEN se.event_type = 5 THEN '5' WHEN se.event_type = 4 THEN '4'
+                    WHEN se.event_type = 21 THEN '21' END faultEventType,
+                    COUNT(DISTINCT se.id) faultCount, SUM(IF(seh.id IS NOT NULL, 1, 0)) processed, SUM(IF(seh.id IS NULL, 1, 0)) untreated,
+                    seh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM s_smoke_event se
+                INNER JOIN s_smoke_device sd ON se.smoke_device_id = sd.id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.smoke_device_id, ta.event_id, ta.device_type
+                    FROM s_smoke_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM s_smoke_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) seh ON se.id = seh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = seh.device_fault_type_id
+                WHERE 1=1 AND sd.deleted = false AND se.project_id = #{projectId} AND se.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '4' deviceType,
+                    CASE WHEN fae.event_type = 1 THEN '1' WHEN fae.event_type >= 2 AND fae.event_type &lt;= 4 THEN '2'
+                    WHEN fae.event_type = 6 OR  fae.event_type = 7 OR  fae.event_type = 14 OR  fae.event_type = 15 OR  fae.event_type = 16 THEN '7'
+                    WHEN fae.event_type = 21 THEN '21' END faultEventType,
+                    COUNT(DISTINCT fae.id) faultCount, SUM(IF(faeh.id IS NOT NULL, 1, 0)) processed, SUM(IF(faeh.id IS NULL, 1, 0)) untreated,
+                    faeh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM f_fire_alarm_event fae
+                INNER JOIN f_fire_alarm_device fad ON fae.fire_alarm_device_id = fad.id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.fire_alarm_device_id, ta.event_id, ta.device_type
+                    FROM f_fire_alarm_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM f_fire_alarm_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) faeh ON fae.id = faeh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = faeh.device_fault_type_id
+                WHERE 1=1 AND fad.status &lt;=98 AND fae.project_id = #{projectId} AND fae.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '5' deviceType,
+                    CASE WHEN ve.event_type = 3 THEN '3' WHEN ve.event_type = 4 THEN '4' WHEN ve.event_type = 2 THEN '2'
+                    WHEN ve.event_type = 1 THEN '1' WHEN ve.event_type = 0 THEN '0' WHEN ve.event_type = 5 THEN '5' END faultEventType,
+                    COUNT(DISTINCT ve.id) faultCount, SUM(IF(veh.id IS NOT NULL, 1, 0)) processed, SUM(IF(veh.id IS NULL, 1, 0)) untreated,
+                    veh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM v_vesa_event ve
+                INNER JOIN v_vesa_device vd ON vd.id = ve.vesa_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.vesa_device_id, ta.event_id, ta.device_type
+                    FROM v_vesa_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM v_vesa_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) veh ON ve.id = veh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = veh.device_fault_type_id
+                WHERE 1=1 AND vd.status &lt;=98 AND ve.project_id = #{projectId} AND ve.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '8' deviceType,
+                    CASE WHEN (w.type = 1 OR  w.type = 5) AND ( w.device_status = 2 OR  w.device_status = 3) THEN '1'
+                    WHEN w.device_status = 2 AND (w.type = 6 OR  w.type = 7) THEN '2' WHEN w.device_status = 4 AND (w.type = 6 OR  w.type = 7) THEN '3'
+                    WHEN w.type = 3 AND w.device_status = 2 THEN '4' WHEN w.type = 4 AND w.device_status = 2 THEN '5' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount,
+                    SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated, weh.device_fault_type_id  deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 8 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 8 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '7' deviceType,
+                    CASE WHEN le.event_type = 2 THEN '2' WHEN le.event_type = 3 THEN '3' END faultEventType,
+                    COUNT(DISTINCT le.id) faultCount,
+                    SUM(IF(leh.id IS NOT NULL, 1, 0)) processed, SUM(IF(leh.id IS NULL, 1, 0)) untreated, leh.device_fault_type_id deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM l_linkage_event le
+                INNER JOIN l_linkage_device ld ON ld.id = le.linkage_device_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.linkage_device_id, ta.event_id, ta.device_type
+                    FROM l_linkage_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM l_linkage_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) leh ON le.id = leh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = leh.device_fault_type_id
+                WHERE 1=1 AND ld.deleted = false AND le.project_id = #{projectId} AND le.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+                ORDER BY deviceType , faultEventType, faultEventTypeCode
+            ) t GROUP BY faultEventType, deviceFaultTypeId
+        ) a
+
+
+        LEFT JOIN (
+            SELECT t.deviceType, z.deviceSum, SUM(t.faultCount) eventSum, t.faultEventType
+            FROM (
+                SELECT '2' deviceType,
+                    CASE WHEN w.type = 1 AND w.device_status = 2 THEN '1' WHEN w.type = 1 AND w.device_status = 3 THEN '2'
+                    WHEN w.type = 4 AND w.device_status = 2 THEN '4' WHEN w.type = 3 AND w.device_status = 2 THEN '3' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount,
+                    SUM(IF(weh.id IS NOT NULL, 1, 0)) processed, SUM(IF(weh.id IS NULL, 1, 0)) untreated, weh.device_fault_type_id deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 2 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type IN(2, 13, 14) AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '3' deviceType,
+                    CASE WHEN w.type = 5 AND w.device_status = 2 THEN '1' WHEN w.type = 3 AND w.device_status = 2 THEN '2'
+                    WHEN w.type = 4 AND w.device_status = 2 THEN '3' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount, SUM(IF(weh.id IS NOT NULL, 1, 0)) processed, SUM(IF(weh.id IS NULL, 1, 0)) untreated,
+                    weh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 3 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 3 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '11' deviceType,
+                    CASE WHEN se.event_type = 1 THEN '1' WHEN se.event_type = 5 THEN '5' WHEN se.event_type = 4 THEN '4'
+                    WHEN se.event_type = 21 THEN '21' END faultEventType,
+                    COUNT(DISTINCT se.id) faultCount,SUM(IF(seh.id IS NOT NULL,1,0)) processed, SUM(IF(seh.id IS NULL,1,0)) untreated,
+                    seh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM s_smoke_event se
+                INNER JOIN s_smoke_device sd ON se.smoke_device_id = sd.id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.smoke_device_id, ta.event_id, ta.device_type
+                    FROM s_smoke_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM s_smoke_event_handle WHERE project_id = #{projectId}  AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) seh ON se.id = seh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = seh.device_fault_type_id
+                WHERE 1=1 AND sd.deleted = false AND se.project_id = #{projectId} AND se.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '4' deviceType,
+                    CASE WHEN fae.event_type = 1 THEN '1' WHEN fae.event_type >= 2 AND fae.event_type &lt;= 4 THEN '2'
+                    WHEN fae.event_type = 6 OR  fae.event_type = 7 OR  fae.event_type = 14 OR  fae.event_type = 15 OR  fae.event_type = 16 THEN '7'
+                    WHEN fae.event_type = 21 THEN '21' END faultEventType,
+                    COUNT(DISTINCT fae.id) faultCount, SUM(IF(faeh.id IS NOT NULL,1,0)) processed, SUM(IF(faeh.id IS NULL,1,0)) untreated,
+                    faeh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM f_fire_alarm_event fae
+                INNER JOIN f_fire_alarm_device fad ON fae.fire_alarm_device_id = fad.id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.fire_alarm_device_id, ta.event_id, ta.device_type
+                    FROM f_fire_alarm_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM f_fire_alarm_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) faeh ON fae.id = faeh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = faeh.device_fault_type_id
+                WHERE 1=1 AND fad.status &lt;=98 AND fae.project_id = #{projectId} AND fae.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '5' deviceType,
+                    CASE WHEN ve.event_type = 3 THEN '3' WHEN ve.event_type = 4 THEN '4' WHEN ve.event_type = 2 THEN '2'
+                    WHEN ve.event_type = 1 THEN '1' WHEN ve.event_type = 0 THEN '0' WHEN ve.event_type = 5 THEN '5' END faultEventType,
+                    COUNT(DISTINCT ve.id) faultCount, SUM(IF(veh.id IS NOT NULL,1,0)) processed, SUM(IF(veh.id IS NULL,1,0)) untreated,
+                    veh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM v_vesa_event ve
+                INNER JOIN v_vesa_device vd ON vd.id = ve.vesa_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.vesa_device_id, ta.event_id, ta.device_type
+                    FROM v_vesa_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM v_vesa_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) veh ON ve.id = veh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = veh.device_fault_type_id
+                WHERE 1=1 AND vd.status &lt;=98 AND ve.project_id = #{projectId} AND ve.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '8' deviceType,
+                    CASE WHEN (w.type = 1 OR  w.type = 5) AND ( w.device_status = 2 OR  w.device_status = 3) THEN '1'
+                    WHEN w.device_status = 2 AND ( w.type = 6 OR  w.type = 7) THEN '2' WHEN w.device_status = 4 AND ( w.type = 6 OR  w.type = 7) THEN '3'
+                    WHEN w.type = 3 AND w.device_status = 2 THEN '4' WHEN w.type = 4 AND w.device_status = 2 THEN '5' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount,
+                    SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated, weh.device_fault_type_id  deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 8 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 8 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '7' deviceType,
+                    CASE WHEN le.event_type = 2 THEN '2' WHEN le.event_type = 3 THEN '3' END faultEventType,
+                    COUNT(DISTINCT le.id) faultCount,
+                    SUM(IF(leh.id IS NOT NULL, 1, 0)) processed, SUM(IF(leh.id IS NULL, 1, 0)) untreated, leh.device_fault_type_id deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM l_linkage_event le
+                INNER JOIN l_linkage_device ld ON ld.id = le.linkage_device_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.linkage_device_id, ta.event_id, ta.device_type
+                    FROM l_linkage_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM l_linkage_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) leh ON le.id = leh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = leh.device_fault_type_id
+                WHERE 1=1 AND ld.deleted = false AND le.project_id = #{projectId} AND le.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+                ORDER BY deviceType , faultEventType, faultEventTypeCode
+            ) t
+            LEFT JOIN (
+                SELECT y.deviceType, SUM(eventSum) deviceSum, y.faultEventType
+                FROM(
+                    SELECT t.deviceType, SUM(t.faultCount) eventSum, t.faultEventType
+                    FROM (
+                        SELECT '2' deviceType,
+                            CASE WHEN w.type = 1 AND w.device_status = 2 THEN '1' WHEN w.type = 1 AND w.device_status = 3 THEN '2'
+                            WHEN w.type = 4 AND w.device_status = 2 THEN '4' WHEN w.type = 3 AND w.device_status = 2 THEN '3' END faultEventType,
+                            COUNT(DISTINCT w.id) faultCount,
+                            SUM(IF(weh.id IS NOT NULL, 1, 0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated, weh.device_fault_type_id deviceFaultTypeId,
+                            dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                        FROM w_water_event w
+                        INNER JOIN w_water_device wd ON wd.id = w.water_id
+                        LEFT JOIN (
+                            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                            FROM w_water_event_handle ta
+                            INNER JOIN (
+                                SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 2 AND create_time >= #{beginTime}
+                                GROUP BY event_id
+                            ) t ON t.id = ta.id
+                        ) weh ON w.id = weh.event_id
+                        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type IN(2, 13, 14) AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                        GROUP BY faultEventType, deviceFaultTypeId
+
+                        UNION ALL
+                        SELECT '3' deviceType,
+                            CASE WHEN w.type = 5 AND w.device_status = 2 THEN '1' WHEN w.type = 3 AND w.device_status = 2 THEN '2'
+                            WHEN w.type = 4 AND w.device_status = 2 THEN '3' END faultEventType,
+                            COUNT(DISTINCT w.id) faultCount,SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated,
+                            weh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                        FROM w_water_event w
+                        INNER JOIN w_water_device wd ON wd.id = w.water_id
+                        LEFT JOIN (
+                            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                            FROM w_water_event_handle ta
+                            INNER JOIN (
+                                SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 3 AND create_time >= #{beginTime}
+                                GROUP BY event_id
+                            ) t ON t.id = ta.id
+                        ) weh ON w.id = weh.event_id
+                        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 3 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                        GROUP BY faultEventType, deviceFaultTypeId
+
+                        UNION ALL
+                        SELECT '11' deviceType,
+                            CASE WHEN se.event_type = 1 THEN '1' WHEN se.event_type = 5 THEN '5' WHEN se.event_type = 4 THEN '4'
+                            WHEN se.event_type = 21 THEN '21' END faultEventType,
+                            COUNT(DISTINCT se.id) faultCount, SUM(IF(seh.id IS NOT NULL, 1, 0)) processed, SUM(IF(seh.id IS NULL, 1, 0)) untreated,
+                            seh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                        FROM s_smoke_event se
+                        INNER JOIN s_smoke_device sd ON se.smoke_device_id = sd.id
+                        LEFT JOIN (
+                            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.smoke_device_id, ta.event_id, ta.device_type
+                            FROM s_smoke_event_handle ta
+                            INNER JOIN (
+                                SELECT MAX(id) id FROM s_smoke_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                                GROUP BY event_id
+                            ) t ON t.id = ta.id
+                        ) seh ON se.id = seh.event_id
+                        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = seh.device_fault_type_id
+                        WHERE 1 = 1 AND sd.deleted = false AND se.project_id = #{projectId} AND se.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                        GROUP BY faultEventType, deviceFaultTypeId
+
+                        UNION ALL
+                        SELECT '4' deviceType,
+                            CASE WHEN fae.event_type = 1 THEN '1' WHEN fae.event_type >= 2 AND fae.event_type &lt;= 4 THEN '2'
+                            WHEN fae.event_type = 6 OR  fae.event_type = 7 OR  fae.event_type = 14 OR  fae.event_type = 15 OR  fae.event_type = 16 THEN '7'
+                            WHEN fae.event_type = 21 THEN '21' END faultEventType,
+                            COUNT(DISTINCT fae.id) faultCount, SUM(IF(faeh.id IS NOT NULL,1,0)) processed, SUM(IF(faeh.id IS NULL,1,0)) untreated,
+                            faeh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                        FROM f_fire_alarm_event fae
+                        INNER JOIN f_fire_alarm_device fad ON fae.fire_alarm_device_id = fad.id
+                        LEFT JOIN (
+                            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.fire_alarm_device_id, ta.event_id, ta.device_type
+                            FROM f_fire_alarm_event_handle ta
+                            INNER JOIN (
+                                SELECT MAX(id) id FROM f_fire_alarm_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                                GROUP BY event_id
+                            ) t ON t.id = ta.id
+                        ) faeh ON fae.id = faeh.event_id
+                        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = faeh.device_fault_type_id
+                        WHERE 1=1 AND fad.status &lt;=98 AND fae.project_id = #{projectId} AND fae.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                        GROUP BY faultEventType, deviceFaultTypeId
+
+                        UNION ALL
+                        SELECT '5' deviceType,
+                            CASE WHEN ve.event_type = 3 THEN '3' WHEN ve.event_type = 4 THEN '4' WHEN ve.event_type = 2 THEN '2'
+                            WHEN ve.event_type = 1 THEN '1' WHEN ve.event_type = 0 THEN '0' WHEN ve.event_type = 5 THEN '5' END faultEventType,
+                            COUNT(DISTINCT ve.id) faultCount, SUM(IF(veh.id IS NOT NULL,1,0)) processed, SUM(IF(veh.id IS NULL,1,0)) untreated,
+                            veh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                        FROM v_vesa_event ve
+                        INNER JOIN v_vesa_device vd ON vd.id = ve.vesa_id
+                        LEFT JOIN (
+                            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.vesa_device_id, ta.event_id, ta.device_type
+                            FROM v_vesa_event_handle ta
+                            INNER JOIN (
+                                SELECT MAX(id) id FROM v_vesa_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                                GROUP BY event_id
+                            ) t ON t.id = ta.id
+                        ) veh ON ve.id = veh.event_id
+                        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = veh.device_fault_type_id
+                        WHERE 1=1 AND vd.status &lt;=98 AND ve.project_id = #{projectId} AND ve.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                        GROUP BY faultEventType, deviceFaultTypeId
+
+                        UNION ALL
+                        SELECT '8' deviceType,
+                            CASE WHEN (w.type = 1 OR  w.type = 5) AND ( w.device_status = 2 OR  w.device_status = 3) THEN '1'
+                            WHEN w.device_status = 2 AND ( w.type = 6 OR  w.type = 7) THEN '2' WHEN w.device_status = 4 AND ( w.type = 6 OR  w.type = 7) THEN '3'
+                            WHEN w.type = 3 AND w.device_status = 2 THEN '4' WHEN w.type = 4 AND w.device_status = 2 THEN '5' END faultEventType,
+                            COUNT(DISTINCT w.id) faultCount,
+                            SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated, weh.device_fault_type_id  deviceFaultTypeId,
+                            dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                        FROM w_water_event w
+                        INNER JOIN w_water_device wd ON wd.id = w.water_id
+                        LEFT JOIN (
+                            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                            FROM w_water_event_handle ta
+                            INNER JOIN (
+                                SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 8 AND create_time >= #{beginTime}
+                                GROUP BY event_id
+                            ) t ON t.id = ta.id
+                        ) weh ON w.id = weh.event_id
+                        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                        WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 8 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                        GROUP BY faultEventType, deviceFaultTypeId
+
+                        UNION ALL
+                        SELECT '7' deviceType,
+                            CASE WHEN le.event_type = 2 THEN '2' WHEN le.event_type = 3 THEN '3' END faultEventType,
+                            COUNT(DISTINCT le.id) faultCount,
+                            SUM(IF(leh.id IS NOT NULL, 1, 0)) processed, SUM(IF(leh.id IS NULL, 1, 0)) untreated, leh.device_fault_type_id deviceFaultTypeId,
+                            dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                        FROM l_linkage_event le
+                        INNER JOIN l_linkage_device ld ON ld.id = le.linkage_device_id
+                        LEFT JOIN (
+                            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.linkage_device_id, ta.event_id, ta.device_type
+                            FROM l_linkage_event_handle ta
+                            INNER JOIN (
+                                SELECT MAX(id) id FROM l_linkage_event_handle WHERE project_id = #{projectId}  AND create_time >= #{beginTime}
+                                GROUP BY event_id
+                            ) t ON t.id = ta.id
+                        ) leh ON le.id = leh.event_id
+                        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = leh.device_fault_type_id
+                        WHERE 1=1 AND ld.deleted = false AND le.project_id = #{projectId} AND le.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                        GROUP BY faultEventType, deviceFaultTypeId
+                    )t GROUP BY deviceType, faultEventType
+                ) y GROUP BY deviceType
+            ) z ON t.deviceType = z.deviceType
+            GROUP BY deviceType
+        ) b ON a.deviceType = b.deviceType
+
+        LEFT JOIN (
+	        SELECT t.deviceType, SUM(faultCount) eventSum, t.faultEventType
+            FROM (
+                SELECT '2' deviceType,
+                    CASE WHEN w.type = 1 AND w.device_status = 2 THEN '1' WHEN w.type = 1 AND w.device_status = 3 THEN '2'
+                    WHEN w.type = 4 AND w.device_status = 2 THEN '4' WHEN w.type = 3 AND w.device_status = 2 THEN '3' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount,
+                    SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated, weh.device_fault_type_id deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 2 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type IN(2, 13, 14) AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '3' deviceType,
+                    CASE WHEN w.type = 5 AND w.device_status = 2 THEN '1' WHEN w.type = 3 AND w.device_status = 2 THEN '2'
+                    WHEN w.type = 4 AND w.device_status = 2 THEN '3' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount,SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated,
+                    weh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 3 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 3 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '11' deviceType,
+                    CASE WHEN se.event_type = 1 THEN '1' WHEN se.event_type = 5 THEN '5' WHEN se.event_type = 4 THEN '4'
+                    WHEN se.event_type = 21 THEN '21' END faultEventType,
+                    COUNT(DISTINCT se.id) faultCount,SUM(IF(seh.id IS NOT NULL,1,0)) processed, SUM(IF(seh.id IS NULL,1,0)) untreated,
+                    seh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM s_smoke_event se
+                INNER JOIN s_smoke_device sd ON se.smoke_device_id = sd.id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.smoke_device_id, ta.event_id, ta.device_type
+                    FROM s_smoke_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM s_smoke_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) seh ON se.id = seh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = seh.device_fault_type_id
+                WHERE 1=1 AND sd.deleted = false AND se.project_id = #{projectId} AND se.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '4' deviceType,
+                    CASE WHEN fae.event_type = 1 THEN '1' WHEN fae.event_type >= 2 AND fae.event_type &lt;= 4 THEN '2'
+                    WHEN fae.event_type = 6 OR  fae.event_type = 7 OR  fae.event_type = 14 OR  fae.event_type = 15 OR  fae.event_type = 16 THEN '7'
+                    WHEN fae.event_type = 21 THEN '21' END faultEventType,
+                    COUNT(DISTINCT fae.id) faultCount, SUM(IF(faeh.id IS NOT NULL,1,0)) processed, SUM(IF(faeh.id IS NULL,1,0)) untreated,
+                    faeh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM f_fire_alarm_event fae
+                INNER JOIN f_fire_alarm_device fad ON fae.fire_alarm_device_id = fad.id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.fire_alarm_device_id, ta.event_id, ta.device_type
+                    FROM f_fire_alarm_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM f_fire_alarm_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) faeh ON fae.id = faeh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = faeh.device_fault_type_id
+                WHERE 1=1 AND fad.status &lt;=98 AND fae.project_id = #{projectId} AND fae.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '5' deviceType,
+                    CASE WHEN ve.event_type = 3 THEN '3' WHEN ve.event_type = 4 THEN '4' WHEN ve.event_type = 2 THEN '2'
+                    WHEN ve.event_type = 1 THEN '1' WHEN ve.event_type = 0 THEN '0' WHEN ve.event_type = 5 THEN '5' END faultEventType,
+                    COUNT(DISTINCT ve.id) faultCount, SUM(IF(veh.id IS NOT NULL,1,0)) processed, SUM(IF(veh.id IS NULL,1,0)) untreated,
+                    veh.device_fault_type_id deviceFaultTypeId, dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM v_vesa_event ve
+                INNER JOIN v_vesa_device vd ON vd.id = ve.vesa_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.vesa_device_id, ta.event_id, ta.device_type
+                    FROM v_vesa_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM v_vesa_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) veh ON ve.id = veh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = veh.device_fault_type_id
+                WHERE 1=1 AND vd.status &lt;=98 AND ve.project_id = #{projectId} AND ve.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '8' deviceType,
+                    CASE WHEN (w.type = 1 OR  w.type = 5) AND ( w.device_status = 2 OR  w.device_status = 3) THEN '1'
+                    WHEN w.device_status = 2 AND ( w.type = 6 OR  w.type = 7) THEN '2' WHEN w.device_status = 4 AND ( w.type = 6 OR  w.type = 7) THEN '3'
+                    WHEN w.type = 3 AND w.device_status = 2 THEN '4' WHEN w.type = 4 AND w.device_status = 2 THEN '5' END faultEventType,
+                    COUNT(DISTINCT w.id) faultCount,
+                    SUM(IF(weh.id IS NOT NULL,1,0)) processed, SUM(IF(weh.id IS NULL,1,0)) untreated, weh.device_fault_type_id  deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM w_water_event w
+                INNER JOIN w_water_device wd ON wd.id = w.water_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.water_id, ta.event_id, ta.device_type
+                    FROM w_water_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM w_water_event_handle WHERE project_id = #{projectId} AND device_type = 8 AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) weh ON w.id = weh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = weh.device_fault_type_id
+                WHERE 1 = 1 AND wd.status &lt;=98 AND w.project_id = #{projectId} AND wd.type = 8 AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+
+                UNION ALL
+                SELECT '7' deviceType,
+                    CASE WHEN le.event_type = 2 THEN '2' WHEN le.event_type = 3 THEN '3' END faultEventType,
+                    COUNT(DISTINCT le.id) faultCount,
+                    SUM(IF(leh.id IS NOT NULL, 1, 0)) processed, SUM(IF(leh.id IS NULL, 1, 0)) untreated, leh.device_fault_type_id deviceFaultTypeId,
+                    dft.fault_type faultType, dft.fault_event_type faultEventTypeCode, dft.repair_proposal repairProposal
+                FROM l_linkage_event le
+                INNER JOIN l_linkage_device ld ON ld.id = le.linkage_device_id
+                LEFT JOIN (
+                    SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.linkage_device_id, ta.event_id, ta.device_type
+                    FROM l_linkage_event_handle ta
+                    INNER JOIN (
+                        SELECT MAX(id) id FROM l_linkage_event_handle WHERE project_id = #{projectId} AND create_time >= #{beginTime}
+                        GROUP BY event_id
+                    ) t ON t.id = ta.id
+                ) leh ON le.id = leh.event_id
+                LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = leh.device_fault_type_id
+                WHERE 1 = 1 AND ld.deleted = false AND le.project_id = #{projectId} AND le.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+                GROUP BY faultEventType, deviceFaultTypeId
+            ) t GROUP BY deviceType, faultEventType
+        ) c ON a.deviceType = c.deviceType AND a.faultEventType = c.faultEventType
+        GROUP BY faultEventType, deviceFaultTypeId
+        ORDER BY deviceType , faultEventType, faultEventTypeCode
+    </select>
+</mapper>

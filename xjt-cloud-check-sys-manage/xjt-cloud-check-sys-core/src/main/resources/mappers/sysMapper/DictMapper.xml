@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.sys.core.dao.sys.DictDao" >
+
+    <select id="findDictAllList" resultType="com.xjt.cloud.commons.dict.Dict">
+        <![CDATA[
+        SELECT
+            d.id, d.dict_name dictName, d.dict_code dictCode, d.description, d.status,
+            di.id itemId, di.item_name  itemName,
+            di.item_value itemValue, di.description itemDescription,
+            di.sort_order sortOrder, di.status itemStatus,item_code itemCode,memo
+        FROM s_dict d
+        INNER JOIN s_dict_item di ON d.id = di.dict_id
+        WHERE d.status <= 98 AND di.status<=98
+        GROUP BY di.id ORDER BY d.id, di.sort_order
+        ]]>
+    </select>
+</mapper>

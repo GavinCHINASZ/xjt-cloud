@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.fire.FireAlarmEventHandleDao" >
+
+    <resultMap id="FireAlarmEventHandleResultMap" type="com.xjt.cloud.iot.core.entity.fire.FireAlarmEventHandle" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_fault_type_id" property="deviceFaultTypeId" jdbcType="BIGINT" />
+        <result column="fire_alarm_device_id" property="fireAlarmDeviceId" jdbcType="BIGINT" />
+        <result column="event_id" property="eventId" jdbcType="VARCHAR" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="img_urls" property="imgUrls" jdbcType="VARCHAR" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+        <result column="cause_analysis" property="causeAnalysis" jdbcType="VARCHAR" />
+        <result column="repair_method" property="repairMethod" jdbcType="VARCHAR" />
+        <result column="fault_level" property="faultLevel" jdbcType="INTEGER" />
+        <result column="repair_proposal" property="repairProposal" jdbcType="VARCHAR" />
+        <result column="fault_color" property="faultColor" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findFireAlarmEventHandleWhere">
+        WHERE 1=1
+        <if test="fireAlarmDeviceId != null and fireAlarmDeviceId != 0">
+            AND faeh.fire_alarm_device_id = #{fireAlarmDeviceId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND faeh.device_id = #{deviceId}
+        </if>
+        <if test="eventId != null and eventId != 0">
+            AND faeh.event_id = #{eventId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND faeh.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND faeh.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND faeh.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND faeh.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <!-- 查询 火警事件处理信息-->
+    <select id="findFireAlarmEventHandleList" parameterType="FireAlarmEventHandle" resultMap="FireAlarmEventHandleResultMap">
+        SELECT faeh.*, dft.fault_type, dft.fault_level, dft.cause_analysis, dft.repair_method, dft.repair_proposal, dft.fault_color
+        FROM f_fire_alarm_event_handle faeh
+        INNER JOIN device_manage.d_device_fault_type dft ON faeh.device_fault_type_id = dft.id
+        <include refid="findFireAlarmEventHandleWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 火警事件处理信息列表总记录数-->
+    <select id="findFireAlarmEventHandleListCount" parameterType="FireAlarmEventHandle" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT faeh.id)
+        FROM f_fire_alarm_event_handle faeh
+        INNER JOIN device_manage.d_device_fault_type dft ON faeh.device_fault_type_id = dft.id
+        <include refid="findFireAlarmEventHandleWhere"/>
+    </select>
+
+    <!--添加 火警压 火警浸消火栓事件处理信息-->
+    <insert id="saveFireAlarmEventHandle" parameterType="FireAlarmEventHandle">
+        INSERT INTO f_fire_alarm_event_handle (project_id, device_id, device_fault_type_id, fire_alarm_device_id, event_id, status,
+            device_type, description, img_urls, create_user_id, create_user_name, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.projectId}, #{item.deviceId}, #{item.deviceFaultTypeId}, #{item.fireAlarmDeviceId}, #{item.eventId}, 1,
+            #{item.deviceType}, #{item.description}, #{item.imgUrls}, #{item.createUserId}, #{item.createUserName}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 查询 火警事件处理信息-->
+    <select id="findFireAlarmEventFaultTypeColumnChart" parameterType="FireAlarmEventHandle" resultType="EventFaultReport">
+        SELECT IF(dft.fault_event_type IS NULL, faeh.untreated, COUNT(DISTINCT faeh.id)) faultCount,
+            dft.fault_event_type faultEventType, dft.fault_type faultType, dft.device_type deviceType, dft.fault_color faultColor
+        FROM (
+            SELECT faeh.* ,
+                t.untreated
+            FROM f_fire_alarm_event_handle faeh
+            RIGHT JOIN (
+                SELECT MAX(faeh.id) id, COUNT(DISTINCT fae.id) - COUNT(DISTINCT faeh.event_id) untreated
+                FROM f_fire_alarm_event fae
+                LEFT JOIN f_fire_alarm_event_handle faeh ON fae.id = faeh.event_id
+                <include refid="findFireAlarmEventFaultTypeColumnChartWhere"/>
+                GROUP BY faeh.event_id
+            ) t ON t.id = faeh.id 
+        ) faeh
+        LEFT JOIN device_manage.d_device_fault_type dft ON faeh.device_fault_type_id = dft.id
+        GROUP BY dft.id ORDER BY dft.fault_event_type, dft.sort
+    </select>
+
+    <sql id="findFireAlarmEventFaultTypeColumnChartWhere">
+        WHERE 1 = 1
+        <if test="fireAlarmDeviceId != null and fireAlarmDeviceId != 0">
+            AND fae.fire_alarm_device_id = #{fireAlarmDeviceId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND fae.device_id = #{deviceId}
+        </if>
+        <if test="eventId != null and eventId != 0">
+            AND faeh.event_id = #{eventId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND fae.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND fae.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+    </sql>
+
+</mapper>

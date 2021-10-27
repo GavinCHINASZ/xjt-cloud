@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.eye.FireEyeEventDao">
+
+    <resultMap id="fireEyeEventResultMap" type="com.xjt.cloud.iot.core.entity.eye.FireEyeEvent">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_type" property="deviceType" jdbcType="INTEGER"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="building_floor_name" property="buildingFloorName" jdbcType="VARCHAR"/>
+
+        <result column="fire_eye_device_id" property="fireEyeDeviceId" jdbcType="BIGINT"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <result column="video_name" property="videoName" jdbcType="VARCHAR"/>
+        <result column="channel_no" property="channelNo" jdbcType="INTEGER"/>
+        <result column="event_type" property="eventType" jdbcType="INTEGER"/>
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER" />
+        <result column="recover_time" property="recoverTime" jdbcType="TIMESTAMP" />
+        <result column="ip_address" property="ipAddress" jdbcType="VARCHAR"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="fireEyeEventSql">
+        fee.id, fee.project_id, fee.check_point_id, fee.device_id, fee.sensor_no, fee.video_name, fee.recover_status, fee.recover_time, fee.event_type,
+        fee.channel_no, fee.create_time, fee.ip_address, fee.image_url, fee.fire_eye_device_id, fee.last_modify_time
+    </sql>
+
+    <sql id="findFireEyentWhere">
+        WHERE 1 = 1
+        <if test="id != null and id > 0">
+            AND fee.id = #{id}
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND fee.project_id = #{projectId}
+        </if>
+        <if test="deviceId != null">
+            AND fee.device_id = #{deviceId}
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND fee.sensor_no = #{sensorNo}
+        </if>
+        <if test="recoverStatus != null">
+            AND fee.recover_status = #{recoverStatus}
+        </if>
+        <if test="recoverStatusArray != null and recoverStatusArray.length > 0">
+            AND fee.recover_status IN
+            <foreach item="item" collection="recoverStatusArray" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="eventType != null">
+            AND fee.event_type = #{eventType}
+        </if>
+        <if test="eventTypeArray != null and eventTypeArray.length > 0">
+            AND fee.event_type IN
+            <foreach item="item" collection="eventTypeArray" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="startTime != null and endTime != null">
+            AND fee.create_time BETWEEN #{startTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="videoName != null and videoName != ''">
+            AND (fee.video_name LIKE CONCAT('%', #{videoName}, '%') OR cp.point_location LIKE CONCAT('%', #{videoName}, '%'))
+        </if>
+    </sql>
+
+    <!-- 新增 保存-->
+    <insert id="save" parameterType="FireEyeEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO e_fire_eye_event( project_id, check_point_id, device_id, create_time, sensor_no, video_name, event_type, channel_no,
+            ip_address, image_url, fire_eye_device_id, recover_status, recover_time)
+         VALUES (#{projectId}, #{checkPointId}, #{deviceId}, NOW(), #{sensorNo}, #{videoName}, #{eventType}, #{channelNo},
+            #{ipAddress}, #{imageUrl}, #{fireEyeDeviceId}, #{recoverStatus}, #{recoverTime});
+    </insert>
+
+    <!-- 查询事件列表 -->
+    <select id="findFireEyeEventList" parameterType="FireEyeEvent" resultMap="fireEyeEventResultMap">
+        SELECT <include refid="fireEyeEventSql"/>,
+            d.qr_no deviceQrNo, dt.device_sys_name deviceName, dt.device_type,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id
+        FROM e_fire_eye_event fee
+        LEFT JOIN device_manage.d_device d ON fee.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = fee.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+
+        <include refid="findFireEyentWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询事件数量 -->
+    <select id="findFireEyeEventListCount" parameterType="FireEyeDevice" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM e_fire_eye_event fee
+        LEFT JOIN device_manage.d_device d ON fee.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = fee.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        <include refid="findFireEyentWhere"/>
+    </select>
+
+    <!-- 查询事件数量 -->
+    <select id="findFireEyeEventSummary" parameterType="FireEyeDevice" resultType="FireEyeEventReport">
+        SELECT
+            (
+                SELECT COUNT(t.id) deviceCount
+                FROM(
+                    SELECT fed.id
+                    FROM iot_manage.e_fire_eye_device fed
+                    WHERE fed.project_id = #{projectId}
+                    GROUP BY fed.device_id, fed.channel_no
+                ) t
+            ) deviceCount,
+            SUM(IF(fee.event_type = 1, 1, 0)) smokeWarningCount,
+            SUM(IF(fee.event_type = 2, 1, 0)) smokeCount,
+            SUM(IF(fee.event_type = 4, 1, 0)) flameWarningCount,
+            SUM(IF(fee.event_type = 8, 1, 0)) flameCount,
+            SUM(IF(fee.event_type = 16, 1, 0)) occlusionCount,
+            SUM(IF(fee.event_type = 32, 1, 0)) faultEventCount
+        FROM iot_manage.e_fire_eye_event fee
+        <include refid="findFireEyentWhere"/>
+    </select>
+
+    <!-- 更新 火眼事件 -->
+    <update id="updateFireEyeEvent" parameterType="FireEyeEvent">
+        UPDATE e_fire_eye_event
+        <set>
+            <if test="eventType != null and eventType > 0">
+                event_type = #{eventType},
+            </if>
+            <if test="videoName != null and videoName != ''">
+                video_name = #{videoName},
+            </if>
+            <if test="recoverStatus != null">
+                recover_status = #{recoverStatus},
+            </if>
+            <if test="recoverStatus == 1">
+                recover_time = NOW()
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="sensorNo != null">
+            sensor_no = #{sensorNo}
+        </if>
+    </update>
+
+</mapper>

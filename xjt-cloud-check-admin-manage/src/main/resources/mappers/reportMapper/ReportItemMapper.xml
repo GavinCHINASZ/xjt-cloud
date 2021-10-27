@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.report.ReportItemDao" >
+    <resultMap id="reportItemResultMap" type="com.xjt.cloud.admin.manage.entity.report.ReportItem" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="report_system_id" property="reportSystemId" jdbcType="BIGINT" />
+        <result column="device_check_item_id" property="deviceCheckItemId" jdbcType="BIGINT" />
+        <result column="report_item_name" property="reportItemName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="selColumns">
+        `id`, `report_system_id`, `device_check_item_id`, `report_item_name`
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="id != null and id != 0">
+            AND id = #{id}
+        </if>
+    </sql>
+
+    <!-- 查询列表 -->
+    <select id="findDeviceList" parameterType="ReportItem" resultMap="reportItemResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM r_report_item
+        <include refid="findWhere"/>
+    </select>
+
+</mapper>

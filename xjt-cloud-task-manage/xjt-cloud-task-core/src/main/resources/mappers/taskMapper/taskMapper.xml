@@ -1,0 +1,1223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.TaskDao" >
+    <resultMap id="taskResultMap" type="com.xjt.cloud.task.core.entity.task.Task" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="parent_id" property="parentId" jdbcType="BIGINT" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR" />
+        <result column="task_name" property="taskName" jdbcType="VARCHAR" />
+        <result column="remark" property="remark" jdbcType="VARCHAR" />
+        <result column="task_type" property="taskType" jdbcType="INTEGER" />
+        <result column="period_type" property="periodType" jdbcType="INTEGER" />
+        <result column="task_period_type" property="taskPeriodType" jdbcType="INTEGER" />
+        <result column="period_start_time" property="periodStartTime" jdbcType="DATE" />
+        <result column="period_end_time" property="periodEndTime" jdbcType="DATE" />
+        <result column="remind_time" property="remindTime" jdbcType="VARCHAR" />
+        <result column="check_count" property="checkCount" jdbcType="INTEGER" />
+        <result column="check_start_time" property="checkStartTime" jdbcType="VARCHAR" />
+        <result column="check_end_time" property="checkEndTime" jdbcType="VARCHAR" />
+        <result column="interval_time" property="intervalTime" jdbcType="INTEGER" />
+        <result column="review" property="review" jdbcType="INTEGER" />
+        <result column="task_status" property="taskStatus" jdbcType="INTEGER" />
+        <result column="type_task" property="typeTask" jdbcType="INTEGER" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="update_user_id" property="lastModifyUserId" jdbcType="BIGINT" />
+        <result column="update_user_name" property="updateUserName" jdbcType="VARCHAR" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="completedNum" property="completedNum" jdbcType="INTEGER"/>
+        <result column="device_num" property="deviceNum" jdbcType="INTEGER"/>
+        <result column="fault_device_num" property="faultDeviceNum" jdbcType="INTEGER"/>
+        <result column="totalCount" property="totalCount" jdbcType="INTEGER"/>
+        <result column="faultNum" property="faultNum" jdbcType="INTEGER"/>
+        <result column="checkedNum" property="checkedNum" jdbcType="INTEGER"/>
+        <result column="check_point_name" property="checkPointName" jdbcType="VARCHAR"/>
+        <result column="checkPointNum" property="checkPointNum" jdbcType="INTEGER"/>
+        <result column="check_point_num" property="checkPointNum" jdbcType="INTEGER"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="no_checked_count" property="noCheckedCount" jdbcType="INTEGER"/>
+        <result column="fault_count" property="faultCount" jdbcType="INTEGER"/>
+        <result column="normal_count" property="normalCount" jdbcType="INTEGER"/>
+        <result column="checked_count" property="checkedCount" jdbcType="INTEGER"/>
+        <result column="fault_rate" property="faultRate" jdbcType="DOUBLE"/>
+        <result column="checked_rate" property="checkedRate" jdbcType="DOUBLE"/>
+        <result column="is_review" property="isReview" jdbcType="INTEGER"/>
+        <result column="is_remind" property="isRemind" jdbcType="INTEGER"/>
+        <result column="executor_name" property="executorsName" jdbcType="VARCHAR"/>
+        <result column="org_type" property="orgType" jdbcType="INTEGER"/>
+
+    </resultMap>
+
+    <sql id="taskSql">
+        id, project_id, parent_id, task_name, project_name, task_type, period_type, task_period_type, period_start_time, period_end_time,
+        remind_time, check_count, check_start_time, check_end_time, interval_time, review, device_num, task_status, deleted, is_remind,
+        executor_name, org_type
+    </sql>
+
+    <sql id="findTaskListSql">
+        <where>
+            1 = 1
+            <if test="id != null">
+                AND t.id = #{id}
+            </if>
+
+            <if test="projectId != null">
+                AND t.project_id = #{projectId}
+            </if>
+            <if test="projectIds != null and projectIds.length > 0">
+                AND t.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="parentId != null">
+                AND t.parent_id = #{parentId}
+            </if>
+            <if test="taskType != null">
+                AND t.task_type = #{taskType}
+            </if>
+            <if test="periodType != null">
+                AND t.period_type = #{periodType}
+            </if>
+            <if test="taskPeriodType != null">
+                AND t.task_period_type = #{taskPeriodType}
+            </if>
+
+            <if test="periodStartTime != null and periodEndTime != null">
+                AND t.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+            </if>
+
+            <if test="periodStartTime != null and lastModifyTime != null">
+                AND t.period_start_time BETWEEN #{periodStartTime} AND #{lastModifyTime}
+            </if>
+
+            <if test="delete != null">
+                AND t.deleted = #{delete}
+            </if>
+
+            <if test="taskStatus != null">
+                AND t.task_status = #{taskStatus}
+            </if>
+            <if test="taskStatusArr != null and taskStatusArr.length > 0">
+                AND t.task_status IN
+                <foreach item="item" collection="taskStatusArr" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="periodTypeArr != null and periodTypeArr.length >0">
+                AND t.period_type IN
+                <foreach item="item" collection="periodTypeArr" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="taskPeriodTypeArr != null and taskPeriodTypeArr.length >0">
+                AND t.task_period_type IN
+                <foreach item="item" collection="taskPeriodTypeArr" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="taskTypeArr != null and taskTypeArr.length >0">
+                AND t.task_type IN
+                <foreach item="item" collection="taskTypeArr" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND t.id IN
+                <foreach item="item" collection="ids" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="typeTask != null">
+                AND t.type_task = #{typeTask}
+            </if>
+            <if test="taskName != null and taskName != ''">
+                AND t.task_name LIKE CONCAT('%',#{taskName},'%')
+            </if>
+            <if test="createUserId != null and createUserId != 0">
+                AND t.create_user_id = #{createUserId}
+            </if>
+            <if test="createTime != null and lastModifyTime != null">
+                AND t.create_time between #{createTime} and #{lastModifyTime}
+            </if>
+            <if test="lastModifyTime != null and periodEndTime != null">
+                AND t.period_end_time between #{lastModifyTime} and #{periodEndTime}
+            </if>
+            <if test="checkPointName != null and checkPointName != ''">
+                AND tcp.check_point_name LIKE CONCAT('%',#{checkPointName},'%')
+            </if>
+            <if test="checkPointNames != null and checkPointNames.length >0">
+                AND tcp.check_point_name IN
+                <foreach item="item" collection="checkPointNames" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="orgType != null and orgType != 0">
+                AND t.org_type = #{orgType}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询任务列表总行数-->
+    <select id="findTaskCount" parameterType="Task" resultType="java.lang.Integer">
+        SELECT COUNT(t.id)
+        FROM t_task t
+        <include refid="findTaskListSql"/>
+        AND t.task_status > 0
+    </select>
+
+    <!-- 任务概览表 总行数-->
+    <select id="findTaskOverviewTableCount" parameterType="Task" resultType="java.lang.Integer">
+        SELECT COUNT(n.totalCount)
+        FROM (
+            SELECT COUNT(t.id) totalCount
+            FROM t_task t
+            <include refid="findTaskListSql"/>
+            AND t.task_status > 0
+            GROUP BY t.task_name
+        ) n
+    </select>
+
+    <!--任务状态 0未开始，1执行中，2已过期，3已完成,4:子任务-（审核中）待审核,5:子任务-已驳回6:子任务-通过
+   private Integer taskStatus;<if test="typeTask == 1 and (parentId == null or parentId == 0)">
+                AND t.task_status != 0
+            </if>
+            <if test="taskStatusArr != null and taskStatusArr.length > 0">
+                AND t.task_status IN
+                <foreach item="item" collection="taskStatusArr" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            -->
+
+    <select id="findTaskStatusNum" parameterType="Task" resultType="TaskStatusReport">
+        SELECT COUNT(t.id) taskCount,
+            SUM(t.task_status = 1) executing,
+            SUM(t.task_status = 3 or t.task_status = 6) completed,
+            SUM(t.task_status = 2) expired,
+            SUM(if(t.task_status != 2 and t.task_status != 3, 1, 0)) noComplete
+            <if test="typeTask == 0">
+                ,SUM(t.task_status = 0) notStarted
+            </if>
+            <if test="typeTask == 1">
+                ,SUM(t.task_status = 4) toBeAudit
+            </if>
+        FROM t_task t
+        <where>
+            t.project_id = #{projectId}
+            AND t.type_task = #{typeTask}
+            AND t.deleted = 0
+            <if test="parentId != null and parentId != 0">
+                AND t.parent_id = #{parentId}
+            </if>
+            <if test=" createUserId != null and createUserId != 0">
+                AND t.create_user_id = #{createUserId}
+            </if>
+            <if test=" createTime != null and lastModifyTime != null">
+                AND t.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            <if test="periodStartTime != null and periodEndTime != null">
+                AND t.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询任务列表t.id, t.project_id projectId, t.parent_id parentId, t.task_name taskName, t.project_name projectName, t.task_type taskType, t.period_type periodType,
+            t.task_period_type taskPeriodType, t.period_start_time periodStartTime, t.period_end_time periodEndTime,
+            t.remind_time remindTime, t.check_count checkCount, t.check_start_time checkStartTime, t.check_end_time checkEndTime, t.interval_time intervalTime,
+            t.review, t.device_number deviceNumber, t.task_status taskStatus,t.deleted, t.create_time createTime
+             ,COUNT(DISTINCT cr.id) totalCount, SUM(DISTINCT cr.check_result = 1) faultNum, COUNT(DISTINCT d.id) device_num, our.user_id
+              ,SUM(IF(cr.version_no = MAX(cr.version_no)),1,0) totalCount, SUM(IF(cr.version_no = MAX(cr.version_no) and cr.check_result = 1),1,0) faultNum, COUNT(DISTINCT d.id) device_num, our.user_id
+            -->
+
+    <select id="findAllSonTaskList" parameterType="Task" resultMap="taskResultMap">
+        SELECT
+            t.id, t.project_id, t.parent_id, t.task_name, t.project_name, t.task_type, t.period_type,
+            t.task_period_type, t.period_start_time, t.period_end_time,t.org_type,
+            t.remind_time, t.check_count, t.check_start_time, t.check_end_time, t.interval_time,
+            t.review, t.task_status,t.deleted, t.create_time, t.create_user_id, t.is_remind, e.user_id,
+            tcp.checkPointNum check_point_num,
+            tcp.checkedNum,
+            tcp.faultNum,
+            IF ( e.user_id = #{userId} and e.executor_type = 1, 1, 0) AS is_review
+        FROM(
+            SELECT *
+            FROM t_task t
+            <include refid="findTaskListSql"/>
+        ) t
+        LEFT JOIN (
+            SELECT
+                COUNT(DISTINCT check_point_id) AS checkPointNum,
+                COUNT(DISTINCT IF ( task_check_point_status >= 1, check_point_id, null)) AS checkedNum,
+                COUNT(DISTINCT IF ( task_check_point_status = 1, check_point_id, null))  AS faultNum,
+                project_id, task_id
+            FROM t_task_check_point
+            WHERE project_id = #{projectId}
+            AND task_id IN (
+                SELECT t.id
+                FROM t_task t
+                <include refid="findTaskListSql"/>
+            )
+            GROUP BY project_id,task_id
+        ) tcp ON tcp.task_id = t.id
+        LEFT JOIN t_executor e ON e.task_id = t.id AND t.project_id = #{projectId} AND e.executor_type = 1
+        WHERE 1=1
+        <if test="userId != null and userId != 0 and typeTask == 1 and createUserId != null">
+            AND e.user_id = #{userId}
+        </if>
+        <if test="ids != null">
+            AND t.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY t.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findTaskList" parameterType="Task" resultMap="taskResultMap">
+        SELECT t.id, t.project_id, t.parent_id, t.task_name, t.project_name, t.task_type, t.period_type,
+            t.task_period_type, t.period_start_time, t.period_end_time,t.org_type,
+            t.remind_time, t.check_count, t.check_start_time, t.check_end_time, t.interval_time,
+            t.review, t.task_status,t.deleted, t.create_time, t.create_user_id, t.is_remind, t.last_modify_time
+        <if test="typeTask == 0 and (parentId == null or parentId == 0)">
+           ,COUNT(DISTINCT tt.id) totalCount,
+            COUNT(DISTINCT IF ( tt.task_status = 3 OR tt.task_status = 6, tt.id, null)) AS completedNum
+        </if>
+        <if test="typeTask == 1">
+            , COUNT(DISTINCT tcp.id) AS checkPointNum, e.user_id,
+            COUNT(DISTINCT IF ( tcp.task_check_point_status != 0, tcp.id, null ) ) AS checkedNum,
+            COUNT(DISTINCT IF ( tcp.task_check_point_status = 1, tcp.id, null ) ) AS faultNum,
+            IF ( e.user_id = #{userId} and e.executor_type = 1, 1, 0) as is_review
+        </if>
+        FROM t_task t
+        <if test="typeTask == 0 and (parentId == null or parentId == 0)">
+            LEFT JOIN t_task tt
+            ON tt.parent_id = t.id AND tt.type_task = 1 AND t.type_task = 0 AND tt.deleted = 0
+        </if>
+        <if test="typeTask == 1">
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            LEFT JOIN t_executor e ON e.task_id = t.id AND e.executor_type = 1
+        </if>
+        <include refid="findTaskListSql"/>
+        <if test="userId != null and userId != 0 and typeTask == 1 and createUserId != null">
+           AND e.user_id = #{userId}
+        </if>
+        GROUP BY t.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询任务-->
+    <select id="findTaskById" parameterType="java.lang.Long" resultMap="taskResultMap">
+        SELECT id, project_id, parent_id,task_name, project_name, task_type, period_type, task_period_type,
+            DATE_FORMAT(period_start_time,'%Y-%m-%d') period_start_time,
+            DATE_FORMAT(period_end_time,'%Y-%m-%d') period_end_time, is_remind,org_type,
+            remind_time, check_count, check_start_time, check_end_time, interval_time, review, task_status, remark
+        FROM t_task
+        WHERE id = #{id} LIMIT 1
+    </select>
+
+    <select id="findTaskByIds" parameterType="java.util.List" resultType="Task">
+        SELECT id, project_id projectId, parent_id parentId, task_name taskName, project_name projectName, task_type taskType, period_type periodType,
+            task_period_type taskPeriodType, period_start_time periodStartTime, period_end_time periodEndTime, is_remind,org_type,
+            remind_time remindTime, check_count checkCount, check_start_time chcekStartTime, check_end_time chcekEndTime, interval_time intervalTime,
+            review, task_status taskStatus
+        FROM t_task
+        WHERE id in
+        <foreach item="item" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--添加任务-->
+    <insert id="saveTask" parameterType="Task" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_task
+            (project_id, parent_id,task_name, project_name, task_type, period_type, task_period_type, period_start_time, period_end_time,
+            remind_time, check_count, check_start_time,check_end_time, interval_time, review, task_status, type_task, create_user_id,
+            create_time, remark,org_type)
+        VALUES
+            (#{projectId}, #{parentId}, #{taskName}, #{projectName},  #{taskType}, #{periodType}, #{taskPeriodType}, #{periodStartTime}, #{periodEndTime},
+            #{remindTime}, #{checkCount}, #{checkStartTime}, #{checkEndTime}, #{intervalTime}, #{review}, #{taskStatus}, #{typeTask}, #{createUserId},
+            NOW(), #{remark}, #{orgType});
+    </insert>
+
+    <!-- 修改任务 -->
+    <update id="modifyTask" parameterType="Task">
+        UPDATE t_task
+        <set>
+            <if test="taskName != null">
+                task_name = #{taskName},
+            </if>
+            <if test="taskStatus != null">
+                task_status = #{taskStatus},
+            </if>
+            <if test="taskType != null">
+                task_type = #{taskType},
+            </if>
+            <if test="periodType != null">
+                period_type = #{periodType},
+            </if>
+            <if test="taskPeriodType != null">
+                task_period_type = #{taskPeriodType},
+            </if>
+            <if test="periodStartTime != null">
+                period_start_time = #{periodStartTime},
+            </if>
+            <if test="periodEndTime != null">
+                period_end_time = #{periodEndTime},
+            </if>
+            <if test="remindTime != null">
+                remind_time = #{remindTime},
+            </if>
+            <if test="checkCount != null">
+                check_count = #{checkCount},
+            </if>
+            <if test="checkStartTime != null">
+                check_start_time = #{checkStartTime},
+            </if>
+            <if test="checkEndTime != null">
+                check_end_time = #{checkEndTime},
+            </if>
+            <if test="review != null">
+                review = #{review},
+            </if>
+            <if test="deleted != null">
+                deleted = #{deleted},
+            </if>
+            <if test="intervalTime != null and intervalTime != 0">
+                interval_time = #{intervalTime},
+            </if>
+            <if test="updateUserId != null and updateUserId != 0">
+                update_user_id = #{updateUserId},
+            </if>
+            <if test="lastModifyTime != null">
+                last_modify_time = NOW(),
+            </if>
+            <if test="remark != null and remark != ''">
+                remark = #{remark},
+            </if>
+            <if test="isRemind != null">
+                is_remind = #{isRemind},
+            </if>
+            <if test="orgType != null and orgType != 0">
+                org_type = #{orgType}
+            </if>
+        </set>
+        <where>
+            <if test="id != null and id != 0">
+                AND id = #{id}
+            </if>
+            <if test="parentId != null and parentId != 0">
+                AND parent_id = #{parentId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND project_id = #{projectId}
+            </if>
+        </where>
+    </update>
+
+    <!-- 逻辑删除任务 -->
+    <update id="modifyDeletedTask" parameterType="Task">
+        UPDATE t_task
+        SET
+        <if test="updateUserId != null and updateUserId != 0">
+            update_user_id = #{updateUserId},
+        </if>
+        <if test="lastModifyTime != null">
+            last_modify_time = #{lastModifyTime},
+        </if>
+        deleted = 1
+        <where>
+            <if test="projectId != null and projectId != 0">
+                AND project_id = #{projectId}
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND id IN
+                <foreach item="item" collection="ids" index="index" separator="," open="(" close=")" >
+                     #{item}
+                </foreach>
+            </if>
+        </where>
+    </update>
+
+    <!-- 逻辑删除子任务任务 -->
+    <update id="modifySonTaskByParentId" parameterType="Task">
+        UPDATE t_task
+        SET
+            <if test="taskName != null and taskName != ''">
+                task_name = #{taskName}
+            </if>
+            <if test="remark != null and remark != ''">
+                ,remark = #{remark}
+            </if>
+        <where>
+            task_status = 0
+            AND deleted = 0
+            <if test="projectId != null and projectId != 0">
+                AND project_id = #{projectId}
+            </if>
+            <if test="id != null and id != 0">
+                AND   parent_id = #{id}
+            </if>
+        </where>
+    </update>
+
+    <update id="modifyDeletedSonTask" parameterType="Task">
+        UPDATE t_task
+        SET
+            <if test="updateUserId != null and updateUserId != 0">
+                update_user_id = #{updateUserId},
+            </if>
+            <if test="lastModifyTime != null">
+                last_modify_time = #{lastModifyTime},
+            </if>
+            deleted = 1
+        <where>
+            task_status = 0
+            <if test="projectId != null and projectId != 0">
+                AND project_id = #{projectId}
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND   parent_id IN
+                <foreach item="item" open="(" close=")" separator="," collection="ids" index="index">
+                     #{item}
+                </foreach>
+            </if>
+        </where>
+    </update>
+
+    <!-- 根据父任务id查询子任务列表 -->
+    <select id="findSonTaskList" parameterType="Task" resultMap="taskResultMap">
+        SELECT t.id, t.project_id, t.parent_id, t.task_name, t.project_name, t.task_type, t.period_type,
+            t.task_period_type, t.period_start_time, t.period_end_time, t.is_remind,t.org_type,
+            t.remind_time, t.check_count, t.check_start_time, t.check_end_time, t.interval_time,
+            t.review, t.task_status,t.deleted, t.create_time, t.create_user_id
+        FROM t_task t
+        <include refid="findTaskListSql"/>
+        ORDER BY t.check_end_time DESC
+    </select>
+
+    <!-- 删除任务 -->
+    <delete id="deleteTask" parameterType="Task">
+        DELETE FROM t_task
+        <where>
+            <if test="parentId != null and parentId != 0">
+                AND parent_id = #{parentId}
+            </if>
+            <if test="taskStatus != null">
+                AND task_status = #{taskStatus}
+            </if>
+            <if test="periodEndTime != null">
+                AND check_start_time &gt; #{periodEndTime}
+            </if>
+        </where>
+    </delete>
+
+    <!-- App 任务列表查询 -->
+    <select id="findSonTaskListApp" parameterType="AppTask" resultType="AppTask">
+        SELECT t.id taskId, t.parent_id parentTaskId, t.project_id projectId, p.project_name projectName, t.task_period_type taskPeriodType,
+            t.task_status taskStatus, t.review, t.period_start_time startTime, t.period_end_time endTime
+        FROM t_task t
+        LEFT JOIN project_manage.p_project p ON t.project_id = p.id
+        <where>
+            t.type_task = 1
+            AND t.deleted = 0
+            <if test="taskName != null and taskName != ''">
+                AND t.task_name LIKE CONCAT('%',#{taskName},'%')
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND t.project_id = #{projectId}
+            </if>
+        </where>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- App 查询未检设备任务详情 -->
+    <select id="findTaskDeviceDetailsApp" parameterType="AppTaskDevice" resultType="AppTaskDeviceItem">
+        SELECT t.task_name taskName, t.period_start_time startTime, t.period_end_time endTime, d.device_name deviceName, d.qr_no deviceQrNo
+        FROM t_task t
+        LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+        LEFT JOIN device_manage.d_device d ON d.check_point_id = tcp.check_point_id
+        WHERE t.id = #{taskId}
+        AND d.id = #{deviceId}
+    </select>
+
+    <!-- 根据 任务id数组 查询实体 -->
+    <select id="findIds" parameterType="java.lang.Long" resultType="AppTaskDeviceItem">
+        SELECT
+        <include refid="taskSql"/>
+        FROM t_task t
+        <include refid="findTaskListSql"/>
+    </select>
+
+    <!--<select id="findProjectNameById" resultType="java.lang.String">
+        SELECT
+            p.project_name
+        FROM project_manage.p_project p
+        WHERE p.id = #{projectId}
+    </select>-->
+
+    <!--查询任务详情-->
+    <select id="findTaskLocation" parameterType="Task" resultMap="taskResultMap">
+        SELECT
+            t.id, t.project_id, t.parent_id, t.task_name, t.task_type, t.period_type,
+            t.task_period_type, t.period_start_time, t.period_end_time,t.interval_time,
+            t.remind_time, t.check_count, t.check_start_time, t.check_end_time,t.org_type,
+            t.review, t.task_status,t.deleted, t.create_time, t.create_user_id,t.remark,
+            COUNT(distinct IF ( tcp.task_check_point_status = 0, tcp.id, null ) ) AS no_checked_count,
+            COUNT(distinct IF ( tcp.task_check_point_status = 1, tcp.id, null ) ) AS fault_count,
+            COUNT(distinct IF ( tcp.task_check_point_status = 2, tcp.id, null ) ) AS normal_count,
+            COUNT(distinct IF ( tcp.task_check_point_status != 0, tcp.id, null ) ) AS checked_count,
+            COUNT( distinct tcp.id ) AS check_point_num,
+            IF ( e.user_id = #{userId} and e.executor_type = 1 and t.task_status = 4, 1, 0 ) as is_review
+        FROM t_task t
+        LEFT JOIN t_executor e ON t.id = e.task_id and e.user_id = #{userId} and e.executor_type = 1
+        LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+        WHERE t.id = #{id}
+    </select>
+
+    <!-- 查询我的任务列表 -->
+    <select id="findMyTaskList" parameterType="Task" resultMap="taskResultMap">
+        SELECT w.*,
+            FORMAT(CONVERT ( w.fault_count / IF ( w.check_point_num = 0, 1, w.check_point_num ), DECIMAL ( 15, 5 ) ) * 100 ,2) AS fault_rate ,
+            FORMAT(CONVERT ( w.checked_count / IF ( w.check_point_num = 0, 1, w.check_point_num ), DECIMAL ( 15, 5 ) ) * 100 ,2) AS checked_rate
+        FROM(
+            SELECT t.id, t.project_id, t.parent_id, t.task_name, t.task_type,t.period_type,
+                t.task_period_type, t.period_start_time, t.period_end_time,t.interval_time,
+                t.remind_time, t.check_count, t.check_start_time, t.check_end_time,
+                t.review, t.task_status,t.deleted, t.create_time, t.create_user_id,t.org_type,
+                COUNT(distinct IF ( tcp.task_check_point_status = 0, tcp.id, null ) ) AS no_checked_count,
+                COUNT(distinct IF ( tcp.task_check_point_status = 1, tcp.id, null ) ) AS fault_count,
+                COUNT(distinct IF ( tcp.task_check_point_status = 2, tcp.id, null ) ) AS normal_count,
+                COUNT(distinct IF ( tcp.task_check_point_status != 0, tcp.id, null ) ) AS checked_count,
+                count( distinct tcp.id ) AS check_point_num
+            FROM t_task t
+            LEFT JOIN t_executor e ON t.id = e.task_id
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            WHERE t.type_task = 1 AND t.deleted = false
+            <include refid="findMyTaskSql"/>
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) w
+        ORDER BY w.create_time DESC
+    </select>
+
+    <!-- 查询我的任务列表条件 -->
+    <sql id="findMyTaskSql">
+        <if test="id != null and id != 0">
+            AND t.id = #{id}
+        </if>
+        <if test="id == null">
+            <if test="projectId != null and projectId != 0">
+                AND t.project_id = #{projectId}
+            </if>
+            <if test="orgType != null and orgType != 0">
+                AND t.org_type = #{orgType}
+            </if>
+
+            <if test="userId != null and userId != 0">
+                AND ( t.create_user_id = #{userId} OR e.user_id = #{userId} )
+            </if>
+
+            <if test="taskName != null and taskName != ''">
+                AND t.task_name LIKE CONCAT('%',#{taskName},'%')
+            </if>
+
+            <if test="periodStartTime != null and periodEndTime != null">
+                AND t.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+            </if>
+
+            <!-- 任务执行中时，只有执行人可看，任务审核中/任务已过期/任务已完成时执行人、审核人都可看，任务已过期，-->
+            <if test="taskStatusArr != null and taskStatusArr.length > 0">
+                AND
+                <foreach item="item" collection="taskStatusArr" index="index" open="(" separator="or" close=")">
+                    (t.task_status = #{item}
+                        <if test="item == 1 ">
+                            AND e.executor_type = 0
+                        </if>
+                    )
+                </foreach>
+            </if>
+
+            <if test="taskType != null ">
+                AND t.task_type = #{taskType}
+            </if>
+            <if test="taskTypeArr != null and taskTypeArr.length >0">
+                AND t.task_type IN
+                <foreach item="item" collection="taskTypeArr" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="startTime != null">
+                AND t.period_end_time <![CDATA[ >= ]]> #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND t.period_end_time <![CDATA[ <= ]]> #{endTime}
+            </if>
+        </if>
+        GROUP BY
+        t.id
+    </sql>
+
+    <!-- 查询我的任务总数 -->
+    <select id="findMyTaskListCount" parameterType="Task" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT w.id)
+        FROM(
+            SELECT t.id
+            FROM t_task t
+            LEFT JOIN t_executor e ON t.id = e.task_id
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            WHERE t.type_task = 1 AND t.deleted = false
+            <include refid="findMyTaskSql"/>
+        ) w
+    </select>
+
+    <!-- 查询我的任务角标 -->
+    <select id="findMyTaskSubscript" parameterType="Task" resultType="TaskStatusReport">
+        SELECT
+            COUNT( DISTINCT IF ( t.task_status = 1, t.id, NULL ) ) AS executing,
+            COUNT( DISTINCT IF ( t.task_status = 4, t.id, NULL ) ) AS toBeAudit,
+            t.task_type as taskType
+        FROM t_task t
+        LEFT JOIN t_executor e ON t.id = e.task_id
+        WHERE t.type_task = 1  AND t.project_id = #{projectId} AND t.deleted = false
+        AND ( t.create_user_id = #{userId} OR e.user_id = #{userId} )
+        AND ( (t.task_status = 1 and e.executor_type = 0 ) or (t.task_status = 4) )
+	    GROUP BY t.task_type
+    </select>
+
+    <!-- 查询我的任务状态数量 -->
+    <select id="findMyTaskStatusReport" parameterType="Task" resultType="TaskStatusReport">
+        SELECT
+            COUNT( DISTINCT IF ( t.task_status = 1, t.id, NULL ) ) AS executing,
+            COUNT( DISTINCT IF ( t.task_status = 4, t.id, NULL ) ) AS toBeAudit,
+            COUNT( DISTINCT IF ( t.task_status = 3, t.id, NULL ) ) AS completed,
+            COUNT( DISTINCT IF ( t.task_status = 2, t.id, NULL ) ) AS expired,
+            COUNT( DISTINCT IF ( t.period_type = 0, t.id, NULL ) ) AS cycleCount,
+            COUNT( DISTINCT IF ( t.period_type = 1, t.id, NULL ) ) AS dailyCount,
+            COUNT( DISTINCT IF ( t.period_type = 2, t.id, NULL ) ) AS customizeCount
+        FROM t_task t
+        LEFT JOIN t_executor e ON t.id = e.task_id
+        WHERE t.type_task = 1  AND t.project_id = #{projectId} AND t.deleted = false
+
+        <if test="userId != null and userId > 0">
+            AND (t.create_user_id = #{userId} OR e.user_id = #{userId})
+        </if>
+
+        <if test="periodStartTime != null and periodEndTime != null">
+            AND t.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+        </if>
+
+        <if test="taskStatusArr != null and taskStatusArr.length > 0">
+            AND
+            <foreach item="item" collection="taskStatusArr" index="index" open="(" separator="or" close=")">
+                (t.task_status = #{item}
+                    <if test="item == 1 ">
+                        and e.executor_type = 0
+                    </if>
+                )
+            </foreach>
+        </if>
+
+        <if test="startTime != null">
+            AND t.period_end_time <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND t.period_end_time <![CDATA[ <= ]]> #{endTime}
+        </if>
+
+        <if test="taskType != null ">
+            AND t.task_type = #{taskType}
+        </if>
+        <if test="taskTypeArr != null and taskTypeArr.length >0">
+            AND t.task_type IN
+            <foreach item="item" collection="taskTypeArr" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 查询符合定时任务处理的任务列表 -->
+    <select id="findHandleTaskList" parameterType="Task" resultMap="taskResultMap">
+        SELECT t.id, t.project_id, t.parent_id, t.task_name, t.project_name, t.task_type, t.period_type,
+            t.task_period_type, t.period_start_time, t.period_end_time,t.org_type,
+            t.remind_time, t.check_count, t.check_start_time, t.check_end_time, t.interval_time,
+            t.review, t.task_status,t.deleted, t.create_time, t.create_user_id, t.is_remind
+        FROM t_task t
+        <include refid="findTaskListSql"/>
+    </select>
+
+    <!-- 月度工单统计 工单概览 -->
+    <select id="taskOverview" parameterType="Task" resultType="Task">
+        SELECT SUM(x.executing + x.toBeAudit + x.completed + x.expired) taskNum,
+            SUM(x.executing + x.toBeAudit) faultCount,
+            SUM(x.completed + x.expired) completedNum
+        FROM (
+            SELECT COUNT(t.id) taskNum,
+                SUM(if(t.task_status = 1, 1, 0)) executing,
+                SUM(if(t.task_status = 3 or t.task_status = 6, 1, 0)) completed,
+                SUM(if(t.task_status = 2, 1, 0)) expired,
+                SUM(if(t.task_status != 2 and t.task_status != 3, 1, 0)) noComplete
+                <if test="typeTask == 0">,
+                    SUM(if(t.task_status = 0, 1, 0)) notStarted
+                </if>
+                ,SUM(if(t.task_status = 4, 1, 0)) toBeAudit
+            FROM t_task t
+            <where>
+                t.project_id = #{projectId}
+                AND t.type_task = #{typeTask}
+                AND t.deleted = 0
+                <if test="parentId != null and parentId != 0">
+                    AND t.parent_id = #{parentId}
+                </if>
+                <if test=" createUserId != null and createUserId != 0">
+                    AND t.create_user_id = #{createUserId}
+                </if>
+                <if test=" createTime != null and lastModifyTime != null">
+                    AND t.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+                </if>
+                <if test="periodStartTime != null and periodEndTime != null">
+                    AND t.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+                </if>
+            </where>
+        ) x
+    </select>
+
+    <!-- 月度工单统计 巡查点概览 -->
+    <select id="checkOverview" parameterType="Task" resultType="Task">
+        SELECT COUNT(DISTINCT tcp.id) checkedNum,
+            SUM(if(tcp.task_check_point_status = 2, 1, 0)) normalCount,
+            SUM(if(tcp.task_check_point_status = 1, 1, 0)) faultNum,
+            SUM(if(tcp.task_check_point_status = 0, 1, 0)) noCheckedCount,
+            SUM(if(tcp.task_check_point_status = 2 || tcp.task_check_point_status = 1, 1, 0)) checkedCount
+        FROM t_task t
+        INNER JOIN t_task_check_point tcp ON tcp.task_id = t.id
+        <include refid="findTaskListSql"/>
+        AND t.task_status > 0
+    </select>
+
+    <!-- 月度工单统计 设备系统详情 数量 -->
+    <select id="findDeviceCount" parameterType="Task" resultType="java.lang.Integer">
+        SELECT COUNT(t.id)
+        FROM(
+            SELECT d.id
+            FROM t_task t
+            INNER JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            LEFT JOIN device_manage.d_device d ON d.check_point_id = tcp.check_point_id AND d.status &lt;= 98
+            LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+            <include refid="findTaskListSql"/>
+            AND t.task_status > 0
+            GROUP BY dt.device_sys_name
+        ) t
+    </select>
+
+    <!-- 月度工单统计 设备系统详情 -->
+    <select id="deviceDetails" parameterType="Task" resultType="Device">
+        SELECT dt.id, dt.device_sys_name deviceName,
+               COUNT(DISTINCT d.id) deviceCount,
+               COUNT(DISTINCT CASE WHEN d.device_status = 2 THEN d.id END) faultNum
+        FROM t_task t
+        INNER JOIN t_task_check_point tcp ON tcp.task_id = t.id
+        INNER JOIN device_manage.d_device d ON d.check_point_id = tcp.check_point_id AND d.status &lt;= 98
+        LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        <include refid="findTaskListSql"/>
+        AND t.task_status > 0
+        GROUP BY dt.device_sys_name
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 大屏 巡检管理 设备总数 -->
+    <select id="taskDeviceNum" parameterType="Task" resultType="Device">
+        SELECT COUNT(DISTINCT n.id) deviceCount,
+               SUM(if(n.device_status = 2, 1, 0)) faultNum,
+               SUM(if(n.device_status = 1, 1, 0)) normalNum
+        FROM (
+            SELECT d.id, d.device_status
+            FROM t_task t
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            LEFT JOIN device_manage.d_device d ON d.check_point_id = tcp.check_point_id AND d.status &lt;= 98
+            <include refid="findTaskListSql"/> AND t.task_status > 0
+            GROUP BY d.id
+        ) n
+    </select>
+
+    <!-- PC任务概览列表 app月度工单统计 -->
+    <select id="findTaskOverviewTable" parameterType="Task" resultMap="taskResultMap">
+        SELECT n.id, n.task_name, n.period_start_time, n.period_end_time, n.task_status, n.project_id, n.task_period_type, n.check_count,
+               n.check_start_time, n.check_end_time, n.check_point_num, n.fault_count,
+               COUNT(DISTINCT cr.check_point_id) checked_count, n.device_num,
+               COUNT(DISTINCT CASE WHEN cr.check_result = 1 THEN cr.device_id END) fault_device_num, n.last_modify_time
+        FROM (
+            SELECT t.id, t.task_name, t.period_start_time, t.period_end_time, t.task_status, t.project_id, t.task_period_type, t.check_count,
+                   t.check_start_time, t.check_end_time,
+                    COUNT(DISTINCT tcp.check_point_id) check_point_num,
+                    COUNT(DISTINCT IF (tcp.task_check_point_status = 1, tcp.check_point_id, null)) AS fault_count,
+                    COUNT(DISTINCT d.id) device_num, t.last_modify_time
+            FROM t_task t
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+            LEFT JOIN device_manage.d_device d ON d.check_point_id = cp.id
+            <include refid="findTaskListSql"/>
+            AND t.task_status > 0
+            GROUP BY t.id
+        ) n
+        LEFT join t_check_record cr ON cr.task_id = n.id
+        GROUP BY n.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--任务状态 0未开始，1执行中，2已过期，3已完成,4:子任务-（审核中）待审核,5:子任务-已驳回6:子任务-通过
+        private Integer taskStatus;-->
+    <select id="findCurrLoginProjectTaskNum" parameterType="Task" resultType="TaskStatusReport">
+        SELECT SUM(t.task_status = 1) executing, SUM(t.task_status = 4) toBeAudit
+        FROM t_task t
+        <where>
+            t.project_id = #{projectId}
+            AND t.type_task = #{typeTask}
+            AND t.deleted = 0
+            <if test="typeTask == 1 and (parentId == null or parentId == 0)">
+                AND t.task_status != 0
+            </if>
+            <if test=" createUserId != null and createUserId != 0">
+                AND t.create_user_id = #{createUserId}
+            </if>
+        </where>
+    </select>
+
+    <!-- PC巡查点概览表 -->
+    <select id="checkOverviewTable" parameterType="Task" resultMap="taskResultMap">
+        SELECT tcp.check_point_name,
+            COUNT(DISTINCT tcp.id) checkPointNum,
+            SUM(if(tcp.task_check_point_status = 1, 1, 0)) faultNum,
+            SUM(if(tcp.task_check_point_status != 0, 1, 0)) checkedNum,
+            tcp.create_time
+        FROM t_task t
+        INNER JOIN t_task_check_point tcp ON tcp.task_id = t.id
+        <include refid="findTaskListSql"/>
+        <if test="taskCheckPointStatus != null">
+            AND tcp.task_check_point_status = #{taskCheckPointStatus}
+        </if>
+        <if test="checkState != null and checkState == 1">
+            AND tcp.task_check_point_status != 0
+        </if>
+        AND t.task_status &gt; 0
+        GROUP BY tcp.check_point_id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询扫描二维码巡检的任务-->
+    <select id="findScanQrNoCheckTaskList" parameterType="Task" resultMap="taskResultMap">
+        SELECT
+            t.id, t.project_id, t.parent_id, t.task_name, t.task_type,t.period_type,
+            t.task_period_type, t.period_start_time, t.period_end_time,t.interval_time,
+            t.remind_time, t.check_count, t.check_start_time, t.check_end_time,
+            t.review, t.task_status,t.deleted, t.create_time, t.create_user_id
+        FROM
+            t_task t
+                LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+                LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+                INNER JOIN t_executor e ON t.id = e.task_id
+            WHERE
+                cp.qr_no = #{checkPointQrNo}
+                AND ( t.create_user_id = #{userId} OR e.user_id = #{userId} )
+                AND t.task_status = 1
+                AND t.type_task = 1
+                AND t.task_type != 3
+                AND t.deleted = FALSE
+                AND t.project_id = #{projectId}
+                GROUP BY
+                t.id
+    </select>
+
+    <!--*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-抽查功能-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-->
+    <!--查询我的抽查任务列表-->
+    <select id="findMySpotCheckTaskList" resultMap="taskResultMap">
+        SELECT w.*,
+            FORMAT(CONVERT ( w.fault_count / IF ( w.device_num = 0, 1, w.device_num ), DECIMAL ( 15, 5 ) ) * 100 ,2) AS fault_rate ,
+            FORMAT(CONVERT ( w.checked_count / IF ( w.device_num = 0, 1, w.device_num ), DECIMAL ( 15, 5 ) ) * 100 ,2) AS checked_rate
+        FROM (
+            SELECT t.id, t.project_id, t.parent_id, t.task_name, t.task_type,t.period_type,
+                t.task_period_type, t.period_start_time, t.period_end_time,t.interval_time,
+                t.remind_time, t.check_count, t.check_start_time, t.check_end_time,
+                t.review, t.task_status,t.deleted, t.create_time, t.create_user_id,
+            COUNT(distinct IF ( cr.check_result is null, d.id, null ) ) AS no_checked_count,
+            COUNT(distinct IF ( cr.check_result = 1, d.id, null ) ) AS fault_count,
+            COUNT(distinct IF ( cr.check_result = 0, d.id, null ) ) AS normal_count,
+            COUNT(distinct IF ( cr.check_result is not null, d.id, null ) ) AS checked_count,
+            count( distinct d.id ) AS device_num
+            FROM t_task t
+            LEFT JOIN t_executor e ON t.id = e.task_id
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            INNER JOIN device_manage.d_device d on d.check_point_id = tcp.check_point_id AND d.status &lt;= 98
+            LEFT JOIN (
+                SELECT MAX(tcr.id) AS id, tcr.check_point_id,tcr.task_id,tcr.check_result,tcr.device_id
+                FROM t_check_record tcr
+                WHERE tcr.project_id = #{projectId}
+                GROUP BY tcr.task_id,tcr.check_point_id,tcr.device_id
+            ) cr on tcp.check_point_id = cr.check_point_id and t.id = cr.task_id and d.id = cr.device_id
+            WHERE t.type_task = 1 AND t.deleted = false
+            <include refid="findMyTaskSql"/>
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) w
+        ORDER BY w.create_time DESC
+    </select>
+
+    <!--查询我的抽查任务列表-->
+    <select id="findMySpotCheckTaskListCount" resultType="java.lang.Integer">
+        SELECT count(w.id)
+        FROM (
+            SELECT t.id
+            FROM t_task t
+            LEFT JOIN t_executor e ON t.id = e.task_id
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            INNER JOIN device_manage.d_device d on d.check_point_id = tcp.check_point_id AND d.status &lt;= 98
+            LEFT JOIN (
+                SELECT MAX(tcr.id) AS id, tcr.check_point_id,tcr.task_id,tcr.check_result,tcr.device_id
+                FROM t_check_record tcr
+                WHERE tcr.project_id = #{projectId}
+                GROUP BY tcr.task_id,tcr.check_point_id,tcr.device_id
+            ) cr on tcp.check_point_id = cr.check_point_id and t.id = cr.task_id and d.id = cr.device_id
+            WHERE t.type_task = 1 AND t.deleted = false
+            <include refid="findMyTaskSql"/>
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) w
+    </select>
+
+    <!--查询我的抽查任务详情-->
+    <select id="findMySpotCheckTaskLocation" parameterType="Task" resultMap="taskResultMap">
+         SELECT
+            t.id, t.project_id, t.parent_id, t.task_name, t.task_type, t.period_type,
+            t.task_period_type, t.period_start_time, t.period_end_time,t.interval_time,
+            t.remind_time, t.check_count, t.check_start_time, t.check_end_time,
+            t.review, t.task_status,t.deleted, t.create_time, t.create_user_id,t.remark,
+            COUNT(distinct IF ( cr.check_result is null, d.id, null ) ) AS no_checked_count,
+            COUNT(distinct IF ( cr.check_result = 1, d.id, null ) ) AS fault_count,
+            COUNT(distinct IF ( cr.check_result = 0, d.id, null ) ) AS normal_count,
+            COUNT(distinct IF ( cr.check_result is not null, d.id, null ) ) AS checked_count,
+            count( distinct d.id ) AS device_num,
+            IF ( e.user_id =  #{userId}  and e.executor_type = 1 and t.task_status = 4, 1, 0 ) as is_review
+        FROM t_task t
+        LEFT JOIN t_executor e ON t.id = e.task_id and e.user_id =  #{userId}  and e.executor_type = 1
+        LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+        LEFT JOIN device_manage.d_device d on tcp.check_point_id = d.check_point_id AND d.status &lt;= 98
+        LEFT JOIN(
+            SELECT MAX(tcr.id) AS id, tcr.check_point_id,tcr.task_id,tcr.check_result,tcr.device_id,tcr.fault_description
+            FROM t_check_record tcr
+            WHERE tcr.task_id = #{id}
+            GROUP BY tcr.task_id,tcr.check_point_id,tcr.device_id
+        ) AS temp on d.id = temp.device_id and tcp.check_point_id = temp.check_point_id and tcp.task_id = temp.task_id
+        LEFT JOIN task_manage.t_check_record cr on cr.id = temp.id
+        WHERE
+	    t.id = #{id}
+    </select>
+
+    <!--查询我的抽查任务详情-->
+    <select id="findMonthTaskAnalysis" parameterType="Task" resultType="Task">
+        SELECT
+            count( tcp.id ) as checkPointNum,
+            sum( IF ( tcp.task_check_point_status = 0, 1, 0 ) ) as noCheckedCount,
+            sum( IF ( tcp.task_check_point_status != 0, 1, 0 ) ) as checkedNum,
+            sum( IF ( tcp.task_check_point_status = 1, 1, 0 ) ) as faultNum,
+            sum( IF ( tcp.task_check_point_status = 2, 1, 0 ) ) as completedNum
+        FROM t_task t
+        INNER JOIN t_task_check_point tcp ON t.id = tcp.task_id
+        WHERE
+        t.type_task = 1
+        AND t.task_status != 0
+        AND t.deleted = FALSE
+        AND t.project_id in
+        <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND t.create_time <![CDATA[ >= ]]>  #{startTime} AND t.create_time <![CDATA[ <= ]]> #{endTime} ;
+    </select>
+
+    <select id="findTaskMetroScreenList" parameterType="Task" resultType="Tasks">
+        SELECT t.task_name taskName, t.create_time createTime,
+            CASE t.task_status when 2 then 1 when 3 then 1 else 2 end as taskStatus
+        FROM t_task t
+        <include refid="findTaskListSql"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findAllParentTask" resultMap="taskResultMap">
+        SELECT * FROM task_manage.t_task t
+        WHERE t.check_end_time > NOW() AND t.type_task = 0 AND t.task_status IN (0,1) AND t.task_period_type IS NOT NULL
+        ORDER BY t.period_start_time DESC
+    </select>
+
+    <!--查询大屏任务记录分析列表-->
+    <select id="findScreenTaskRecordAnalysisList" resultMap="taskResultMap">
+        SELECT w.*,
+            FORMAT(CONVERT ( w.checked_count / IF ( w.check_point_num = 0, 1, w.check_point_num ), DECIMAL ( 15, 5 ) ) * 100 ,2) AS checked_rate ,
+            FORMAT(CONVERT ( w.fault_count / IF ( w.device_num = 0, 1, w.device_num ), DECIMAL ( 15, 5 ) ) * 100 ,2) AS fault_rate
+        from (
+            SELECT t.id,t.task_name,t.check_start_time,t.task_status,t.task_type,t.period_type,t.task_period_type,t.check_count,
+                COUNT(distinct IF ( tcp.task_check_point_status != 0, tcp.id, null ) ) AS checked_count,
+                COUNT( distinct tcp.id ) AS check_point_num,
+                COUNT(distinct IF ( cr.check_result = 1, d.id, null ) ) AS fault_count,
+                COUNT( distinct d.id ) AS device_num,
+                GROUP_CONCAT(DISTINCT e.executor_name SEPARATOR ',') as executor_name
+            from t_task t
+            LEFT JOIN t_executor e ON t.id = e.task_id and e.executor_type = 0 and t.project_id = e.project_id
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            inner join device_manage.d_device d on d.check_point_id = tcp.check_point_id AND d.status  <![CDATA[ < ]]>  99
+            left join (
+                SELECT MAX(tcr.id) AS id, tcr.check_point_id,tcr.task_id,tcr.check_result,tcr.device_id
+                FROM t_check_record tcr
+                where tcr.project_id in
+                <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+                 GROUP BY 	tcr.task_id,tcr.check_point_id,tcr.device_id
+            ) cr on tcp.check_point_id = cr.check_point_id and t.id = cr.task_id and d.id = cr.device_id
+            where t.project_id in
+            <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            AND t.deleted = false  and t.type_task = 1 and t.task_type != 3
+            GROUP BY t.id
+            ORDER BY t.check_start_time DESC
+         ) w;
+    </select>
+
+    <!--查询大屏任务数量-->
+    <select id="findScreenTaskRecordAnalysisCount" resultType="java.lang.Integer">
+        SELECT count(w.id)
+        from (
+            SELECT t.id,t.task_name,t.check_start_time,
+                COUNT(distinct IF ( tcp.task_check_point_status != 0, tcp.id, null ) ) AS checked_count,
+                COUNT( distinct tcp.id ) AS check_point_num,
+                COUNT(distinct IF ( cr.check_result = 1, d.id, null ) ) AS fault_count,
+                COUNT( distinct d.id ) AS device_num,
+                GROUP_CONCAT(DISTINCT e.executor_name SEPARATOR ',') as executor_name
+            from t_task t
+            LEFT JOIN t_executor e ON t.id = e.task_id and e.executor_type = 0 and t.project_id = e.project_id
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            inner join device_manage.d_device d on d.check_point_id = tcp.check_point_id AND d.status  <![CDATA[ < ]]>  99
+            left join (
+                SELECT MAX(tcr.id) AS id, tcr.check_point_id,tcr.task_id,tcr.check_result,tcr.device_id
+                FROM t_check_record tcr
+                where tcr.project_id in
+                <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+                GROUP BY 	tcr.task_id,tcr.check_point_id,tcr.device_id
+            ) cr on tcp.check_point_id = cr.check_point_id and t.id = cr.task_id and d.id = cr.device_id
+            where t.project_id in
+            <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            AND t.deleted = false  and t.type_task = 1 and t.task_type != 3 GROUP BY t.id  ORDER BY t.check_start_time DESC
+        ) w;
+    </select>
+
+    <select id="findNotStartSonTaskByParentId" resultType="java.lang.Long">
+        SELECT DISTINCT  t.id
+        FROM t_task t
+        WHERE t.parent_id = #{parentTd} AND t.task_status = 0
+    </select>
+
+    <select id="findCurrentMontSubwayTask" parameterType="Task" resultType="SubwayTask">
+        SELECT
+            COUNT(DISTINCT check_point_id) AS checkPointNum,
+            COUNT(DISTINCT IF ( task_check_point_status IS NULL OR task_check_point_status = 0, check_point_id, null)) AS undetectedNum,
+            COUNT(DISTINCT IF ( task_check_point_status = 1, check_point_id, null))  AS faultNum,
+            project_id, task_id
+        FROM t_task_check_point
+        WHERE project_id = #{projectId}
+        AND task_id = (
+            SELECT t.id
+            FROM t_task t
+            LEFT JOIN t_task_check_point tcp ON t.id = tcp.task_id
+            INNER JOIN device_manage.d_check_point dcp ON tcp.check_point_id = dcp.id
+            WHERE dcp.project_id = #{projectId}
+            AND dcp.building_floor_id = #{buildingFloorId}
+            AND t.type_task = 1
+            AND t.deleted = 0
+            AND t.task_status = 1
+            AND t.org_type = 2
+            AND t.period_start_time &lt; NOW()
+            AND t.period_end_time > NOW()
+            GROUP BY t.id
+            LIMIT 1
+        )
+    </select>
+
+    <select id="findBuildingFloorMetroCheckPointCount" parameterType="Task" resultType="SubwayTask">
+        SELECT
+            pbf.id buildingFloorId,pbf.floor_name floorName,pbf.floor,pbf.building_id buildingId,
+            pbf.image_url imageUrl,pbf.line_color lineColor,pbf.line_size lineSize,t.task_id taskId,
+            t.checkPointNum,t.undetectedNum,t.faultNum
+        FROM project_manage.p_building_floor pbf
+        LEFT JOIN (
+        SELECT
+            COUNT(DISTINCT d.id) AS checkPointNum,
+            COUNT(DISTINCT(IF(cr.device_id IS NULL,d.id,NULL))) AS undetectedNum,
+            COUNT(DISTINCT IF ( tcp.task_check_point_status = 1, d.id, null))  AS faultNum,tcp.task_id,dcp.building_floor_id
+            FROM t_task_check_point tcp
+            INNER JOIN device_manage.d_device d ON d.check_point_id = tcp.check_point_id AND d.status &lt;= 98
+            LEFT JOIN t_check_record cr ON cr.check_point_id = tcp.check_point_id AND tcp.task_id = cr.task_id
+            INNER JOIN (
+                SELECT dcp.building_floor_id, dcp.building_id, dcp.id
+                FROM device_manage.d_check_point dcp
+                WHERE dcp.project_id = #{projectId}
+                AND dcp.building_id = #{buildingId}
+                <if test="buildingFloorId != null and buildingFloorId != 0">
+                    AND dcp.building_floor_id = #{buildingFloorId}
+                </if>
+                GROUP BY building_floor_id,id
+            ) dcp
+            ON dcp.id = tcp.check_point_id
+            WHERE tcp.task_id = #{id}
+            GROUP BY dcp.building_floor_id
+        ) t
+        ON t.building_floor_id = pbf.id
+        WHERE pbf.building_id  = #{buildingId}
+        AND pbf.deleted = false
+        ORDER BY pbf.floor ASC
+    </select>
+
+    <!--地铁抽检工单故障率完成率设备数量统计-->
+    <select id="findSpotCheckTaskDeviceStatusCount" parameterType="java.lang.Long" resultType="SpotCheckTask">
+        SELECT
+            MAX(t.version_no) versionNo,t.deviceNum,t.checkedNum,t.faultNum
+        FROM (
+            SELECT tcr.version_no,
+                COUNT(DISTINCT d.id) AS deviceNum,
+                COUNT(DISTINCT IF (tcr.check_result IS NOT NULL, d.id, null)) AS checkedNum,
+                COUNT(DISTINCT IF (tcr.check_result = 1, d.id, null))  AS faultNum
+            FROM task_manage.t_task_check_point tcp
+            LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+            LEFT JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+            LEFT JOIN task_manage.t_check_record tcr ON tcr.task_id = tcp.task_id AND tcp.check_point_id = tcr.check_point_id AND d.id = tcr.device_id
+            WHERE tcp.task_id = #{taskId} AND cp.status &lt;= 98
+            ORDER BY tcr.version_no DESC
+         ) t
+        GROUP BY t.version_no
+        LIMIT 1;
+    </select>
+
+    <!--根据任务id查询建筑物楼层列表-->
+    <select id="findBuildingAndFloorListByTaskId" parameterType="Task" resultType="SubwayTask">
+        SELECT dcp.building_id buildingId
+        FROM t_task_check_point tcp
+        LEFT JOIN (
+            SELECT dcp.building_floor_id,dcp.building_id,dcp.id
+            FROM device_manage.d_check_point dcp
+            WHERE dcp.project_id = #{projectId}
+            AND dcp.building_id >= 1
+            AND dcp.status &lt;= 98
+            GROUP BY building_floor_id,id
+        ) dcp
+        ON dcp.id = tcp.check_point_id
+        WHERE tcp.task_id = #{id}
+        GROUP BY buildingId
+    </select>
+
+</mapper>

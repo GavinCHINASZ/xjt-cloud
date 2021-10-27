@@ -1,0 +1,8 @@
+com\xjt\cloud\iot\netty\controller\gateway\FireGatewayController.class
+com\xjt\cloud\iot\netty\controller\electricalFire\ElectricalFireEventRecordController.class
+com\xjt\cloud\iot\netty\controller\eye\FireEyeEventController.class
+com\xjt\cloud\iot\netty\controller\IotDeviceController.class
+com\xjt\cloud\iot\netty\common\ConstantsIotNetty.class
+com\xjt\cloud\iot\netty\ServletInitializers.class
+com\xjt\cloud\iot\netty\XjtCloudIotNettyManageApplication.class
+com\xjt\cloud\iot\netty\controller\smoke\SmokeEventController.class

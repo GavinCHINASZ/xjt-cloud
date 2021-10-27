@@ -1,0 +1,995 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.fire.FireAlarmEventDao" >
+
+    <resultMap id="fireAlarmEventResultMap" type="com.xjt.cloud.iot.core.entity.fire.FireAlarmEvent" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+
+        <result column="alarm_device_name" property="alarmDeviceName" jdbcType="VARCHAR" />
+        <result column="alarm_position" property="alarmPosition" jdbcType="VARCHAR" />
+        <result column="event_type" property="eventType" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="recover_time" property="recoverTime" jdbcType="TIMESTAMP"/>
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER"/>
+        <result column="record_id" property="recordId" jdbcType="BIGINT"/>
+        <result column="recover_record_id" property="recoverRecordId" jdbcType="BIGINT"/>
+        <result column="trans_device_id" property="transDeviceId" jdbcType="VARCHAR"/>
+        <result column="trans_device_name" property="transDeviceName" jdbcType="VARCHAR"/>
+        <result column="fire_alarm_no" property="fireAlarmNo" jdbcType="VARCHAR"/>
+        <result column="fire_alarm_device_id" property="fireAlarmDeviceId" jdbcType="BIGINT"/>
+        <result column="event_cause" property="eventCause" jdbcType="INTEGER"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="confirm" property="confirm" jdbcType="INTEGER"/>
+        <result column="confirms" property="confirms" jdbcType="INTEGER"/>
+        <result column="handle_time" property="handleTime" jdbcType="TIMESTAMP"/>
+        <result column="event_handle_time" property="endHandleTime" jdbcType="TIMESTAMP"/>
+        <result column="area_type" property="areaType" jdbcType="INTEGER"/>
+        <result column="date_num" property="dateNum" jdbcType="INTEGER"/>
+        <result column="unit" property="unit" jdbcType="VARCHAR"/>
+        <result column="remarks" property="remarks" jdbcType="VARCHAR"/>
+        <result column="monitor_type" property="monitorType" jdbcType="INTEGER"/>
+        <result column="protect_id" property="protectId" jdbcType="BIGINT"/>
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="fireEventWhere">
+        <where>
+            <if test="id != null and id != 0">
+                AND fae.id = #{id}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND fae.project_id = #{projectId}
+            </if>
+            <if test="fireAlarmNo != null and fireAlarmNo != ''">
+                AND fae.fire_alarm_no = #{fireAlarmNo}
+            </if>
+            <if test="alarmDeviceName != null and alarmDeviceName != ''">
+                AND fae.alarm_device_name LIKE CONCAT('%', #{alarmDeviceName}, '%')
+            </if>
+            <if test="transDeviceName != null and transDeviceName != ''">
+                AND fae.trans_device_name LIKE CONCAT('%', #{transDeviceName}, '%')
+            </if>
+            <if test="alarmPosition != null and alarmPosition != ''">
+                AND fae.alarm_position LIKE CONCAT('%', #{alarmPosition}, '%')
+            </if>
+
+            <if test="startTime != null and endTime != null">
+                AND fae.create_time BETWEEN #{startTime} AND #{endTimeDesc}
+            </if>
+            <if test="beginTime != null and endTime != null">
+                AND fae.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+            </if>
+
+            <if test="recoverStatus != null and recoverStatus != 0">
+                AND fae.recover_status = #{recoverStatus}
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                AND fae.device_id = #{deviceId}
+            </if>
+            <if test="eventType != null and eventType != 0">
+                AND fae.event_type = #{eventType}
+            </if>
+            <if test="byFaultEventType != null and byFaultEventType != 0">
+                AND fae.event_type = #{byFaultEventType}
+            </if>
+            <if test="eventCause != null and eventCause != 0">
+                AND fae.event_cause = #{eventCause}
+            </if>
+            <if test="confirm != null and confirm != 0">
+                AND fae.confirm = #{confirm}
+            </if>
+            <if test="monitorTypeArr != null and monitorTypeArr.length > 0">
+                AND fae.monitor_type IN
+                <foreach item="item" collection="monitorTypeArr" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="eventTypeArr != null and eventTypeArr.length > 0">
+                AND fae.event_type IN
+                <foreach item="item" collection="eventTypeArr" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND fae.id IN
+                <foreach item="item" collection="ids" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="recoverStatusArr != null and recoverStatusArr.length > 0">
+                AND fae.recover_status IN
+                <foreach item="item" collection="recoverStatusArr" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="projectIds != null and projectIds.length > 0">
+                AND fae.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="handleStatuss != null">
+                <foreach item="item" collection="handleStatuss" >
+                    <if test="item == 1">AND faeh.create_time IS NOT NULL</if>
+                    <if test="item == 2">AND faeh.create_time IS NULL</if>
+                </foreach>
+            </if>
+            <if test="handleStatus != null and handleStatus != 0">
+                <if test="handleStatus == 1">AND faeh.create_time IS NOT NULL</if>
+                <if test="handleStatus == 2">AND faeh.create_time IS NULL</if>
+            </if>
+
+            <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                AND faeh.device_fault_type_id = #{deviceFaultTypeId}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询火警主机事件列表导出 -->
+    <select id="downLoadFireAlarmEventList" parameterType="FireAlarmEvent" resultType="FireAlarmEvent">
+        SELECT fae.event_type eventType, fae.fire_alarm_no fireAlarmNo, fae.alarm_device_name alarmDeviceName, fae.trans_device_name transDeviceName,
+            fae.alarm_position alarmPosition, fae.create_time createTime, fae.recover_time recoverTime, fae.recover_status recoverStatus, fae.event_cause eventCause, 
+            fae.description, fae.confirm, fae.remarks, fae.monitor_type monitorType, handle_time handleTime, fae.unit, fae.area_type areaType,
+            MAX(faeh.create_time) endHandleTime, IF(faeh.id IS NULL, 1, 2) confirms,
+            MAX(IF(faeh.id IS NULL, 2, 1)) eventExistStatus, MAX(IF(faeh.id IS NULL, 2, 1)) handleStatus
+        FROM f_fire_alarm_event fae
+        RIGHT JOIN f_fire_alarm_device fad ON fae.fire_alarm_device_id = fad.id AND fad.status &lt; 99
+        LEFT JOIN iot_manage.f_fire_alarm_event_handle faeh ON fae.id = faeh.event_id
+
+        <include refid="fireEventWhere"/>
+        GROUP BY fae.id
+        ORDER BY fae.create_time DESC
+    </select>
+
+    <!-- 查询火警主机事件列表 -->
+    <select id="findFireAlarmEventList" parameterType="FireAlarmEvent" resultMap="fireAlarmEventResultMap">
+        SELECT fae.id, fae.project_id, fae.alarm_device_name, fae.device_id, fae.alarm_position, fae.event_type, fae.trans_device_id,
+            fae.fire_alarm_no, fae.create_time, fae.recover_time, fae.recover_status, fae.trans_device_name, fae.event_cause, 
+            fae.description, fae.confirm, fae.remarks, fae.monitor_type, handle_time , fae.unit, fae.area_type, fae.fire_alarm_device_id,
+            MAX(faeh.create_time) event_handle_time, IF(faeh.id IS NULL, 1, 2) confirms,
+            faeh.description handleDescription, faeh.create_user_name handleUserName,
+            MAX(IF(faeh.id IS NULL, 2, 1)) eventExistStatus, MAX(IF(faeh.id IS NULL, 2, 1)) handleStatus,
+            cp.id check_point_id, cp.qr_no point_qr_no, cp.point_name, dt.device_sys_name
+            ,dft.fault_type
+        FROM f_fire_alarm_event fae
+        RIGHT JOIN (
+            SELECT fad.id
+            FROM f_fire_alarm_device fad
+            WHERE fad.status &lt; 99
+            <if test="projectIds != null and projectIds.length > 0">
+                AND fad.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="projectId != null and projectId > 0">
+                AND fad.project_id = #{projectId}
+            </if>
+        ) fad ON fae.fire_alarm_device_id = fad.id
+
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.event_id, ta.device_type, ta.description, ta.create_time, ta.create_user_name
+            FROM iot_manage.f_fire_alarm_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id
+                FROM iot_manage.f_fire_alarm_event_handle
+                WHERE project_id = #{projectId}
+                <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                    AND device_fault_type_id = #{deviceFaultTypeId}
+                </if>
+                <if test="handleDeviceType != null">
+                    AND device_type = #{handleDeviceType}
+                </if>
+                <if test="createTime != null">
+                    AND create_time >= #{createTime}
+                </if>
+                GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) faeh ON fae.id = faeh.event_id
+
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = faeh.device_fault_type_id
+
+        LEFT JOIN device_manage.d_device d ON fae.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        <include refid="fireEventWhere"/>
+        GROUP BY fae.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询火警主机事件列表 导出 -->
+    <select id="findFireAlarmEventLists" parameterType="FireAlarmEvent" resultMap="fireAlarmEventResultMap">
+        SELECT t.id, t.project_id, t.alarm_device_name, t.device_id, t.alarm_position, t.event_type, s.date_num, t.trans_device_id, 
+            t.fire_alarm_no, t.create_time, t.recover_time, t.recover_status, t.trans_device_name, t.event_cause, 
+            t.description, t.confirm, t.remarks, t.monitor_type, t.unit, t.area_type
+        FROM (
+            SELECT
+                fae.id, fae.project_id, fae.alarm_device_name, fae.device_id, fae.alarm_position, fae.event_type, fae.trans_device_id, 
+                fae.fire_alarm_no, fae.create_time, fae.recover_time, fae.recover_status, fae.trans_device_name, fae.event_cause, 
+                fae.description, fae.confirm, fae.remarks, fae.monitor_type, handle_time , fae.unit, fae.area_type
+            FROM f_fire_alarm_event fae
+            RIGHT JOIN (
+                SELECT fad.id
+                FROM f_fire_alarm_device fad
+                WHERE fad.status &lt; 99
+                <if test="projectIds != null and projectIds.length > 0">
+                    AND fad.project_id IN
+                    <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="projectId != null and projectId > 0">
+                    AND fad.project_id = #{projectId}
+                </if>
+            ) fad ON fae.fire_alarm_device_id = fad.id
+            <include refid="fireEventWhere"/>
+            GROUP BY fae.id
+        ) t
+        LEFT JOIN (
+            SELECT fae.event_type, COUNT(fae.event_type) date_num
+            FROM f_fire_alarm_event fae
+            RIGHT JOIN (
+                SELECT fad.id
+                FROM f_fire_alarm_device fad
+                WHERE fad.status &lt; 99
+                <if test="projectIds != null and projectIds.length > 0">
+                    AND fad.project_id IN
+                    <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="projectId != null and projectId > 0">
+                    AND fad.project_id = #{projectId}
+                </if>
+            ) fad ON fae.fire_alarm_device_id = fad.id
+            <include refid="fireEventWhere"/>
+            GROUP BY fae.event_type
+        ) s ON t.event_type = s.event_type
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 根据条件统计火警主机事件数 -->
+    <select id="findFireAlarmEventCount" parameterType="FireAlarmEvent" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT fae.id) totalCount
+        FROM f_fire_alarm_event fae
+        RIGHT JOIN (
+            SELECT fad.id
+            FROM f_fire_alarm_device fad
+            WHERE fad.status &lt; 99
+            <if test="projectIds != null and projectIds.length > 0">
+                AND fad.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="projectId != null and projectId > 0">
+                AND fad.project_id = #{projectId}
+            </if>
+        ) fad ON fae.fire_alarm_device_id = fad.id
+        LEFT JOIN iot_manage.f_fire_alarm_event_handle faeh ON fae.id = faeh.event_id
+        <include refid="fireEventWhere"/>
+    </select>
+    
+    <!-- 保存火警主机事件 -->
+    <insert id="saveFireAlarmEvent" parameterType="FireAlarmEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO f_fire_alarm_event (project_id, device_id, alarm_device_name, alarm_position, event_type, fire_alarm_no, create_time, record_id,
+            trans_device_id, recover_status, trans_device_name, fire_alarm_device_id, confirm, description, area_type, unit)
+        VALUES (#{projectId}, #{deviceId}, #{alarmDeviceName}, #{alarmPosition}, #{eventType} , #{fireAlarmNo}, NOW(), 
+        #{recordId}, #{transDeviceId}, #{recoverStatus}, #{transDeviceName}, #{fireAlarmDeviceId}, 1, #{description}, #{areaType}, #{unit})
+    </insert>
+
+    <!-- 更新 火警主机 -->
+    <update id="updateFireAlarmEvent" parameterType="FireAlarmEvent">
+        UPDATE f_fire_alarm_event
+        <set>
+            <if test="protectId != null and protectId > 0">
+                protect_id = #{protectId},
+            </if>
+        </set>
+        WHERE 1 = 1
+        <if test="id != null and id > 0">
+            AND id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            AND id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <sql id="formatCreateTime">
+        <if test="dateType != null and dateType == 1">
+            , DATE_FORMAT(date_list.createTime, '%H:%i') createTime
+        </if>
+        <if test="dateType != null and dateType == 2">
+            , DATE_FORMAT(date_list.createTime, '%Y-%c-%d') createTime
+        </if>
+        <if test="dateType != null and dateType == 3">
+            , DATE_FORMAT(date_list.createTime, '%Y-%m') createTime
+        </if>
+        <if test="dateType != null and dateType == 4">
+            , DATE_FORMAT(date_list.createTime, '%Y') createTime
+        </if>
+    </sql>
+    
+    <sql id="formatTime">
+        <if test="dateType != null and dateType == 1">
+            , DATE_FORMAT(e.create_time, '%Y-%m-%d %H') createTime
+        </if>
+        <if test="dateType != null and dateType == 2">
+            , DATE_FORMAT(e.create_time, '%Y-%m-%d') createTime
+        </if>
+        <if test="dateType != null and dateType == 3">
+            , DATE_FORMAT(e.create_time, '%Y-%m') createTime
+        </if>
+        <if test="dateType != null and dateType == 4">
+            , DATE_FORMAT(e.create_time, '%Y') createTime
+        </if>
+    </sql>
+    
+    <sql id="formatTimeRow">
+        <if test="dateType != null and dateType == 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 HOUR), '%Y-%m-%d %H') createTime
+        </if>
+        <if test="dateType != null and dateType == 2">
+            @date := DATE_ADD(@date, interval 1 DAY) createTime
+        </if>
+        <if test="dateType != null and dateType == 3">
+            @date := DATE_ADD(@date, interval 1 MONTH) createTime
+        </if>
+        <if test="dateType != null and dateType == 4">
+            @date := DATE_ADD(@date, interval 1 YEAR) createTime
+        </if>
+    </sql>
+    
+    <!-- 更新火警主机事件恢复时间 /*help_topic*/ -->
+    <select id="findBrokenLineEventNum" parameterType="FireAlarmEvent" resultType="FireEventReport">
+        SELECT
+            IFNULL(d.eventTotal, 0) eventTotal, IFNULL(d.fireEvent, 0) fireEvent, IFNULL(d.monitorEvent, 0) monitorEvent, IFNULL(d.faultEvent, 0) faultEvent, 
+            IFNULL(d.offLineEvent, 0) offLineEvent
+            <include refid="formatCreateTime"/>
+        FROM(
+            SELECT COUNT(e.id) eventTotal, SUM(e.event_type = 1) fireEvent, SUM(e.event_type = 2) monitorEvent, SUM(e.event_type = 7) faultEvent,
+                SUM(e.event_type = 21) offLineEvent
+                <include refid="formatTime"/>
+            FROM f_fire_alarm_event e
+            RIGHT JOIN (
+                SELECT fad.id
+                FROM f_fire_alarm_device fad
+                WHERE fad.status &lt; 99
+                <if test="projectId != null and projectId != 0">
+                    AND fad.project_id = #{projectId}
+                </if>
+                <if test="projectIds != null and projectIds.length > 0">
+                    AND fad.project_id IN
+                    <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                        #{item}
+                    </foreach>
+                </if>
+            ) fad ON e.fire_alarm_device_id = fad.id
+            WHERE e.create_time BETWEEN #{startTime} AND #{endTime}
+                <if test="projectId != null and projectId != 0">
+                    AND e.project_id = #{projectId}
+                </if>
+                <if test="recoverStatus != null and recoverStatus != 0">
+                    AND e.recover_status = #{recoverStatus}
+                </if>
+                <if test="alarmPosition != null and alarmPosition != ''">
+                    AND e.alarm_position LIKE CONCAT('%', #{alarmPosition}, '%')
+                </if>
+                <if test="projectIds != null and projectIds.length > 0">
+                    AND e.project_id IN
+                    <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                        #{item}
+                    </foreach>
+                </if>
+            GROUP BY createTime
+        ) d
+        RIGHT JOIN(
+            SELECT <include refid="formatTimeRow"/>
+            FROM(
+                SELECT <include refid="formatTimeLine"/>
+                FROM b_base_data
+                LIMIT #{dateNum}
+            ) days
+            LIMIT #{dateNum}
+        ) date_list
+        ON
+        <include refid="formatTimeON"/>
+        ORDER BY createTime
+    </select>
+    
+    <sql id="formatTimeLine">
+        <if test="dateType != null and dateType == 1">
+            @date := DATE_ADD(DATE_FORMAT(#{startTime}, '%Y-%m-%d %H'), interval -1 HOUR)
+        </if>
+        <if test="dateType != null and dateType == 2">
+            @date := DATE_ADD(DATE_FORMAT(#{startTime}, '%Y-%m-%d'), interval -1 DAY)
+        </if>
+        <if test="dateType != null and dateType == 3">
+            @date := DATE_ADD(DATE_FORMAT(#{startTime}, '%Y-%m-%d'), interval -1 MONTH)
+        </if>
+        <if test="dateType != null and dateType == 4">
+            @date := DATE_ADD(DATE_FORMAT(#{startTime}, '%Y-%m-%d'), interval -1 YEAR)
+        </if>
+    </sql>
+    
+    <sql id="formatTimeON">
+        <if test="dateType != null and dateType == 1">
+            DATE_FORMAT(date_list.createTime, '%Y-%m-%d %H') = d.createTime
+        </if>
+        <if test="dateType != null and dateType == 2">
+            DATE_FORMAT(date_list.createTime, '%Y-%m-%d') = d.createTime
+        </if>
+        <if test="dateType != null and dateType == 3">
+            DATE_FORMAT(date_list.createTime, '%Y-%m') = d.createTime
+        </if>
+        <if test="dateType != null and dateType == 4">
+            DATE_FORMAT(date_list.createTime, '%Y') = d.createTime
+        </if>
+    </sql>
+    
+    <!-- 火警主机折线图事件数统计查询 -->
+    <update id="modifyFireAlarmEventRecoverStatus" parameterType="FireAlarmEvent">
+        UPDATE f_fire_alarm_event fae
+        SET fae.recover_time = NOW(),
+            fae.recover_record_id = #{recoverRecordId},
+            fae.recover_status = #{recoverStatus}
+        <where>
+            fae.recover_status = 2
+            <if test="id != null and id != 0">
+               AND fae.id = #{id}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND fae.project_id = #{projectId}
+            </if>
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND fae.trans_device_id = #{transDeviceId}
+            </if>
+            <if test="fireAlarmNo != null and fireAlarmNo != ''">
+                AND fae.fire_alarm_no = #{fireAlarmNo}
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                AND fae.device_id = #{deviceId}
+            </if>
+        </where>
+
+    </update>
+
+    <sql id="formatTimeOrderBy">
+        <if test="groupType != null and groupType == 1">
+            str_to_date(date_list.createTime, '%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            str_to_date(date_list.createTime, '%Y-%c-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            str_to_date(date_list.createTime, '%Y-%c')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            str_to_date(date_list.createTime, '%Y')
+        </if>
+    </sql>
+    
+    <!-- 火警主机饼图事件数统计查询 -->
+    <select id="findPieEventNum" parameterType="FireAlarmEvent" resultType="FireEventReport">
+        SELECT
+            IFNULL(COUNT(e.id), 0) eventTotal, IFNULL(SUM(e.event_type = 1), 0) fireEvent, 
+            IFNULL(SUM(e.event_type = 2), 0) monitorEvent, IFNULL(SUM(e.event_type = 7), 0) faultEvent, IFNULL(SUM(e.event_type = 21), 0) offLineEvent
+        FROM f_fire_alarm_event e
+        RIGHT JOIN (
+            SELECT fad.id
+            FROM f_fire_alarm_device fad
+            WHERE fad.status &lt; 99
+            <if test="projectId != null and projectId != 0">
+                AND fad.project_id = #{projectId}
+            </if>
+            <if test="projectIds != null and projectIds.length > 0">
+                AND fad.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+        ) fad
+        ON e.fire_alarm_device_id = fad.id
+        <where>
+            <if test="projectId != null and projectId != 0">
+                AND e.project_id = #{projectId}
+            </if>
+            <if test="startTime != null and endTime != null">
+                AND e.create_time BETWEEN #{startTime} AND #{endTime}
+            </if>
+            <if test="recoverStatus != null and recoverStatus != 0">
+                AND e.recover_status = #{recoverStatus}
+            </if>
+            <if test="projectIds != null and projectIds.length > 0">
+                AND e.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 火警主机事件监测 -->
+    <select id="findFireAlarmEventMonitor" parameterType="FireAlarmEvent" resultType="FireEventReport">
+        SELECT SUM(fae.fireEvent) fireEvent, SUM(fae.monitorEvent) monitorEvent, SUM(fae.faultEvent) faultEvent
+        FROM f_fire_alarm_device fad
+        LEFT JOIN (
+            SELECT SUM(IF(fae.event_type = 1 and fae.recover_status = 2, 1, 0)) fireEvent,
+                    SUM(IF(fae.event_type = 2 and fae.recover_status = 2, 1, 0)) monitorEvent,
+                    SUM(IF(fae.event_type = 7 and fae.recover_status = 2, 1, 0)) faultEvent,
+                    fae.fire_alarm_device_id
+            FROM f_fire_alarm_event fae
+            <where>
+                <if test="projectId != null and projectId != 0">
+                    AND fae.project_id = #{projectId}
+                </if>
+                <if test="recoverStatus != null and recoverStatus != 0">
+                    AND fae.recover_status = #{recoverStatus}
+                </if>
+                <if test="startTime != null">
+                    AND fae.create_time >= #{startTime}
+                </if>
+                <if test="endTime != null">
+                    AND fae.create_time &lt; #{endTime}
+                </if>
+            </where>
+            GROUP BY fae.fire_alarm_device_id
+        )fae
+        ON fae.fire_alarm_device_id = fad.id
+        WHERE fad.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND fad.project_id = #{projectId}
+        </if>
+    </select>
+
+    <!--通过id查询事件详情-->
+    <select id="findFireAlarmEventById" parameterType="FireAlarmEvent"  resultType="FireAlarmEvent">
+        SELECT fae.id, fae.project_id projectId, fae.alarm_device_name alarmDeviceName, fae.device_id deviceId, fae.alarm_position alarmPosition,
+            fae.event_type eventType, fae.trans_device_id transDeviceId, fae.fire_alarm_no fireAlarmNo, fae.create_time createTime, fae.recover_time recoverTime,
+            fae.recover_status recoverStatus, fae.trans_device_name transDeviceName, fae.event_cause eventCause,
+            fae.description, fae.confirm, fae.remarks, fae.monitor_type monitorType, handle_time handleTime, fae.unit, fae.area_type areaType
+        FROM f_fire_alarm_event fae
+        <include refid="fireEventWhere"/>
+        LIMIT 1
+    </select>
+    
+    <!--根据记录筛选查询事件列表-->
+    <select id="findEventListByRecord" parameterType="FireAlarmRecord" resultType="FireAlarmEvent">
+        SELECT fae.id, fae.project_id projectId, fae.alarm_device_name alarmDeviceName, fae.device_id deviceId,
+            fae.alarm_position alarmPosition, fae.event_type eventType, fae.trans_device_id transDeviceId, 
+            fae.fire_alarm_no fireAlarmNo, fae.create_time createTime, fae.recover_time recoverTime, 
+            fae.recover_status recoverStatus, fae.trans_device_name transDeviceName
+        FROM f_fire_alarm_event fae
+        RIGHT JOIN f_fire_alarm_record far
+        ON far.id = fae.record_id
+        <include refid="findEventSql"/>
+    </select>
+    
+    <!--根据记录筛选查询事件列表-->
+    <select id="findEventByRecord" parameterType="FireAlarmRecord" resultType="FireAlarmEvent">
+        SELECT fae.id, fae.project_id projectId, fae.alarm_device_name alarmDeviceName, fae.device_id deviceId,
+            fae.alarm_position alarmPosition, fae.event_type eventType, fae.trans_device_id transDeviceId,
+            fae.fire_alarm_no fireAlarmNo, fae.create_time createTime, fae.recover_time recoverTime,
+            fae.recover_status recoverStatus, fae.trans_device_name transDeviceName
+        FROM f_fire_alarm_event fae
+        INNER JOIN f_fire_alarm_record far
+        ON far.id = fae.record_id
+        <include refid="findEventSql"/>
+        LIMIT 1
+    </select>
+    
+    <sql id="findEventSql">
+        <where>
+            fae.recover_status = 2
+            <if test="recordPosition != null and recordPosition != ''">
+                AND far.record_position = #{recordPosition}
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND far.device_name = #{deviceName}
+            </if>
+            <if test="fireAlarmDeviceId != null and fireAlarmDeviceId != 0">
+                AND far.fire_alarm_device_id = #{fireAlarmDeviceId}
+            </if>
+            <if test="positionCode != null and positionCode != ''">
+                AND far.position_code = #{positionCode}
+            </if>
+            <if test="deviceCode != null and deviceCode != ''">
+                AND far.device_code = #{deviceCode}
+            </if>
+            <if test="deviceAddress != null and deviceAddress != ''">
+                AND far.device_address = #{deviceAddress}
+            </if>
+            <if test="fireAlarmNo != null and fireAlarmNo != ''">
+                AND fae.fire_alarm_no = #{fireAlarmNo}
+            </if>
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND fae.trans_device_id = #{transDeviceId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND fae.project_id = #{projectId}
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                AND fae.device_id = #{deviceId}
+            </if>
+            <if test="eventTypeArr != null and eventTypeArr.length > 0">
+                AND fae.event_type IN
+                <foreach item="item" collection="eventTypeArr" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="eventType != null and eventType != 0">
+                AND fae.event_type = #{eventType}
+            </if>
+            <if test="projectIds != null and projectIds.length > 0">
+                AND fae.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+    
+    <!--查询火警主机离线事件最新的一条-->
+    <select id="findFireAlarmEventNewest" parameterType="FireAlarmEvent" resultType="FireAlarmEvent">
+        SELECT fae.id, fae.event_type eventType, fae.recover_status recoverStatus
+        FROM f_fire_alarm_event fae
+        RIGHT JOIN f_fire_alarm_device fad
+        ON fae.fire_alarm_device_id = fad.id and fad.status &lt; 99
+        <where>
+                fae.event_type = 21
+            <if test="fireAlarmNo != null and fireAlarmNo != ''">
+                AND fae.fire_alarm_no = #{fireAlarmNo}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND fae.project_id = #{projectId}
+            </if>
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND fae.trans_device_id = #{transDeviceId}
+            </if>
+        </where>
+        ORDER BY fae.create_time DESC
+        LIMIT 1
+    </select>
+    
+    <!--查询火警主机离线事件未恢复的最新列表-->
+    <select id="findOffLineEventNewestList" parameterType="FireAlarmEvent" resultType="FireAlarmEvent">
+        SELECT fae.id, fae.event_type eventType, fae.recover_status recoverStatus
+        FROM f_fire_alarm_event fae
+        RIGHT JOIN f_fire_alarm_device fad
+        ON fae.fire_alarm_device_id = fad.id AND fad.status &lt; 99
+        <where>
+            fae.event_type = 21
+            AND fae.recover_status = 2
+            <if test="fireAlarmNo != null and fireAlarmNo != ''">
+                AND fae.fire_alarm_no = #{fireAlarmNo}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND fae.project_id = #{projectId}
+            </if>
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND fae.trans_device_id = #{transDeviceId}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 更新火警主机离线事件恢复时间和状态 -->
+    <update id="modifyOffLineEventStatus">
+        UPDATE f_fire_alarm_event fae
+        SET fae.recover_time = NOW(), fae.recover_status = 1
+        WHERE fae.recover_status = 2
+        AND fae.event_type = 21
+        AND fae.trans_device_id = #{transDeviceId}
+    </update>
+    
+    <!--火警主机网关-->
+    <select id="findGatewayEvent" parameterType="FireAlarmEvent" resultType="FireAlarmEvent">
+        SELECT fae.id, fae.project_id projectId, fae.alarm_device_name alarmDeviceName, fae.device_id deviceId,
+            fae.alarm_position alarmPosition, fae.event_type eventType, fae.trans_device_id transDeviceId, 
+            fae.fire_alarm_no fireAlarmNo, fae.create_time createTime, fae.recover_time recoverTime, 
+            fae.recover_status recoverStatus, fae.trans_device_name transDeviceName
+        FROM f_fire_alarm_event fae
+        RIGHT JOIN f_fire_alarm_device fad
+        ON fae.fire_alarm_device_id = fad.id AND fad.status &lt; 99
+        <where>
+            fae.recover_status = 2
+            <if test="alarmPosition != null and alarmPosition != ''">
+                AND fae.alarm_position = #{alarmPosition}
+            </if>
+            <if test="alarmDeviceName != null and alarmDeviceName != ''">
+                AND fae.alarm_device_name = #{alarmDeviceName}
+            </if>
+            <if test="fireAlarmNo != null and fireAlarmNo != ''">
+                AND fae.fire_alarm_no = #{fireAlarmNo}
+            </if>
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND fae.trans_device_id = #{transDeviceId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND fae.project_id = #{projectId}
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                AND fae.device_id = #{deviceId}
+            </if>
+            <if test="eventType != null and eventType != 0">
+                AND fae.event_type = #{eventType}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+    
+    <!--根据传感器id查询离线事件列表-->
+    <select id="findFireEventByFrom" parameterType="java.lang.String" resultType="FireAlarmEvent">
+        SELECT fae.id, fae.event_type eventType, fae.project_id projectId,
+            fae.fire_alarm_no fireAlarmNo, fae.trans_device_id transDeviceId, fae.trans_device_name transDeviceName
+        FROM f_fire_alarm_device fad
+        LEFT JOIN f_fire_alarm_event fae ON fae.fire_alarm_device_id = fad.id
+        WHERE fad.status &lt;= 98 AND fae.recover_status = 2
+        AND fae.trans_device_id = #{from}
+        AND fae.event_type = 21
+        GROUP BY fae.id
+    </select>
+
+    <!--地铁火警事件原因统计-->
+    <select id="findSubwayEventOfCauseCount" parameterType="FireAlarmEvent" resultType="FireEventReport">
+        SELECT e.event_cause eventCause, COUNT(DISTINCT e.id) eventTotal
+        FROM f_fire_alarm_event e
+        RIGHT JOIN f_fire_alarm_device fad ON e.fire_alarm_device_id = fad.id and fad.status &lt; 99
+        <where>
+            e.event_type = 1
+            AND e.event_cause IN (1, 2, 3, 4, 5, 7)
+            <if test="projectId != null and projectId != 0">
+                AND e.project_id = #{projectId}
+            </if>
+            <if test="startTime != null and endTime != null">
+                AND e.create_time BETWEEN #{startTime} AND #{endTime}
+            </if>
+            <if test="projectIds != null and projectIds.length > 0">
+                AND e.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY eventCause
+        ORDER BY eventTotal DESC LIMIT 5
+    </select>
+
+    <!--地铁事件处理接口-->
+    <update id="updateEventCauseById" parameterType="FireAlarmEvent">
+        UPDATE f_fire_alarm_event fae
+        SET event_cause = #{eventCause}, confirm = 2, description = #{description}
+        WHERE
+            <if test="ids != null and ids.length > 0">
+                fae.id IN
+                <foreach item="item" collection="ids" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="id != null and id != 0">
+                fae.id = #{id}
+            </if>
+    </update>
+    
+    <!--地铁事件-->
+    <select id="findSubwayEventCount" parameterType="FireAlarmEvent" resultType="SubwayFireEvent">
+        SELECT COUNT(DISTINCT fae.id) alarmDeviceNum, fae.alarm_device_name alarmDeviceName, fae.event_type eventType, fae.event_cause eventCause
+        FROM f_fire_alarm_event fae
+        <where>
+            fae.event_cause IN (1, 2, 3, 4, 5, 7)
+            <if test="projectIds != null and projectIds.length > 0">
+                AND fae.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator=", " close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="startTime != null and endTime != null">
+                AND fae.create_time BETWEEN #{startTime} AND #{endTime}
+            </if>
+        </where>
+        GROUP BY eventCause
+        ORDER BY alarmDeviceNum DESC
+        LIMIT 5
+    </select>
+    
+    <!--火警主机改版处理状态接口-->
+    <update id="updateFireEventHandleStatus" parameterType="FireAlarmEvent">
+        UPDATE f_fire_alarm_event fae
+        SET fae.confirm = 2, fae.handle_time = NOW()
+        <if test="monitorType != null and monitorType != 0">
+            , fae.monitor_type = #{monitorType}
+        </if>
+        <if test="remarks != null and remarks != ''">
+            , fae.remarks = #{remarks}
+        </if>
+        where
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach item="item" collection="ids" index="index" open="(" separator=", " close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+    
+    <select id="findInterAreaTypeEventCount" parameterType="FireAlarmEvent" resultType="InterEntity">
+        SELECT IFNULL(d.outerNum, 0) outerNum, IFNULL(d.cleanAreaNum, 0) cleanAreaNum
+        <include refid="formatCreateTime"/>
+        FROM(
+            SELECT SUM(e.area_type = 1) outerNum, SUM(e.area_type = 2) cleanAreaNum
+            <include refid="formatTime"/>
+            FROM f_fire_alarm_event e
+            RIGHT JOIN (
+                SELECT fad.id
+                FROM f_fire_alarm_device fad
+                WHERE fad.status &lt; 99
+                <if test="projectId != null and projectId != 0">
+                    AND fad.project_id = #{projectId}
+                </if>
+            ) fad ON e.fire_alarm_device_id = fad.id
+            WHERE e.create_time BETWEEN #{startTime} AND #{endTime} AND e.recover_status = 2
+            <if test="projectId != null and projectId != 0">
+                AND e.project_id = #{projectId}
+            </if>
+            GROUP BY createTime
+        ) d
+        RIGHT JOIN(
+            SELECT <include refid="formatTimeRow"/>
+            FROM(
+                SELECT <include refid="formatTimeLine"/>
+                FROM b_base_data
+                LIMIT #{dateNum}
+            ) days
+            LIMIT #{dateNum}
+        ) date_list ON <include refid="formatTimeON"/>
+        ORDER BY createTime
+    </select>
+    
+    <!-- 地铁 班前防护 -->
+    <select id="findMetroProtectionFaultEventList" parameterType="FireAlarmEvent" resultMap="fireAlarmEventResultMap">
+        SELECT x.id, tpg.grade_name alarm_position, x.create_time, x.last_modify_time,
+               x.recover_status recover_status
+        FROM (
+            SELECT tpg.id, tpg.grade_name
+            FROM task_manage.t_protect_grade tpg
+            WHERE 1 = 1
+            <if test="protectGradeId != null and protectGradeId > 0">
+                AND tpg.parent_id = #{protectGradeId}
+            </if>
+            <if test="sign != null and sign > 0">
+                AND tpg.sign = #{sign}
+            </if>
+        ) tpg
+        LEFT JOIN (
+            SELECT f.id, f.alarm_position, f.recover_status, f.create_time, f.last_modify_time
+            FROM f_fire_alarm_event f
+            INNER JOIN (
+                SELECT MAX(fae.id) id
+                FROM f_fire_alarm_event fae
+                INNER JOIN task_manage.t_protect_grade pg ON fae.alarm_position = pg.grade_name
+                WHERE fae.event_type = 7
+                AND fae.project_id = #{projectId}
+                <if test="ids != null and ids.length > 0">
+                    AND fae.id IN
+                    <foreach collection="ids" item="item" open="(" separator=", " close=")">
+                        #{item}
+                    </foreach>
+                </if>
+
+                <if test="alarmPositionArr != null and alarmPositionArr.length > 0">
+                    AND fae.alarm_position IN
+                    <foreach collection="alarmPositionArr" item="item" open="(" separator=", " close=")">
+                        #{item}
+                    </foreach>
+                </if>
+
+                <if test="protectGradeId != null and protectGradeId > 0">
+                    AND pg.parent_id = #{protectGradeId}
+                </if>
+                <if test="sign != null and sign > 0">
+                    AND pg.sign = #{sign}
+                </if>
+                GROUP BY pg.grade_name
+                ORDER BY fae.create_time DESC
+            ) b ON b.id = f.id
+        ) x ON x.alarm_position = tpg.grade_name
+    </select>
+
+    <!-- 地铁班前防护 数量 -->
+    <select id="findProtectUserNum" parameterType="FireAlarmEvent" resultType="java.lang.Integer">
+        SELECT SUM(x.id) totalCount
+        FROM (
+            SELECT COUNT(tp.id) id
+            FROM task_manage.t_protect tp
+            WHERE tp.project_id = #{projectId} AND tp.deleted = 0
+            <if test="protectStatus != null">
+                AND tp.task_state = #{protectStatus}
+            </if>
+            <if test="protectStatusType != null and protectStatusType.length > 0">
+                AND tp.task_state IN
+                <foreach collection="protectStatusType" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            AND tp.construction_director_id = #{createUserId}
+
+            UNION ALL
+            SELECT COUNT(tpu.id) id
+            FROM task_manage.t_protect_user tpu
+            INNER JOIN task_manage.t_protect tp ON tp.id = tpu.protect_id
+            WHERE tp.project_id = #{projectId} AND tp.deleted = 0
+            <if test="protectStatus != null">
+                AND tp.task_state = #{protectStatus}
+            </if>
+            <if test="protectStatusType != null and protectStatusType.length > 0">
+                AND tp.task_state IN
+                <foreach collection="protectStatusType" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            AND tpu.user_id = #{createUserId}
+        ) x
+    </select>
+
+    <!-- 地铁 班前防护 查询作业是否完成 -->
+    <select id="findProtectIsComplete" parameterType="FireAlarmEvent" resultMap="fireAlarmEventResultMap">
+        SELECT x.id, tpg.grade_name alarm_position, x.create_time, x.recover_status
+        FROM (
+            SELECT tpg.id, tpg.grade_name
+            FROM task_manage.t_protect_grade tpg
+            WHERE 1 = 1
+            <if test="protectGradeId != null and protectGradeId > 0">
+                AND tpg.parent_id = #{protectGradeId}
+            </if>
+            <if test="sign != null and sign > 0">
+                AND tpg.sign = #{sign}
+            </if>
+        ) tpg
+        LEFT JOIN (
+            SELECT f.id, f.alarm_position, f.recover_status, f.create_time
+            FROM f_fire_alarm_event f
+            INNER JOIN (
+                SELECT MAX(fae.id) id
+                FROM f_fire_alarm_event fae
+                INNER JOIN task_manage.t_protect_grade pg ON fae.alarm_position = pg.grade_name
+                WHERE fae.event_type = 7
+                AND fae.project_id = #{projectId}
+                <if test="ids != null and ids.length > 0">
+                    AND fae.id IN
+                    <foreach collection="ids" item="item" open="(" separator=", " close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="alarmPositionArr != null and alarmPositionArr.length > 0">
+                    AND fae.alarm_position IN
+                    <foreach collection="alarmPositionArr" item="item" open="(" separator=", " close=")">
+                        #{item}
+                    </foreach>
+                </if>
+
+                <if test="protectGradeId != null and protectGradeId > 0">
+                    AND pg.parent_id = #{protectGradeId}
+                </if>
+                <if test="sign != null and sign > 0">
+                    AND pg.sign = #{sign}
+                </if>
+                GROUP BY pg.grade_name
+                ORDER BY fae.create_time DESC
+            ) b ON b.id = f.id
+        ) x ON x.alarm_position = tpg.grade_name
+    </select>
+
+</mapper>

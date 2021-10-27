@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.project.RoleDao">
+    <resultMap id="roleResultMap" type="com.xjt.cloud.admin.manage.entity.project.Role">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="org_user_id" property="orgUserId" jdbcType="BIGINT"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="source_type" property="sourceType" jdbcType="INTEGER"/>
+        <result column="permission_id" property="permissionId" jdbcType="BIGINT"/>
+        <result column="permission_mame" property="permissionName" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- /////////////////////////////////////////////////// 角色权限////////////////////////////////////////////////////////// -->
+    <sql id="findRoleListWhere">
+        WHERE 1 = 1 AND r.status = 1
+        <if test="roleName != null and roleName != ''">
+            AND r.role_name = #{roleName}
+        </if>
+        <if test="sourceType != null and sourceType != 0">
+            AND r.source_type = #{sourceType}
+        </if>
+    </sql>
+
+    <select id="findRoleList" parameterType="Role" resultMap="roleResultMap">
+        SELECT r.role_name,r.id,r.source_type,r.create_time FROM project_manage.p_role r
+        <include refid="findRoleListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findRoleListTotalCount" parameterType="Role" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM project_manage.p_role r
+        <include refid="findRoleListWhere"/>
+    </select>
+
+    <insert id="saveRole" parameterType="Role">
+        INSERT INTO project_manage.p_role (role_name, source_type,   create_time)
+        VALUES
+        ( #{roleName}, #{sourceType},   NOW());
+    </insert>
+
+    <update id="modifyRole" parameterType="Role">
+        UPDATE project_manage.p_role
+        SET role_name = #{roleName}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delRole">
+        UPDATE project_manage.p_role
+        SET status = 99
+        WHERE id = #{id}
+    </delete>
+    <!--/////////////////////////////////////////////////用户角色管理 ////////////////////////////////////////////////////////  -->
+
+    <select id="findUserRelationRoleList" parameterType="Role" resultMap="roleResultMap">
+        SELECT our.source_type, p.project_name , ou.project_id, ou.id org_user_id, ou.user_id,org.org_name orgName, co.org_name coName, our.id, r.role_name,
+        u.user_name userName,our.id orgUserRoleId
+        FROM project_manage.p_org_user_role our
+        INNER JOIN project_manage.p_project p ON our.project_id = p.id
+        INNER JOIN project_manage.p_org_user ou ON our.org_user_id = ou.id
+        LEFT JOIN project_manage.p_organization org ON ou.org_id = org.id
+        LEFT JOIN project_manage.p_organization co ON co.id = org.ower_company
+        INNER JOIN project_manage.p_role r ON our.role_id = r.id
+        INNER JOIN sys_manage.s_user u ON ou.user_id = u.id
+        WHERE r.id = #{id} AND p.deleted = false AND u.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND p.id = #{projectId}
+        </if>
+        <if test="loginName != null and loginName != ''">
+            AND u.login_name LIKE CONCAT('%',#{loginName},'%')
+        </if>
+        <if test="userName != null and userName != ''">
+            AND u.user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND u.phone LIKE CONCAT('%',#{phone},'%')
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询所有项目列表-->
+    <select id="findUserRelationRoleListTotalCount" parameterType="Role" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM project_manage.p_org_user_role our
+        INNER JOIN project_manage.p_project p ON our.project_id = p.id
+        INNER JOIN project_manage.p_org_user ou ON our.org_user_id = ou.id
+        LEFT JOIN project_manage.p_organization org ON ou.org_id = org.id
+        LEFT JOIN project_manage.p_organization co ON co.id = org.ower_company
+        INNER JOIN project_manage.p_role r ON our.role_id = r.id
+        INNER JOIN sys_manage.s_user u ON ou.user_id = u.id
+        WHERE r.id = #{id} AND p.deleted = false AND u.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND p.id = #{projectId}
+        </if>
+        <if test="loginName != null and loginName != ''">
+            AND u.login_name LIKE CONCAT('%',#{loginName},'%')
+        </if>
+        <if test="userName != null and userName != ''">
+            AND u.user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND u.phone LIKE CONCAT('%',#{phone},'%')
+        </if>
+    </select>
+
+    <!--查询所有项目数量-->
+    <select id="findUserNotRelationRoleList" parameterType="Role" resultMap="roleResultMap">
+        SELECT r.id roleId, r.source_type, p.project_name , p.id project_id, u.id user_id , r.role_name,ou.id org_user_id,org.org_name orgName, co.org_name coName,
+        u.user_name userName
+        FROM sys_manage.s_user u
+        LEFT JOIN project_manage.p_org_user ou ON ou.user_id = u.id
+        LEFT JOIN project_manage.p_project p ON ou.project_id = p.id
+        LEFT JOIN project_manage.p_organization org ON  ou.org_id = org.id
+        LEFT JOIN project_manage.p_organization co ON co.id = org.ower_company
+        LEFT JOIN project_manage.p_org_user_role our ON our.org_user_id = ou.id AND our.role_id = #{id}
+        LEFT JOIN project_manage.p_role r ON our.role_id = r.id AND r.id = #{id}
+        WHERE p.deleted = false AND u.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND p.id = #{projectId}
+        </if>
+        <if test="loginName != null and loginName != ''">
+            AND u.login_name LIKE CONCAT('%',#{loginName},'%')
+        </if>
+        <if test="userName != null and userName != ''">
+            AND u.user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND u.phone LIKE CONCAT('%',#{phone},'%')
+        </if>
+        GROUP BY ou.id HAVING roleId IS NULL
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询所有项目数量-->
+    <select id="findUserNotRelationRoleListTotalCount" parameterType="Role" resultType="java.lang.Integer">
+        SELECT count(*) FROM (
+        SELECT u.id userId, r.id roleId FROM sys_manage.s_user u
+        LEFT JOIN project_manage.p_org_user ou ON ou.user_id = u.id
+        LEFT JOIN project_manage.p_project p ON ou.project_id = p.id
+        LEFT JOIN project_manage.p_organization org ON  ou.org_id = org.id
+        LEFT JOIN project_manage.p_organization co ON co.id = org.ower_company
+        LEFT JOIN project_manage.p_org_user_role our ON our.org_user_id = ou.id AND our.role_id = #{id}
+        LEFT JOIN project_manage.p_role r ON our.role_id = r.id AND r.id = #{id}
+        WHERE p.deleted = false AND u.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND p.id = #{projectId}
+        </if>
+        <if test="loginName != null and loginName != ''">
+            AND u.login_name LIKE CONCAT('%',#{loginName},'%')
+        </if>
+        <if test="userName != null and userName != ''">
+            AND u.user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND u.phone LIKE CONCAT('%',#{phone},'%')
+        </if>
+        GROUP BY ou.id HAVING roleId IS NULL
+        ) t
+    </select>
+
+    <insert id="saveUserRelationRole">
+        INSERT INTO project_manage.p_org_user_role (org_user_id, role_id, project_id, user_id, source_type) VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.orgUserId}, #{item.id}, #{item.projectId}, #{item.userId}, #{item.sourceType})
+        </foreach>
+    </insert>
+
+    <update id="delUserRelationRole">
+        DELETE FROM project_manage.p_org_user_role
+        WHERE
+            <if test="id != null">
+                id = #{id}
+            </if>
+        <if test="idsStr != null">
+            id IN (${idsStr})
+        </if>
+    </update>
+
+    <select id="findUserRelationAdminRoleList" parameterType="Role"  resultMap="roleResultMap">
+        SELECT our.id, r.role_name , r.source_type, r.status, r.super_admin superAdmin
+        FROM project_manage.p_role r
+        INNER JOIN project_manage.p_org_user_role our ON our.role_id = r.id AND our.user_id = #{userId}
+        WHERE r.source_type = 1
+    </select>
+
+    <select id="findUserRelationAdminRoleListCount" parameterType="Role" resultType="java.lang.Integer">
+        SELECT Count(*)
+        FROM project_manage.p_role r
+        INNER JOIN project_manage.p_org_user_role our ON our.role_id = r.id AND our.user_id = #{userId}
+        WHERE r.source_type = 1
+    </select>
+
+    <select id="findUserNotRelationAdminRoleList" parameterType="Role"  resultMap="roleResultMap">
+        SELECT r.id, r.role_name , r.source_type, r.status, r.super_admin superAdmin,our.id ourId
+        FROM project_manage.p_role r
+        LEFT JOIN project_manage.p_org_user_role our ON our.role_id = r.id AND our.user_id = #{userId}
+        WHERE r.source_type = 1
+        HAVING ourId IS NULL
+    </select>
+
+    <select id="findUserNotRelationAdminRoleListCount" parameterType="Role" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM (
+            SELECT our.id ourId
+            FROM project_manage.p_role r
+            LEFT JOIN project_manage.p_org_user_role our ON our.role_id = r.id AND our.user_id = #{userId}
+            WHERE r.source_type = 1
+            HAVING ourId IS NULL
+        )t
+    </select>
+</mapper>

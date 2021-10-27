@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.sys.UserDao" >
+    <resultMap id="userResultMap" type="com.xjt.cloud.admin.manage.entity.sys.User" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="login_name" property="loginName" jdbcType="VARCHAR" />
+        <result column="user_name" property="userName" jdbcType="VARCHAR" />
+        <result column="phone" property="phone" jdbcType="VARCHAR" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="modify_status" property="modifyStatus" jdbcType="INTEGER" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="head_portrait" property="headPortrait" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="userSel">
+        id, login_name, user_name, status, phone, project_id, project_name, create_time, last_modify_time, modify_status, head_portrait
+    </sql>
+
+    <!-- 用户注册 -->
+    <insert id="saveUser" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO s_user (login_name, password, phone, user_name, status, create_time, head_portrait)
+        VALUES (#{loginName}, #{password}, #{phone}, #{userName}, 1, NOW(), #{headPortrait})
+    </insert>
+
+    <!-- 根据用户名查询 -->
+    <select id="getUser" parameterType="User" resultMap="userResultMap">
+        SELECT <include refid="userSel"/>
+        FROM s_user
+        WHERE status = 1
+        <if test="loginName != null">
+            AND (login_name = #{loginName} OR phone = #{loginName})
+        </if>
+        <if test="phone != null">
+            AND (login_name = #{phone} OR phone = #{phone})
+        </if>
+        <if test="id != null">
+            AND id = #{id}
+        </if>
+        LIMIT 1;
+    </select>
+
+    <!--查询登录用户信息 -->
+    <select id="findLoginUser" resultMap="userResultMap" parameterType="User" >
+        SELECT id, login_name, password
+        FROM s_user
+        WHERE status = 1 AND (login_name = #{loginName} OR phone = #{loginName})
+        LIMIT 1
+    </select>
+
+    <!-- ///////////////////////////////////////////// 用户管理///////////////////////////////////////// -->
+    <!--修改用户信息-->
+    <update id="modifyUser" parameterType="User" >
+        UPDATE s_user
+        <set>
+            <if test="userName != null and userName != ''">
+                user_name = #{userName},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="password != null">
+                password = #{password},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <sql id="findUserListWhere">
+        <if test="loginName != null and loginName != ''">
+            AND login_name LIKE CONCAT('%',#{loginName},'%')
+        </if>
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND phone LIKE CONCAT('%',#{phone},'%')
+        </if>
+    </sql>
+
+    <!-- 根据用户名查询 -->
+    <select id="findUserList" parameterType="User" resultMap="userResultMap">
+        SELECT <include refid="userSel"/>
+        FROM s_user
+        WHERE 1 = 1
+        <include refid="findUserListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 根据用户名查询 -->
+    <select id="findUserListTotalCount" parameterType="User" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM s_user
+        WHERE 1 = 1
+        <include refid="findUserListWhere"/>
+    </select>
+
+    <select id="clearData">
+    </select>
+</mapper>

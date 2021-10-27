@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.device.CheckRecordDao" >
+    <resultMap id="checkRecordResultMap" type="com.xjt.cloud.project.core.entity.device.CheckRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT" />
+        <result column="device_sys_id" property="deviceSysId" jdbcType="BIGINT" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="device_sys_code" property="deviceSysCode" jdbcType="VARCHAR" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="device_type_name" property="deviceTypeName" jdbcType="VARCHAR" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="device_type_code" property="deviceTypeCode" jdbcType="VARCHAR" />
+        <result column="device_check_item_id" property="deviceCheckItemId" jdbcType="VARCHAR" />
+        <result column="check_result" property="checkResult" jdbcType="INTEGER" />
+        <result column="check_num" property="checkNum" jdbcType="BIGINT" />
+        <result column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="address" property="address" jdbcType="VARCHAR" />
+        <result column="memo" property="memo" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="selColumns">
+        cr.id, cp.check_project_id, cp.device_sys_id, cp.device_sys_name, cp.device_sys_code, cp.device_type_id, cp.device_type_name,
+        cp.device_type_code, cr.device_check_item_id, cr.status, cr.create_time, cp.memo, cr.check_result, cr.check_num, cp.building_id,
+        cp.address, cp.building_floor_id, cr.check_point_id,cp.img_url
+    </sql>
+
+    <sql id="findCheckRecordWhere">
+        WHERE  cp.status &lt;= 98
+        <if test="checkProjectId != null and checkProjectId > 0">
+            AND cp.check_project_id = #{checkProjectId}
+        </if>
+        <if test="checkPointId != null and checkPointId > 0">
+            AND cp.id = #{checkPointId}
+        </if>
+        <if test="deviceSysId != null and deviceSysId > 0">
+            AND cp.device_sys_id = #{deviceSysId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId > 0">
+            AND cp.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="buildingId != null and buildingId > 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="checkResult != null and checkResult > 0">
+            AND cr.check_result = #{checkResult}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId > 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+    </sql>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findCheckRecordListCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_check_point cp
+        INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+        <include refid="findCheckRecordWhere"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findCheckRecordList" parameterType="CheckRecord" resultMap="checkRecordResultMap">
+        SELECT <include refid="selColumns"/>,
+            dci.check_specification checkSpecification, dci.code deviceCheckItemCode, dci.grade, dci.check_name checkName
+        FROM t_check_point cp
+        INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+        INNER JOIN d_device_check_item dci ON cr.device_check_item_id = dci.id
+        <include refid="findCheckRecordWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--添加设备巡检项-->
+    <insert id="saveCheckRecord" parameterType="CheckRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_check_record (check_point_id, device_check_item_id, check_result, check_num)
+         VALUES (#{checkPointId}, #{deviceCheckItemId}, #{checkResult}, #{checkNum});
+    </insert>
+
+    <!--添加设备巡检项-->
+    <insert id="saveCheckRecordList" parameterType="CheckRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_check_record (check_point_id, device_check_item_id, check_result, check_num)
+         VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.checkPointId}, #{item.deviceCheckItemId}, #{item.checkResult}, #{item.checkNum})
+        </foreach>
+    </insert>
+
+    <!--修改设备巡检项-->
+    <update id="modifyCheckRecord" parameterType="CheckRecord">
+        UPDATE t_check_record
+        <set>
+            <if test="checkPointId != null and checkPointId != 0">
+                check_point_id = #{checkPointId} ,
+            </if>
+            <if test="deviceCheckItemId != null and deviceCheckItemId != 0">
+                device_check_item_id = #{deviceCheckItemId} ,
+            </if>
+            <if test="checkResult != null and checkResult != 0">
+                check_result = #{checkResult} ,
+            </if>
+            <if test="checkNum != null and checkNum != 0">
+                check_num = #{checkNum} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="checkPointId != null and checkPointId != 0">
+            check_point_id = #{checkPointId}
+        </if>
+    </update>
+
+    <!-- 批量修改巡检点-->
+    <update id="modifyCheckRecordList" parameterType="CheckRecord">
+        UPDATE t_check_record
+        <trim prefix="set" suffixOverrides=",">
+            status =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when id = #{item.id} then #{item.status}
+            </foreach>
+            check_num =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when id = #{item.id} then #{item.checkNum}
+            </foreach>
+            check_result =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when id = #{item.id} then #{item.checkResult}
+            </foreach>
+        </trim>
+        WHERE id IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!--查询所有检测统计列表-->
+    <select id="findAllCheckRecordList" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT  CAST(SUBSTRING_INDEX(t.code, '.', 1) AS UNSIGNED) AS grade_1,
+            IF(LENGTH(t.code)-LENGTH(REPLACE(t.code, '.', '')) >= 1 , CAST(SUBSTRING_INDEX (SUBSTRING_INDEX (t.code, '.', 2), '.', -1) AS UNSIGNED), '') AS grade_2,
+            IF(LENGTH(t.code)-LENGTH(REPLACE(t.code, '.', '')) >= 2, CAST(SUBSTRING_INDEX (SUBSTRING_INDEX (t.code, '.', 3), '.', -1) AS UNSIGNED), '') AS grade_3,
+            t.code, t.deviceCheckItemName, t.grade,
+            t.checkSpecification, t.checkNum, t.check_fail_num checkFailNum
+        FROM(
+            SELECT
+            cp.device_sys_code code, cp.device_sys_name deviceCheckItemName, "" grade,
+            "" checkSpecification, SUM(IF(cr.check_result = 3,0,cr.check_num)) checkNum, SUM(IF(cr.check_result = 2,cr.check_num,0)) check_fail_num
+            FROM t_check_point cp
+            INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98 AND cp.status &lt;= 98
+            WHERE cr.check_result &lt;= 2 AND cp.check_project_id = #{checkProjectId}
+            <if test="sysTypeIdList != null">
+                AND cp.device_sys_id IN
+                <foreach item="item" collection="sysTypeIdList" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY cp.device_sys_id
+
+            UNION
+            SELECT cp.device_type_code code, cp.device_type_name deviceCheckItemName, "" grade,
+                "" checkSpecification, SUM(IF(cr.check_result = 3,0,cr.check_num)) checkNum, SUM(IF(cr.check_result = 2, cp.check_num,0)) check_fail_num
+            FROM t_check_point cp
+            INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98 AND cp.status &lt;= 98
+            WHERE cr.check_result &lt;= 2 AND cp.check_project_id = #{checkProjectId}
+            <if test="sysTypeIdList != null">
+                AND cp.device_sys_id IN
+                <foreach item="item" collection="sysTypeIdList" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY cp.device_type_id
+
+            UNION
+            SELECT di.code code, di.check_name deviceCheckItemName, di.grade, di.check_specification checkSpecification,
+                SUM(IF(cr.check_result &lt;= 2, cp.check_num, 0)) checkNum, SUM(IF(cr.check_result = 2, cp.check_num, 0)) check_fail_num
+            FROM t_check_point cp
+            INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98 AND cp.status &lt;= 98
+            INNER JOIN d_device_check_item di ON cr.device_check_item_id = di.id
+            WHERE cp.check_project_id = #{checkProjectId} AND cr.check_result &lt;= 2
+            <if test="sysTypeIdList != null">
+                AND cp.device_sys_id IN
+                <foreach item="item" collection="sysTypeIdList" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY cr.device_check_item_id
+        ) t
+        ORDER BY grade_1, grade_2, grade_3 ASC
+    </select>
+
+    <!--查询不合格项列表-->
+    <select id="findFailCheckRecordList" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT cp.id, cp.device_sys_code deviceSysCode, cp.device_type_code deviceTypeCode,
+            di.code, di.check_specification checkSpecification, di.grade,cr.check_num
+        FROM t_check_point cp
+        INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+        INNER JOIN d_device_check_item di ON cr.device_check_item_id = di.id
+        WHERE cp.check_project_id = #{checkProjectId} AND cr.check_result = 2
+        <if test="sysTypeIdList != null">
+            AND cp.device_sys_id IN
+            <foreach item="item" collection="sysTypeIdList" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!--查询检测汇总报表-->
+    <select id="findCheckReport" parameterType="java.lang.Long" resultType="CheckReport">
+        SELECT device_sys_id, device_sys_name deviceSysName, device_sys_code deviceSysCode,
+            SUM(aTotal) gradeATotal, SUM(bTotal) gradeBTotal, SUM(cTotal) gradeCTotal,
+            SUM(aFailResult)gradeAFailResult, SUM(bFailResult)gradeBFailResult, SUM(cFailResult) gradeCFailResult,
+            IF(SUM(aFailResult) > 0 OR SUM(bFailResult) > 4 OR SUM(cFailResult) > 8, 2, 1) decisionResult
+        FROM (
+            SELECT device_sys_id, device_sys_name, device_sys_code, device_check_item_id,
+            SUM(IF(grade = 'A', 1, 0)) aTotal, SUM(IF(grade = 'B', 1, 0)) bTotal, SUM(IF(grade = 'C', 1, 0)) cTotal,
+            IF(grade = 'A' ,IF(check_fail_num > 0,1,0 ),0) aFailResult,
+            IF(grade = 'B' ,IF(check_fail_num / check_total_num * 100.00 > 10, 1, 0), 0 ) bFailResult,
+            IF(grade = 'C' ,IF(check_fail_num / check_total_num * 100.00 > 30, 1, 0 ), 0) cFailResult
+            FROM (
+                SELECT cp.device_sys_id, cp.device_sys_name, cp.device_sys_code, cr.device_check_item_id, dci.grade,
+                SUM(if(check_result = 1,cr.check_num,0)) check_ok_num, SUM(if(check_result = 2,cr.check_num,0)) check_fail_num,
+                SUM(if(check_result &lt;= 2,cr.check_num,0)) check_total_num
+                FROM t_check_point cp
+                INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+                INNER JOIN d_device_check_item dci ON cr.device_check_item_id = dci.id
+                WHERE cp.check_project_id = #{checkProjectId}
+                <if test="sysTypeIdList != null">
+                    AND cp.device_sys_id IN
+                    <foreach item="item" collection="sysTypeIdList" index="index" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                GROUP BY cr.device_check_item_id) t
+            GROUP BY device_check_item_id)t
+        GROUP BY device_sys_id
+    </select>
+
+</mapper>

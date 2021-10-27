@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.project.ProjectDao">
+    <resultMap id="projectResultMap" type="com.xjt.cloud.admin.manage.entity.project.Project">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <result column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <result column="project_status" property="projectStatus" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="fire_safety_owner" property="fireSafetyOwner" jdbcType="VARCHAR"/>
+        <result column="fire_safety_owner_phone" property="fireSafetyOwnerPhone" jdbcType="VARCHAR"/>
+        <result column="fire_safety_manager" property="fireSafetyManager" jdbcType="VARCHAR"/>
+        <result column="fire_safety_manager_phone" property="fireSafetyManagerPhone" jdbcType="VARCHAR"/>
+        <result column="isOwner" property="isOwner" jdbcType="BOOLEAN"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="owner_id" property="ownerId" jdbcType="BIGINT"/>
+        <result column="check_item_vs_type" property="checkItemVsType" jdbcType="INTEGER"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+
+    </resultMap>
+
+    <sql id="selectColumns">
+         p.id,p.project_name,p.description ,p.create_user_id,p.create_time,project_status,address,company_name,p.check_item_vs_type,
+        p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone,p.image_url,p.create_user_name
+    </sql>
+
+    <select id="findProject" parameterType="Project" resultMap="projectResultMap">
+        SELECT <include refid="selectColumns"/>
+        from project_manage.p_project p
+        where   p.deleted = false
+        <if test="id != null and id != 0">
+            and p.id = #{id}
+        </if>
+        <if test="projectName != null and projectName != ''">
+            and p.project_name = #{projectName}
+        </if>
+    </select>
+
+    <!--查询所有项目列表-->
+    <select id="findAllProjectList" parameterType="Project" resultMap="projectResultMap">
+        SELECT <include refid="selectColumns"/>
+        from project_manage.p_project p
+        where   p.deleted = false
+        <if test="projectName != null">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+        <if test="projectStatus != null">
+            AND p.project_status = #{projectStatus}
+        </if>
+        <if test="checkItemVsType != null and checkItemVsType != 0">
+            AND p.check_item_vs_type = #{checkItemVsType}
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询所有项目数量-->
+    <select id="findAllProjectListPageCount" parameterType="Project" resultType="java.lang.Integer">
+        SELECT count(*)
+        from project_manage.p_project p
+        where   p.deleted = false
+        <if test="projectName != null">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+        <if test="projectStatus != null">
+            AND p.project_status = #{projectStatus}
+        </if>
+    </select>
+
+    <!-- 运行示例项目存储过程 -->
+    <select id="examplesProjectTask">
+        CALL sys_manage.procExamplesProjectTask();
+    </select>
+
+    <select id="findBuildingList" resultType="Building">
+        SELECT pb.id,pb.building_name buildingName
+        FROM project_manage.p_building pb
+        WHERE pb.deleted = false AND pb.project_id = #{projectId}
+    </select>
+
+    <!--查询建筑物楼层-->
+    <select id="findBuildIngFloorList" parameterType="BuildingFloor" resultType="BuildingFloor">
+        SELECT pbf.id,pbf.floor_name floorName
+        FROM project_manage.p_building_floor pbf
+        WHERE pbf.building_id  = #{buildingId} AND pbf.deleted = false
+        ORDER BY pbf.floor_name
+    </select>
+
+    <update id="modifyProject" parameterType="Project">
+        UPDATE project_manage.`p_project`
+        <set>
+            <if test="projectName != null">
+                `project_name` = #{projectName},
+            </if>
+            <if test="description != null">
+                `description` = #{description},
+            </if>
+            <if test="address != null">
+                `address` = #{address},
+            </if>
+            <if test="companyName != null">
+                `company_name` = #{companyName},
+            </if>
+            <if test="projectStatus != null">
+                `project_status` = #{projectStatus},
+            </if>
+            <if test="imageUrl != null">
+                `image_url` = #{imageUrl},
+            </if>
+            <if test="fireSafetyOwner != null">
+                `fire_safety_owner` = #{fireSafetyOwner},
+            </if>
+            <if test="fireSafetyOwnerPhone != null">
+                `fire_safety_owner_phone` = #{fireSafetyOwnerPhone},
+            </if>
+            <if test="fireSafetyManager != null">
+                `fire_safety_manager` = #{fireSafetyManager},
+            </if>
+            <if test="projectStatus != null">
+                `project_status` = #{projectStatus},
+            </if>
+            <if test="fireSafetyManagerPhone != null">
+                `fire_safety_manager_phone` = #{fireSafetyManagerPhone},
+            </if>
+
+            <if test="projectLogo != null">
+                `project_logo` = #{projectLogo},
+            </if>
+            <if test="deleted != null">
+                `deleted` = #{deleted},
+            </if>
+            <if test="checkItemVsType != null and checkItemVsType != 0">
+                `check_item_vs_type` = #{checkItemVsType},
+            </if>
+        </set>
+        WHERE `id` = #{id}
+    </update>
+</mapper>

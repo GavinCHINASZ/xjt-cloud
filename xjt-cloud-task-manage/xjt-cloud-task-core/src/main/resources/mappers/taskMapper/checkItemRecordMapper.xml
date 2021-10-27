@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.CheckItemRecordDao" >
+    <resultMap id="checkItemRecordResultMap" type="com.xjt.cloud.task.core.entity.check.CheckItemRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="check_record_id" property="checkRecordId" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="task_id" property="taskId" jdbcType="BIGINT" />
+        <result column="task_parent_id" property="taskParentId" jdbcType="BIGINT" />
+        <result column="is_num" property="isNum" jdbcType="INTEGER" />
+        <result column="remark" property="remark" jdbcType="VARCHAR" />
+        <result column="result_description" property="resultDescription" jdbcType="VARCHAR" />
+        <result column="description" property="description" jdbcType="VARCHAR" />
+        <result column="check_result" property="checkResult" jdbcType="INTEGER" />
+
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_name" property="deviceName" jdbcType="BIGINT" />
+        <result column="check_max_value" property="maxValue" jdbcType="DOUBLE" />
+        <result column="check_min_value" property="minValue" jdbcType="DOUBLE" />
+        <result column="check_id" property="checkId" jdbcType="INTEGER" />
+        <result column="check_name" property="checkName" jdbcType="VARCHAR" />
+        <result column="check_specification" property="checkSpecification" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="check_value" property="checkValue" jdbcType="VARCHAR" />
+        <result column="checkValues" property="checkValues" jdbcType="VARCHAR" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="check_type" property="checkType" jdbcType="BIGINT" />
+        <result column="unit" property="unit" jdbcType="VARCHAR" />
+        <result column="sort" property="sort" jdbcType="VARCHAR" />
+        <result column="terminal_code" property="terminalCode" jdbcType="VARCHAR" />
+        <result column="address" property="address" jdbcType="VARCHAR" />
+        <result column="type" property="type" jdbcType="INTEGER" />
+        <result column="device_fault_type_id" property="deviceFaultTypeId" jdbcType="BIGINT" />
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="checkItemRecordSql">
+        cir.id, cir.check_record_id, cir.project_id, cir.task_id, cir.is_num, cir.remark, cir.result_description, cir.check_result, cir.device_id,
+        cir.device_name, cir.check_max_value, cir.check_min_value, cir.check_id, cir.check_name, cir.check_value, cir.check_point_id,
+        cir.create_time, cir.create_user_id, cir.check_type, cir.check_specification,cir.unit,cir.terminal_code,cir.sort,cir.address,
+        cir.type, cir.device_fault_type_id
+    </sql>
+
+    <sql id="findCheckItemRecordSql">
+        <where>
+            1 = 1
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="taskId != null">
+                AND task_id = #{taskId}
+            </if>
+            <if test="taskIds != null and taskIds.length > 0">
+                AND task_id IN
+                <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="projectId != null">
+                AND project_id = #{projectId}
+            </if>
+            <if test="taskParentId != null">
+                AND task_parent_id = #{taskParentId}
+            </if>
+            <if test="deviceId != null">
+                AND device_id = #{deviceId}
+            </if>
+            <if test="checkResult != null and checkResult != -1">
+                AND check_result = #{checkResult}
+            </if>
+            <if test="taskStatus != null">
+                AND task_status = #{taskStatus}
+            </if>
+            <if test="checkPointId != null">
+                AND check_point_id = #{checkPointId}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询巡检记录列表-->
+    <select id="findCheckItemRecordList" parameterType="CheckItemRecord" resultMap="checkItemRecordResultMap">
+        SELECT id, check_record_id, task_id, task_parent_id, project_id, is_num, remark, result_description,
+            check_result, device_id, device_name, check_max_value, check_min_value, check_name, task_status, check_value
+        FROM t_check_item_record
+        <include refid="findCheckItemRecordSql"/>
+    </select>
+
+    <!-- 查询巡检记录总数-->
+    <select id="findCheckItemRecordCount" parameterType="CheckItemRecord" resultMap="checkItemRecordResultMap">
+        SELECT COUNT(*)
+        FROM t_check_item_record
+        <include refid="findCheckItemRecordSql"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询巡检记录-->
+    <select id="findCheckItemRecordById" resultMap="checkItemRecordResultMap">
+        SELECT id, check_record_id, task_id, task_parent_id, project_id, is_num, remark, result_description,
+            check_result, device_id, device_name, check_max_value, check_min_value, check_name, check_value
+        FROM t_check_item_record
+        WHERE id = #{id} LIMIT 1
+    </select>
+
+    <!--添加巡检记录-->
+    <insert id="saveCheckItemRecord" parameterType="CheckItemRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_check_item_record
+            (check_record_id, task_id, task_parent_id, project_id, is_num, remark, result_description,check_result, device_id, device_name,
+             check_max_value, check_min_value, check_id, check_name, create_user_id, create_user_name, check_value, check_point_id, device_fault_type_id)
+        VALUES
+            (#{checkRecordId}, #{taskId}, #{taskParentId}, #{projectId}, #{isNum}, #{remark}, #{resultDescription}, #{checkResult}, #{deviceId},
+             #{deviceName}, #{maxValue}, #{minValue}, #{checkId}, #{checkName}, #{createUserId}, #{createUserName}, #{checkValue}, #{checkPointId}, #{deviceFaultTypeId});
+    </insert>
+
+    <!--保存巡检项结果-->
+    <insert id="saveCheckItemRecordList" parameterType="CheckItemRecord">
+        INSERT INTO t_check_item_record
+            (check_record_id, task_id, project_id, is_num, remark,
+             result_description,check_result, device_id,
+             device_name,check_type,check_specification,
+             check_max_value, check_min_value, check_id, check_name,
+             create_user_id, check_value, check_point_id,create_time,unit,terminal_code,sort,address, type, device_fault_type_id)
+        VALUES
+        <foreach item="item" collection="list" index="index" separator="," >
+            (#{item.checkRecordId}, #{item.taskId}, #{item.projectId}, #{item.isNum}, #{item.remark},
+            #{item.resultDescription}, #{item.checkResult}, #{item.deviceId},
+            #{item.deviceName},#{item.checkType},#{item.checkSpecification},
+            #{item.maxValue}, #{item.minValue}, #{item.checkId}, #{item.checkName},
+            #{item.createUserId}, #{item.checkValue}, #{item.checkPointId},now(),#{item.unit},
+            #{item.terminalCode},#{item.sort},#{item.address}, #{item.type}, #{item.deviceFaultTypeId})
+        </foreach>
+    </insert>
+
+    <!-- 根据巡检记录id查询巡检项记录 -->
+    <select id="findCheckItemRecordByCheckRecordId" resultMap="checkItemRecordResultMap">
+        SELECT <include refid="checkItemRecordSql"/>, dft.fault_type
+        FROM t_check_item_record cir
+        LEFT JOIN device_manage.d_device_fault_type dft ON cir.device_fault_type_id = dft.id
+        WHERE cir.check_record_id = #{checkRecordId}
+        GROUP BY cir.id
+    </select>
+
+    <!-- APP 根据巡检记录id查询巡检项记录-->
+    <select id="findCheckItemByCheckRecordIdApp" resultType="AppTaskCheckItem">
+        SELECT cir.check_name checkName,cir.check_result checkResult,cir.result_description resultdDescription
+        FROM t_check_item_record cir
+        WHERE cir.check_record_id = #{checkRecordId}
+    </select>
+
+    <select id="findChcekItemByCheckItemId" resultType="CheckItemTask">
+        SELECT ci.check_name checkName, ci.check_min_value minValue, ci.check_max_value maxValue,ci.check_type checkType
+        FROM device_manage.check_item ci
+        WHERE ci.id = #{checkId}
+    </select>
+
+    <!-- 查询巡检结果 -->
+    <select id="findByCheckDetails" parameterType="CheckDetails" resultMap="checkItemRecordResultMap">
+        SELECT <include refid="checkItemRecordSql"/>
+        FROM t_check_item_record cir
+        LEFT JOIN t_check_record cr ON cr.id = cir.check_record_id
+        WHERE cir.check_record_id = #{checkRecordId} AND cr.version_no = #{versionNo}
+    </select>
+
+    <!-- 查询 FAS系统巡检结果 -->
+    <select id="findFasList" parameterType="CheckItemRecord" resultMap="checkItemRecordResultMap">
+        SELECT n.device_type_id, n.device_sys_name, n.device_check_item_id check_id, n.check_name, n.check_specification, n.check_type
+            <if test="taskIds != null and taskIds.length > 0">
+                , t.id, if(t.check_result IS NOT NULL, t.check_result , -2) check_result, t.check_value, t.result_description, n.description
+            </if>
+        FROM(
+            SELECT dri.id device_report_item_id, dtt.id device_type_id, dtt.device_sys_name device_sys_name,
+                dci.id device_check_item_id, dri.check_name, dri.check_specification, dci.check_type, dri.description
+            FROM device_manage.d_device_type dt
+            LEFT JOIN device_manage.d_device_type dtt ON dtt.parent_id = dt.id
+            INNER JOIN device_manage.d_device_report_item dri ON dri.device_type_id = dtt.id
+            LEFT JOIN device_manage.d_report_check_item rci ON rci.device_report_item_id = dri.id
+            LEFT JOIN device_manage.d_device_check_item dci ON dci.id = rci.device_check_item_id
+            WHERE dt.device_sys_name = #{deviceSysName}
+            AND dci.check_item_vs_type = #{checkItemVsType}
+            <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+                AND dci.project_id = #{projectId}
+            </if>
+            <if test="deviceDateType != null and deviceDateType.length > 0">
+                AND dtt.device_date_type IN
+                <foreach item="item" collection="deviceDateType" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY dri.id
+            ORDER BY dri.device_type_id, dri.sort
+        ) n
+        <if test="taskIds != null and taskIds.length > 0">
+            LEFT JOIN (
+                SELECT x.id, x.check_id, x.check_result, x.check_value, x.result_description
+                FROM (
+                    SELECT id, check_id, check_result, check_value, result_description
+                    FROM t_check_item_record
+                    <include refid="findCheckItemRecordSql"/>
+                    GROUP BY id
+                    ORDER BY create_time DESC
+                ) x
+                GROUP BY check_id
+            ) t ON t.check_id = n.device_check_item_id
+            GROUP BY n.device_report_item_id
+        </if>
+    </select>
+
+    <!--  地铁站务 运营总部消防设施日常巡查记录表 Q SZDY 0044 04 B3 -->
+    <select id="findDailyPatrol" parameterType="CheckItemRecord" resultMap="checkItemRecordResultMap">
+        SELECT n.device_type_id, n.device_sys_name, n.device_check_item_id, n.check_name, n.check_specification,
+            t.id, t.check_result, t.result_description remark, t.check_max_value, t.check_min_value, t.check_value
+        FROM(
+            SELECT dt.id device_type_id, dt.device_sys_name, dci.id device_check_item_id, dci.check_name, dci.check_specification
+            FROM device_manage.d_device_type dt
+            LEFT JOIN device_manage.d_device_check_item dci ON dci.device_type_id = dt.id
+            WHERE dt.device_type = 18
+            AND dci.check_item_vs_type = #{checkItemVsType}
+            <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+                AND dci.project_id = #{projectId}
+            </if>
+            GROUP BY dci.id
+        ) n
+        LEFT JOIN (
+            SELECT a.id, a.check_id, a.check_result, a.check_max_value, a.check_min_value, a.result_description, a.check_value
+            FROM t_check_item_record AS a, (
+                SELECT MAX(check_id) AS check_id, MAX(create_time) AS create_time
+                FROM t_check_item_record AS b
+                WHERE b.task_id = #{taskId}
+                GROUP BY b.check_id
+            ) AS b
+            WHERE a.check_id = b.check_id AND a.create_time = b.create_time
+            GROUP BY a.check_id
+        ) t ON t.check_id = n.device_check_item_id
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findCheckItemList" parameterType="Device" resultType="CheckItemTask">
+        SELECT id, check_name checkName, device_type_id deviceTypeId, check_specification checkSpecification, min_value minValue,
+            max_value maxCheckValue, unit, check_type checkType, description, type,check_action checkAction
+        FROM device_manage.d_device_check_item
+        WHERE status &lt;= 98
+        <if test="deviceTypeId != null and deviceTypeId > 0">
+            AND device_type_id = #{deviceTypeId}
+        </if>
+
+        <if test="checkItemVsType != null">
+            AND check_item_vs_type = #{checkItemVsType}
+        </if>
+
+        <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId > 0">
+            AND project_id = #{projectId}
+        </if>
+
+        <if test="checkDateType != null and checkDateType > 0">
+            AND check_date_type = #{checkDateType}
+        </if>
+        <if test="checkDateTypeArr != null and checkDateTypeArr.length > 0">
+            AND check_date_type IN
+            <foreach item="item" collection="checkDateTypeArr" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+</mapper>

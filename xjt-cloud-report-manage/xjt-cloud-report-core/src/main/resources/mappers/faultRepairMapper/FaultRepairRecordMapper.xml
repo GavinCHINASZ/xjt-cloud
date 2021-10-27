@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.fault.FaultRepairRecordDao" >
+
+    <resultMap id="faultResultMap" type="com.xjt.cloud.report.core.entity.fault.FaultRepairRecord" >
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <id column="device_id" property="deviceId" jdbcType="INTEGER" />
+        <id column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <id column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <id column="device_count" property="deviceCount" jdbcType="INTEGER" />
+        <id column="device_location" property="deviceLocation" jdbcType="VARCHAR" />
+        <id column="check_point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <id column="check_point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <id column="check_record_id" property="checkRecordId" jdbcType="INTEGER" />
+        <id column="fault_description" property="faultDescription" jdbcType="VARCHAR" />
+        <id column="maintenance_method" property="maintenanceMethod" jdbcType="VARCHAR" />
+        <id column="maintenance_result" property="maintenanceResult" jdbcType="VARCHAR" />
+        <id column="is_stop_system" property="isStopSystem" jdbcType="INTEGER" />
+        <id column="stop_system_date" property="stopSystemDate" jdbcType="DATE" />
+        <id column="work_order_number" property="workOrderNumber" jdbcType="VARCHAR" />
+        <id column="work_order_status" property="workOrderStatus" jdbcType="INTEGER" />
+        <id column="work_order_description" property="workOrderDescription" jdbcType="VARCHAR" />
+
+        <id column="image_url" property="imageUrl" jdbcType="VARCHAR" />
+        <id column="after_image_url" property="afterImageUrl" jdbcType="VARCHAR" />
+
+        <id column="project_id" property="projectId" jdbcType="INTEGER" />
+
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <id column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <id column="create_user_id" property="createUserId" jdbcType="INTEGER" />
+        <id column="from_type" property="fromType" jdbcType="VARCHAR" />
+        <id column="organization_id" property="organizationId" jdbcType="INTEGER" />
+        <id column="org_name" property="orgName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="faultSql">
+        f.id, f.device_id, f.device_name, f.device_qr_no, f.device_count ,f.device_location, f.check_point_qr_no, f.check_record_id, f.fault_description,
+        f.maintenance_method, f.maintenance_result, f.is_stop_system, f.work_order_number, f.work_order_status, f.work_order_description, f.start_handling_time,
+        f.end_handling_time, f.project_id, f.image_url, f.after_image_url, f.create_time, f.create_user_name, f.create_user_id, f.from_type, f.organization_id, f.org_name
+    </sql>
+
+    <sql id="findFaultWhere">
+        WHERE 1 = 1
+        <if test="deviceName != null and deviceName != ''">
+            AND f.device_name LIKE CONCAT('%',#{deviceName},'%') AND f.device_qr_no LIKE CONCAT('%',#{deviceName},'%')
+        </if>
+        <if test="createUserName != null and createUserName != ''">
+            AND f.create_user_name LIKE CONCAT('%',#{createUserName},'%')
+        </if>
+        <if test="checkPointQrNo != null and checkPointQrNo != ''">
+            AND f.check_point_qr_no LIKE CONCAT('%',#{checkPointQrNo},'%') AND f.check_point_name LIKE CONCAT('%',#{checkPointQrNo},'%')
+        </if>
+        <if test="orgName != null and orgName != null">
+            AND f.org_name LIKE CONCAT('%',#{orgName},'%')
+        </if>
+        <if test="startDate != null and endDate != null">
+            AND f.create_time between #{startDate} and #{endDate}
+        </if>
+        <if test="workOrderStatus != null">
+            AND f.work_order_status = #{workOrderStatus}
+        </if>
+        <if test="workOrderNumber != null and workOrderNumber != ''">
+            AND f.work_order_number = #{workOrderNumber}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND f.project_id = #{projectId}
+        </if>
+        <if test="createTime != null and lastModifyTime != null">
+            AND f.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+        </if>
+        <if test="id != null and id != 0">
+            AND f.id = #{id}
+        </if>
+    </sql>
+
+    <!-- 查询故障报修条数 -->
+    <select id="findFaultRepairTotalCount" parameterType="FaultRepairRecord" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM fault_repair_manage.f_fault_repair_record f
+        <include refid="findFaultWhere"/>
+    </select>
+
+
+    <!--                    报表GB25201.B1  reportB1                        -->
+    <select id="reportB1" parameterType="FaultRepairRecord" resultMap="faultResultMap">
+        SELECT
+            f.id, f.device_id, f.device_name, f.device_qr_no, f.device_count, cp.point_location device_location, f.check_point_qr_no, f.check_record_id, f.fault_description,
+            f.maintenance_method, f.maintenance_result, f.is_stop_system, f.work_order_number, f.work_order_status, f.work_order_description, f.start_handling_time,
+            f.end_handling_time, f.project_id, f.create_time, f.create_user_name, f.create_user_id, f.from_type
+        FROM fault_repair_manage.f_fault_repair_record f
+        inner join device_manage.d_device d on f.device_id = d.id
+        inner join device_manage.d_check_point cp on cp.id = d.check_point_id
+        <include refid="findFaultWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+</mapper>

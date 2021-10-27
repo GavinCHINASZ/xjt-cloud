@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.sys.core.dao.sys.CloudInitDao" >
+    <resultMap id="cloudInitResultMap" type="com.xjt.cloud.sys.core.entity.CloudInit">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT" />
+        <result column="cloud_type" property="cloudType" jdbcType="VARCHAR" />
+        <result column="app_version" property="appVersion" jdbcType="VARCHAR" />
+        <result column="info_name" property="infoName" jdbcType="VARCHAR" />
+        <result column="type" property="type" jdbcType="INTEGER" />
+        <result column="type_code" property="typeCode" jdbcType="VARCHAR" />
+        <result column="title" property="title" jdbcType="VARCHAR" />
+        <result column="keyword" property="keyword" jdbcType="VARCHAR" />
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER" />
+        <result column="carousel" property="carousel" jdbcType="INTEGER" />
+        <result column="content" property="content" jdbcType="VARCHAR" />
+        <result column="intro" property="intro" jdbcType="VARCHAR" />
+        <result column="modify_status" property="modifyStatus" jdbcType="INTEGER" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="update_user_name" property="updateUserName" jdbcType="VARCHAR" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="findListWhere">
+        <if test="cloudType != null">
+            AND ci.cloud_type = #{cloudType}
+        </if>
+        <if test="type != null">
+            AND ci.type = #{type}
+        </if>
+        <if test="parentId != null">
+            AND ci.parent_id = #{parentId}
+        </if>
+        <if test="modifyStatus != null">
+            AND ci.modify_status = #{modifyStatus}
+        </if>
+        <if test="typeCode != null">
+            AND ci.type_code = #{typeCode}
+        </if>
+        <if test="id != null">
+            AND ci.id = #{id}
+        </if>
+        <if test="infoName != null">
+            AND ci.info_name LIKE CONCAT('%',#{infoName},'%')
+        </if>
+        <if test="intro != null">
+            AND ci.intro LIKE CONCAT('%',#{intro},'%')
+        </if>
+    </sql>
+
+    <!-- 查询平台信息初使化信息列表 -->
+    <select id="findCloudInitList" resultMap="cloudInitResultMap" parameterType="CloudInit">
+        SELECT ci.id, ci.parent_id, ci.cloud_type,ci.app_version,ci.info_name,ci.type,ci.type_code,ci.title,ci.keyword,ci.sort_order,
+        ci.carousel,ci.content,ci.modify_status,intro,ci.thumbnail
+         FROM s_cloud_init ci
+        WHERE ci.status &lt;= 98
+        <include refid="findListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+    <!-- 查询平台信息初使化信息列表总行数 -->
+    <select id="findCloudInitListTotalCount" resultType="java.lang.Integer" parameterType="CloudInit">
+        SELECT COUNT(*) FROM s_cloud_init ci WHERE status &lt;= 98 <include refid="findListWhere"/>
+    </select>
+
+    <!-- 查询平台信息初使化信息列表 -->
+    <select id="findCloudInitChildList" resultMap="cloudInitResultMap" parameterType="CloudInit">
+        SELECT ch.id, ch.parent_id, ch.cloud_type,ch.app_version,ch.info_name,ch.type,ch.type_code,ch.title,ch.keyword,ch.sort_order,
+        ch.carousel,ch.content,ch.modify_status,ch.intro,ch.thumbnail
+        FROM s_cloud_init ci
+        INNER JOIN s_cloud_init ch ON ci.id = ch.parent_id
+        WHERE ch.status &lt;= 98
+        <include refid="findListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+    <!-- 查询平台信息初使化信息列表总行数 -->
+    <select id="findCloudInitChildListTotalCount" resultType="java.lang.Integer" parameterType="CloudInit">
+        SELECT COUNT(*) FROM s_cloud_init ci
+        INNER JOIN s_cloud_init ch ON ci.id = ch.parent_id
+        WHERE ch.status &lt;= 98 <include refid="findListWhere"/>
+    </select>
+</mapper>

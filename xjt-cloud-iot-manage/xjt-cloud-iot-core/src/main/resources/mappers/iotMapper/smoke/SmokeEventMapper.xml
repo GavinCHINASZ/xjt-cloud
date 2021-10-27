@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.smoke.SmokeEventDao" >
+
+    <resultMap id="smokeEventResultMap" type="com.xjt.cloud.iot.core.entity.smoke.SmokeEvent" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+
+        <result column="smoke_device_id" property="smokeDeviceId" jdbcType="BIGINT" />
+        <result column="sensor_id" property="sensorId" jdbcType="VARCHAR" />
+        <result column="dev_id" property="devId" jdbcType="VARCHAR" />
+        <result column="electric_quantity" property="electricQuantity" jdbcType="INTEGER" />
+        <result column="deal_status" property="dealStatus" jdbcType="INTEGER" />
+        <result column="event_type" property="eventType" jdbcType="INTEGER" />
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER" />
+        <result column="signal_value" property="signalValue" jdbcType="INTEGER" />
+        <result column="event_handle_time" property="endHandleTime" jdbcType="TIMESTAMP"/>
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="building_floor_name" property="buildingFloorName" jdbcType="VARCHAR"/>
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+        <result column="recover_time" property="recoverTime" jdbcType="TIMESTAMP"/>
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER"/>
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="selColumns">
+         se.id, se.smoke_device_id, se.project_id, se.device_id, se.sensor_id, se.dev_id, se.electric_quantity, se.deal_status, se.event_type, se.create_time,
+         se.signal_value, se.recover_time, se.recover_status, se.last_modify_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="projectId != null and projectId > 0">
+            AND se.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND se.project_id IN
+            <foreach item="item" collection="projectIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="id != null and id > 0">
+            AND se.id = #{id}
+        </if>
+        <if test="deviceId != null and deviceId > 0">
+            AND se.device_id = #{deviceId}
+        </if>
+        <if test="smokeDeviceId != null and smokeDeviceId > 0">
+            AND se.smoke_device_id = #{smokeDeviceId}
+        </if>
+
+        <if test="buildingId != null and buildingId > 0">
+            AND sd.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId > 0">
+            AND sd.building_floor_id = #{buildingFloorId}
+        </if>
+
+        <if test="sensorId != null and sensorId != ''">
+            AND se.sensor_id LIKE CONCAT('%', #{sensorId}, '%')
+        </if>
+        <if test="devId != null and devId != ''">
+            AND se.dev_id = #{devId}
+        </if>
+
+        <if test="deviceStatus != null and deviceStatus == 1">
+            AND se.event_type != 21
+        </if>
+        <if test="deviceStatus != null and deviceStatus == 2">
+            AND se.event_type = 21
+        </if>
+
+        <if test="signalStatus != null and signalStatus == 1">
+            AND se.signal_value >= 3
+        </if>
+        <if test="signalStatus != null and signalStatus == 2">
+            AND se.signal_value &lt; 3
+        </if>
+
+        <if test="electricQuantityStatus != null and electricQuantityStatus == 1">
+            AND se.electric_quantity >= 2000
+        </if>
+        <if test="electricQuantityStatus != null and electricQuantityStatus == 2">
+            AND se.electric_quantity &lt; 2000
+        </if>
+
+        <if test="eventType != null and eventType > 0">
+            AND se.event_type = #{eventType}
+        </if>
+        <if test="byFaultEventType != null and byFaultEventType > 0">
+            AND se.event_type = #{byFaultEventType}
+        </if>
+        <if test="eventTypeArray != null and eventTypeArray.length > 0">
+            AND se.event_type IN
+            <foreach item="item" collection="eventTypeArray" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="leakMonitorStatuss != null and leakMonitorStatuss.length > 0">
+            AND se.event_type IN
+            <foreach item="item" collection="leakMonitorStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="recoverStatus != null and recoverStatus > 0">
+            AND se.recover_status = #{recoverStatus}
+        </if>
+        <if test="recoverStatuss != null and recoverStatuss.length > 0">
+            AND se.recover_status IN
+            <foreach item="item" collection="recoverStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="electricQuantity != null">
+            AND se.electric_quantity = #{electricQuantity}
+        </if>
+        <if test="dealStatus != null">
+            AND se.deal_status = #{dealStatus}
+        </if>
+
+        <if test="createTime != null and endTime != null">
+            AND se.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="createTime != null and lastModifyTime != null">
+            AND se.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+        </if>
+
+        <if test="deviceQrNo != null and deviceQrNo != ''">
+            AND d.qr_no LIKE CONCAT('%',#{deviceQrNo},'%')
+        </if>
+        <if test="buildingFloorIds != null">
+            AND cp.building_floor_id IN
+            <foreach collection="buildingFloorIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="ids != null and ids.length > 0">
+            AND se.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="handleStatuss != null">
+            <foreach item="item" collection="handleStatuss" >
+                <if test="item == 1">AND seh.create_time IS NOT NULL</if>
+                <if test="item == 2">AND seh.create_time IS NULL</if>
+            </foreach>
+        </if>
+        <if test="handleStatus != null and handleStatus != 0">
+            <if test="handleStatus == 1">AND seh.create_time IS NOT NULL</if>
+            <if test="handleStatus == 2">AND seh.create_time IS NULL</if>
+        </if>
+
+        <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+            AND seh.device_fault_type_id = #{deviceFaultTypeId}
+        </if>
+    </sql>
+
+    <!-- 查询 烟感设备事件列表 -->
+    <select id="findSmokeEventList" parameterType="SmokeEvent" resultMap="smokeEventResultMap">
+        SELECT <include refid="selColumns"/>,
+            IF(se.event_type = 21, 2, 1) device_status,
+            MAX(seh.create_time) event_handle_time, IF(seh.id IS NULL, 1, 2) confirm, seh.description, seh.create_user_name handleUserName,
+            1 eventExistStatus, MAX(IF(seh.id IS NULL, 2, 1)) handleStatus,
+            d.qr_no device_qr_no, dt.device_sys_name device_name, dt.device_type,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id
+            ,dft.fault_type
+        FROM iot_manage.s_smoke_device sd
+        RIGHT JOIN iot_manage.s_smoke_event se ON sd.id = se.smoke_device_id
+
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.event_id, ta.device_type, ta.description, ta.create_time, ta.create_user_name
+            FROM iot_manage.s_smoke_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id
+                FROM iot_manage.s_smoke_event_handle
+                WHERE project_id = #{projectId}
+                <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                    AND device_fault_type_id = #{deviceFaultTypeId}
+                </if>
+                <if test="handleDeviceType != null">
+                    AND device_type = #{handleDeviceType}
+                </if>
+                <if test="createTime != null">
+                    AND create_time >= #{createTime}
+                </if>
+                GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) seh ON se.id = seh.event_id
+
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = seh.device_fault_type_id
+
+        LEFT JOIN device_manage.d_device d ON sd.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = sd.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = sd.device_type_id
+        <include refid="findWhere"/>
+        AND sd.deleted  = 0
+        GROUP BY se.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 烟感设备 数量 -->
+    <select id="findSmokeEventListTotalCount" parameterType="SmokeEvent" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT se.id)
+        FROM iot_manage.s_smoke_device sd
+        RIGHT JOIN iot_manage.s_smoke_event se ON sd.id = se.smoke_device_id
+        LEFT JOIN iot_manage.s_smoke_event_handle seh ON se.id = seh.event_id
+        LEFT JOIN device_manage.d_device d ON sd.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = sd.check_point_id
+        <include refid="findWhere"/>
+        AND sd.deleted  = 0
+    </select>
+
+    <!-- 保存 烟感事件 -->
+    <insert id="saveSmokeEvent" parameterType="SmokeEvent" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO iot_manage.s_smoke_event(smoke_device_id, device_id, project_id, sensor_id, dev_id, electric_quantity, deal_status, event_type, signal_value,
+            create_time, recover_time, recover_status)
+        VALUES (#{smokeDeviceId}, #{deviceId}, #{projectId}, #{sensorId}, #{devId}, #{electricQuantity}, #{dealStatus}, #{eventType}, 5,
+            NOW(), #{recoverTime}, #{recoverStatus});
+    </insert>
+
+    <!-- 查询 烟感设备 -->
+    <select id="findSmokeEvent" parameterType="SmokeEvent" resultMap="smokeEventResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM iot_manage.s_smoke_event se
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 更新 烟感告警事件 -->
+    <update id="updateSmokeEvent" parameterType="SmokeEvent">
+        UPDATE iot_manage.s_smoke_event sse
+        SET sse.recover_status = #{recoverStatus}
+            ,sse.recover_time = NOW()
+            <if test="electricQuantity != null">
+                ,sse.electric_quantity = #{electricQuantity}
+            </if>
+        WHERE sse.sensor_id = #{sensorId}
+        <if test="eventType != null">
+            AND sse.event_type = #{eventType}
+        </if>
+
+    </update>
+
+    <!-- 查询 烟感告警事件 汇总 饼图 -->
+    <select id="findSmokeEventSummaryReport" parameterType="SmokeEvent" resultType="SmokeDeviceReport">
+        SELECT COUNT(DISTINCT se.id) totalCount,
+            SUM(IF(timestampdiff(HOUR, se.create_time, NOW()) >= 26, 1, 0)) offLine,
+            SUM(IF(se.event_type = 1, 1, 0)) smokeNum,
+            SUM(IF(se.event_type = 5, 1, 0)) sensorFault,
+            SUM(IF(se.event_type = 4, 1, 0)) lowPower
+        FROM iot_manage.s_smoke_event se
+        LEFT JOIN iot_manage.s_smoke_device sd ON sd.id = se.smoke_device_id
+        <include refid="findWhere"/>
+        AND sd.deleted  = 0
+    </select>
+
+    <!-- 查询 烟感告警事件 汇总 曲线图 -->
+    <select id="findSmokeEventReportCount" parameterType="SmokeEvent" resultType="SmokeDeviceReport">
+        SELECT IFNULL(se.totalCount, 0) totalCount,
+            IFNULL(se.offLine, 0) offLine,
+            IFNULL(se.smokeNum, 0) smokeNum,
+            IFNULL(se.sensorFault, 0) sensorFault,
+            IFNULL(se.lowPower, 0) lowPower,
+            <include refid="formatTimeCol"/> timeDesc
+        FROM(
+            SELECT COUNT(se.id) totalCount,
+                SUM(IF(timestampdiff(HOUR, se.create_time, NOW()) >= 26, 1, 0)) offLine,
+                SUM(IF(se.event_type = 1, 1, 0)) smokeNum,
+                SUM(IF(se.event_type = 5, 1, 0)) sensorFault,
+                SUM(IF(se.event_type = 4, 1, 0)) lowPower,
+                <include refid="formatTime"/>
+            FROM iot_manage.s_smoke_event se
+            LEFT JOIN iot_manage.s_smoke_device sd ON sd.id = se.smoke_device_id
+            <include refid="findWhere"/>
+            AND sd.deleted  = 0
+            GROUP BY createTime
+        ) se
+        RIGHT JOIN (
+            <include refid="formatTimeRow"/>
+        ) dayList ON <include refid="formatTimeOn"/>
+        ORDER BY timeDesc
+    </select>
+
+    <sql id="formatTimeCol">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTimeOrderBy">
+        <if test="groupType != null and groupType == 1">
+            str_to_date(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            str_to_date(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            str_to_date(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            str_to_date(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTimeOn">
+        <if test="groupType != null and groupType == 1">
+            se.createTime = DATE_FORMAT(dayList.createTime,'%H')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            se.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            se.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            se.createTime = DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTime">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(se.create_time,'%H') createTime
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(se.create_time,'%Y-%m-%d') createTime
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(se.create_time,'%Y-%m') createTime
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(se.create_time,'%Y') createTime
+        </if>
+    </sql>
+
+    <sql id="formatTimeRow">
+        SELECT
+        <if test="groupType != null and groupType == 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d %H') createTime
+        </if>
+        <if test="groupType != null and groupType != 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d') createTime
+        </if>
+        FROM (
+            SELECT @date := DATE_ADD(#{createTime}, interval -1 ${timeType})
+            FROM b_base_data
+            LIMIT #{dateTimeCount}
+        ) days
+    </sql>
+
+</mapper>

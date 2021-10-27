@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.backstage.ProductDao">
+    <resultMap id="productResultMap" type="com.xjt.cloud.admin.manage.entity.inventory.Product">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="product_name" property="productName" jdbcType="VARCHAR"/>
+        <result column="producer_name" property="producerName" jdbcType="VARCHAR"/>
+        <result column="producer_id" property="producerId" jdbcType="BIGINT"/>
+        <result column="brand" property="brand" jdbcType="VARCHAR"/>
+        <result column="model" property="model" jdbcType="VARCHAR"/>
+        <result column="spec" property="spec" jdbcType="VARCHAR"/>
+        <result column="product_type" property="productType" jdbcType="INTEGER"/>
+        <result column="production_date" property="productionDate" jdbcType="TIMESTAMP"/>
+        <result column="expiry_date" property="expiryDate" jdbcType="TIMESTAMP"/>
+        <result column="api_info" property="apiInfo" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="findProductWhere">
+        WHERE p.status &lt;= 98
+        <if test="productName != null and productName != ''">
+            AND p.product_name LIKE CONCAT('%',#{productName},'%')
+        </if>
+        <if test="producerId != null and producerId != 0">
+            AND p.producer_id = #{producerId}
+        </if>
+    </sql>
+
+    <sql id="selColumns">
+        p.id, p.product_name,pr.producer_name, p.producer_id, p.brand, p.model, p.spec, p.production_date, p.expiry_date,p.product_type,
+        p.api_info, p.status, p.memo, p.create_time
+    </sql>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findProductListTotalCount" parameterType="Product" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM backstage_manage.i_product p
+        <include refid="findProductWhere"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findProductList" parameterType="Product" resultMap="productResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM backstage_manage.i_product p
+        INNER JOIN backstage_manage.i_producer pr ON p.producer_id = pr.id
+        <include refid="findProductWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findProduct" parameterType="Product" resultMap="productResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM backstage_manage.i_product p
+        INNER JOIN backstage_manage.i_producer pr ON p.producer_id = pr.id
+        <include refid="findProductWhere"/>
+        LIMIT 1
+    </select>
+
+    <!--添加设备巡检项-->
+    <insert id="saveProduct" parameterType="Product" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO backstage_manage.i_product (product_name, producer_id, brand, model, spec, production_date, expiry_date, api_info,
+        status, memo, create_time,product_type)
+         VALUES (#{productName}, #{producerId}, #{brand}, #{model},#{spec},#{productionDate},#{expiryDate},#{apiInfo},
+         1,#{memo}, NOW(),#{productType});
+    </insert>
+
+    <!--修改设备巡检项-->
+    <update id="modifyProduct" parameterType="Product">
+        UPDATE backstage_manage.i_product
+        <set>
+            <if test="productName != null and productName != ''">
+                product_name = #{productName} ,
+            </if>
+            <if test="producerId != null and producerId != 0">
+                producer_id = #{producerId} ,
+            </if>
+            <if test="brand != null and brand != ''">
+                brand = #{brand} ,
+            </if>
+            <if test="model != null and model != ''">
+                model = #{model} ,
+            </if>
+            <if test="spec != null and spec != ''">
+                spec = #{spec} ,
+            </if>
+            <if test="productionDate != null">
+                production_date = #{productionDate} ,
+            </if>
+            <if test="expiryDate != null">
+                expiry_date = #{expiryDate} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="apiInfo != null and apiInfo != ''">
+                api_info = #{apiInfo} ,
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo} ,
+            </if>
+            <if test="productType != null and productType != ''">
+                product_type = #{productType} ,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

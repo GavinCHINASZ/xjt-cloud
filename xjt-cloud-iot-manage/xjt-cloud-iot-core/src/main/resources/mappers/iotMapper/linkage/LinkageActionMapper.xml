@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.linkage.LinkageActionDao" >
+
+    <resultMap id="linkageActionResultMap" type="com.xjt.cloud.iot.core.entity.linkage.LinkageAction" >
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="order_number" property="orderNumber" jdbcType="INTEGER" />
+        <result column="device_id" property="deviceId" jdbcType="INTEGER" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <result column="linkage_control_id" property="linkageControlId" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="actionSql">
+        la.id, la.order_number, la.device_id, la.device_name, la.device_qr_no, la.device_location, la.action,
+        la.linkage_control_id, la.linkage_device_id, la.create_time, la.create_user_name, la.create_user_id, la.update_user_name, la.update_user_id
+    </sql>
+
+    <sql id="findActionWhere">
+        WHERE 1 = 1
+        <if test="projectId != null and projectId != 0">
+            AND la.project_id = #{projectId}
+        </if>
+        <if test="id != null and id != 0">
+            AND la.id = #{id}
+        </if>
+    </sql>
+
+    <!-- 批量新增: 触发动作 -->
+    <insert id="saveLinkageActions" parameterType="LinkageAction" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO l_linkage_action (la.order_number, la.device_id, la.device_name, la.device_qr_no, la.device_location, la.action,
+            la.linkage_control_id, la.linkage_device_id, la.create_time, la.create_user_name, la.create_user_id, la.update_user_name, la.update_user_id)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.orderNumber}, #{item.deviceId}, #{item.deviceName}, #{item.deviceQrNo}, #{item.deviceLocation}, #{item.action},
+            #{item.num}, #{item.linkageDeviceId}, NOW(), #{item.createUserName}, #{item.createUserId}, #{item.updateUserName}, #{item.updateUserId})
+        </foreach>
+    </insert>
+
+    <!-- 根据 触发条件 查询 水设备 -->
+    <select id="findByLinkageControlIds" parameterType="java.util.Set" resultMap="linkageActionResultMap">
+        SELECT
+        <include refid="actionSql"/>
+        FROM l_linkage_action la
+        WHERE la.linkage_device_id in
+        <foreach collection="idList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        GROUP BY la.device_qr_no ORDER BY la.action asc
+    </select>
+
+</mapper>

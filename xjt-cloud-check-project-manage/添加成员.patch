@@ -1,0 +1,24 @@
+Index: xjtnettycloud/xjt-cloud-project-manage/xjt-cloud-project-core/src/main/java/com/xjt/cloud/project/core/service/impl/UserServiceImpl.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- xjtnettycloud/xjt-cloud-project-manage/xjt-cloud-project-core/src/main/java/com/xjt/cloud/project/core/service/impl/UserServiceImpl.java	(date 1569739508000)
++++ xjtnettycloud/xjt-cloud-project-manage/xjt-cloud-project-core/src/main/java/com/xjt/cloud/project/core/service/impl/UserServiceImpl.java	(date 1569736676284)
+@@ -118,4 +118,16 @@
+         user.setPassword(password);
+         return userDao.saveUser(user);
+     }
++
++    /**@MethodName: findByUser 查询用户信息
++     * @Description: 
++     * @Param: [user]
++     * @Return: com.xjt.cloud.project.core.entity.User
++     * @Author: zhangZaiFa
++     * @Date:2019/9/29 13:57 
++     **/
++    @Override
++    public User findByUser(User user) {
++        return userDao.findByUser(user);
++    }
+ }

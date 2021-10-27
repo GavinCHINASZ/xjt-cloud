@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.protect.ProtectRecordDao">
+
+    <resultMap id="protectRecordResultMap" type="com.xjt.cloud.task.core.entity.protect.ProtectRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="protect_event" property="protectEvent" jdbcType="VARCHAR"/>
+        <result column="submitter" property="submitter" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="protectRecordSql">
+        pr.id, pr.protect_id, pr.protect_event, pr.submitter, pr.create_time
+    </sql>
+
+    <sql id="findProtectRecordSql">
+        <where>
+            1 = 1
+            <if test="id != null and id > 0">
+                AND pr.id = #{id}
+            </if>
+            <if test="protectId != null and protectId > 0">
+                AND pr.protect_id = #{protectId}
+            </if>
+            <if test="createTime != null">
+                AND tp.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询 班前防护 数量-->
+    <select id="findProtectRecordTotalCount" parameterType="ProtectRecord" resultType="java.lang.Integer">
+        SELECT COUNT(pr.id)
+        FROM task_manage.t_protect_record pr
+        <include refid="findProtectRecordSql"/>
+    </select>
+
+    <!-- 查询 班前防护 -->
+    <select id="findProtectRecordList" parameterType="ProtectRecord" resultMap="protectRecordResultMap">
+        SELECT pr.id, pr.protect_id, pr.protect_event, pr.submitter, pr.create_time,
+            GROUP_CONCAT(pi.image_url Separator ";") imageUrls
+        FROM task_manage.t_protect_record pr
+        LEFT JOIN task_manage.t_protect_image pi ON pr.protect_id = pi.protect_id AND pr.create_time = pi.create_time
+        <include refid="findProtectRecordSql"/>
+        GROUP BY pr.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 保存 班前防护记录 -->
+    <insert id="saveProtectRecord" parameterType="ProtectRecord">
+        INSERT INTO task_manage.t_protect_record(protect_id, protect_event, submitter, create_time)
+        VALUES (#{protectId}, #{protectEvent}, #{submitter}, #{createTime});
+    </insert>
+
+</mapper>

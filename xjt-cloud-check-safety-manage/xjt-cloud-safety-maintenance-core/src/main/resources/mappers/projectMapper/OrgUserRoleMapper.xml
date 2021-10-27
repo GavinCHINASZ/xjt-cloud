@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.project.OrgUserRoleDao">
+
+    <resultMap id="orgUserRoleResultMap" type="com.xjt.cloud.safety.core.entity.project.OrgUserRole">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="org_user_id" property="orgUserId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="role_id" property="roleId" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="BIGINT"/>
+        <result column="type" property="type" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+
+    </resultMap>
+
+    <!--组织架构成员角色中间表:新增数据-->
+    <insert id="saveOrgUserRoles" parameterType="OrgUserRole" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO check_manage.p_org_user_role(org_user_id, role_id, project_id,user_id)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.orgUserId}, #{item.roleId}, #{item.projectId},#{item.userId})
+        </foreach>
+    </insert>
+
+    <!--组织架构成员角色中间表:新增数据-->
+    <insert id="saveOrgUserRolesByList" parameterType="OrgUserRole" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO check_manage.p_org_user_role(org_user_id, role_id, project_id,user_id)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.orgUserId}, #{item.roleId}, #{item.projectId},#{item.userId})
+        </foreach>
+    </insert>
+
+
+    <!--删除角色ID下的成员-->
+    <delete id="deleteRoleIds" parameterType="java.util.List">
+        DELETE FROM check_manage.p_org_user_role
+        WHERE role_id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!--删除用户部门角色关系-->
+    <delete id="deleteOrgUserRole" parameterType="OrgUserRole">
+        DELETE FROM check_manage.p_org_user_role
+        WHERE 1=1
+        <if test="id != null and id != 0">
+            AND id=#{id}
+        </if>
+        <if test="roleId != null and roleId != 0">
+            AND role_id=#{roleId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND project_id = #{projectId}
+        </if>
+        <if test="orgUserId != null and orgUserId != 0">
+            AND org_user_id=#{orgUserId}
+        </if>
+        <if test="orgUserIds != null">
+            role_id IN
+            <foreach collection="orgUserIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+
+    <!--删除用户部门角色关系-->
+    <delete id="deleteOrgUserRoleByUser" parameterType="OrgUserRole">
+        DELETE our.* FROM check_manage.p_org_user_role our
+        WHERE 1=1
+        <if test="projectId != null and projectId != 0">
+            AND our.project_id = #{projectId}
+        </if>
+        <if test="orgUserId != null and orgUserId != 0">
+            AND our.org_user_id=#{orgUserId}
+        </if>
+        <if test="roleId != null and roleId != 0">
+            AND our.role_id=#{roleId}
+        </if>
+        <if test="orgUserIds != null">
+            AND our.user_id IN
+            <foreach collection="orgUserIds" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+    </delete>
+
+    <!--查询角色成员树结构-->
+    <select id="findByRoleOrgUserTree" parameterType="OrgUserRole" resultMap="orgUserRoleResultMap">
+        SELECT r.id ,r.role_name as name,(1) as type,(0) as parent_id from check_manage.p_org_user_role our
+            inner join check_manage.p_role r on r.id = our.role_id
+        where r.source_id = #{projectId} and r.source_type = 2 GROUP BY r.id
+
+        UNION ALL
+
+        SELECT our.id,ou.user_name as name,(2) as type,our.role_id as parent_id from check_manage.p_org_user_role our
+            inner join check_manage.p_role r on r.id = our.role_id
+            INNER join check_manage.p_org_user ou on ou.id = our.org_user_id
+            inner join check_manage.s_user u on u.id = ou.user_id
+        where our.project_id = #{projectId}
+    </select>
+
+
+    <select id="findByRoleOrgUser" parameterType="OrgUserRole" resultType="Organization">
+        SELECT ou.id,ou.user_name as orgName,(3) as orgType,our.role_id as parent_id, if(p.owner_id
+        =ou.user_id,true,false) as isAdmin from check_manage.p_org_user_role our
+        INNER join check_manage.p_org_user ou on ou.id = our.org_user_id
+        inner join check_manage.p_project p on p.id = our.project_id
+        <if test="projectId != null">
+            and our.project_id = #{projectId}
+        </if>
+        <if test="roleId != null">
+            and our.role_id=#{roleId}
+        </if>
+        <if test="userId != null">
+            and our.user_id=#{userId}
+        </if>
+        <if test="orgUserId != null">
+            and our.org_user_id=#{orgUserId}
+        </if>
+        ORDER BY isAdmin desc
+    </select>
+
+    <update id="updateAdmin" parameterType="java.lang.Long">
+        update p_org_user_role our INNER JOIN check_manage.p_role r on our.role_id = r.id
+        set our.org_user_id = #{orgUserId},our.user_id = #{userId} where our.org_user_id = #{oldOrgUserId} and our.project_id = #{projectId} and r.is_admin = 1;
+    </update>
+
+
+    <!--查询项目指定权限的UserId-->
+    <select id="findByProjectPermissionUserIdList" parameterType="OrgUserRole" resultType="java.lang.Long">
+        SELECT our.user_id from check_manage.p_permission p
+        inner join check_manage.p_role_permission rp on p.id = rp.permission_id
+        inner join check_manage.p_org_user_role our on our.role_id = rp.role_id
+        where our.project_id = #{projectId} and p.sign in
+        <foreach collection="signList" item="sign" separator="," open="(" close=")">
+            #{sign}
+        </foreach>
+        GROUP BY our.user_id
+    </select>
+
+    <select id="findByRoleOrgUserBySql" resultMap="orgUserRoleResultMap" parameterType="java.lang.String">
+        SELECT our.id, our.role_id , t.newRoleId,t.org_user_Id,t.user_id FROM check_manage.p_org_user_role our
+        RIGHT JOIN ( ${sql} )t ON our.org_user_id = t.org_user_Id AND our.role_id = t.newRoleId AND our.project_id =
+        #{projectId}
+        UNION
+        SELECT our.id, our.role_id, t.newRoleId,t.org_user_Id,t.user_id FROM check_manage.p_org_user_role our
+        LEFT JOIN ( ${sql} )t ON our.org_user_id = t.org_user_Id AND our.role_id = t.newRoleId
+        WHERE our.org_user_id IN
+        <foreach collection="list" item="orgUser" index="index" open="(" close=")" separator=",">
+            #{orgUser.id}
+        </foreach>
+        AND our.project_id = #{projectId}
+    </select>
+
+    <!--查询用户在指定项目内是否有此权限-->
+    <select id="findByIsOrgUserRoleSign" resultType="java.lang.Integer">
+        SELECT
+            count(our.id)
+        FROM
+        check_manage.p_org_user_role our
+            INNER JOIN check_manage.p_role_permission rp ON rp.role_id = our.role_id
+            INNER JOIN check_manage.p_permission p ON p.id = rp.permission_id
+        WHERE
+            our.user_id = #{userId}
+            AND our.project_id = #{projectId}
+            AND p.sign in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+    </select>
+
+
+    <update id="updateOrgUserRole" parameterType="OrgUser">
+        UPDATE check_manage.p_org_user_role our set role_id = #{roleId}
+        where our.project_id = #{projectId}  and our.user_id = #{userId}
+    </update>
+
+</mapper>

@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.device.TaskDeviceDao">
+    <resultMap id="deviceResultMap" type="com.xjt.cloud.task.core.entity.device.Device">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="INTEGER"/>
+        <result column="project_id" property="projectId" jdbcType="INTEGER"/>
+        <result column="building_id" property="buildingId" jdbcType="INTEGER"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="INTEGER"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="INTEGER"/>
+        <result column="iot_id" property="iotId" jdbcType="INTEGER"/>
+        <result column="iot_type" property="iotType" jdbcType="INTEGER"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="old_device_qr_no" property="oldDeviceQrNo" jdbcType="VARCHAR"/>
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR"/>
+        <result column="num" property="num" jdbcType="INTEGER"/>
+        <result column="brAND" property="brAND" jdbcType="VARCHAR"/>
+        <result column="model" property="model" jdbcType="VARCHAR"/>
+        <result column="spec" property="spec" jdbcType="VARCHAR"/>
+        <result column="production_date" property="productionDate" jdbcType="TIMESTAMP"/>
+        <result column="expiry_date" property="expiryDate" jdbcType="TIMESTAMP"/>
+        <result column="expiry_date_end" property="expiryDateEnd" jdbcType="TIMESTAMP"/>
+
+        <result column="send_modify_time" property="sendModifyTime" jdbcType="TIMESTAMP"/>
+        <result column="send_modify_time_end" property="sendModifyTimeEnd" jdbcType="TIMESTAMP"/>
+
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="id" property="deviceId" jdbcType="INTEGER"/>
+        <result column="qr_no" property="deviceQrNo" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="device_status" property="deviceStatus" jdbcType="VARCHAR"/>
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR"/>
+        <result column="point_qr_no" property="pointQrNo" jdbcType="VARCHAR"/>
+        <result column="check_time" property="checkTime" jdbcType="TIMESTAMP"/>
+        <result column="manage_region" property="manageRegion" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 根据巡更点查询设备列表-->
+    <select id="findDeviceListByCheckPointId" parameterType="Task" resultType="TaskDeviceEntity">
+        SELECT d.id, dt.device_sys_name deviceName, b.building_name buildingName, f.floor_name floorName, cp.id checkPointId,
+            cp.point_name pointName, cp.qr_no qrNo, d.device_status deviceStatus, d.qr_no deviceQrNo, cp.point_location pointLocation
+        FROM device_manage.d_device d
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        LEFT JOIN project_manage.p_building b ON cp.building_id = b.id
+        LEFT JOIN project_manage.p_building_floor f ON cp.building_floor_id = f.id
+        <where>
+            cp.status &lt; 99
+            AND d.status &lt; 99
+            <if test="projectId != null and projectId != 0">
+                AND d.project_id = #{projectId}
+            </if>
+            <if test="checkPointIds != null and checkPointIds.length > 0">
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator=", " open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY d.id
+        </where>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 根据任务id查询设备列表-->
+    <select id="findDeviceListByTaskId" resultType="TaskDeviceEntity">
+        SELECT t.id, t.deviceQrNo, t.deviceTypeId, t.buildingId, location, 
+            t.floorId, t.qrNo, t.deviceStatus, MAX(t.version_no), 
+            t.checkerName, t.orgName, t.createTime, t.pointName, t.checkPointId
+        FROM (
+            SELECT d.id, d.qr_no deviceQrNo, d.device_type_id deviceTypeId, cp.building_id buildingId, cp.point_location location, 
+                cp.building_floor_id floorId, cp.id checkPointId, cp.qr_no qrNo, tcr.check_result deviceStatus, tcr.version_no, 
+                tcr.checker_name checkerName, tcr.org_name orgName, tcr.create_time createTime, cp.point_name pointName
+            FROM task_manage.t_task_check_point tcp
+            LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+            LEFT JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+            LEFT JOIN task_manage.t_check_record tcr ON tcr.task_id = tcp.task_id AND tcp.check_point_id = tcr.check_point_id AND d.id = tcr.device_id
+            WHERE tcp.task_id = #{taskId} AND cp.status &lt;= 98
+            ORDER BY tcr.version_no DESC
+        ) t
+        GROUP BY t.id
+        ORDER BY t.qrNo ASC
+    </select>
+
+    <!-- 地铁 巡检记录表 -->
+    <select id="findListByTaskId" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT t.id deviceId, t.qr_no deviceQrNo, t.device_name deviceName, t.deviceTypeId, t.buildingId, t.building_floor_id buildingFloorId, t.pointLocation, 
+            t.deviceStatus, MAX(t.version_no), t.checkerName, t.orgName, t.createTime, t.checkPointName, t.checkPointId, t.faultDescription
+        FROM (
+            SELECT d.id, d.device_type_id deviceTypeId, 
+                cp.building_id buildingId, cp.point_location pointLocation, cp.building_floor_id, cp.id checkPointId, cp.qr_no, cp.point_name checkPointName, 
+                tcr.check_result deviceStatus, tcr.version_no, tcr.checker_name checkerName, tcr.org_name orgName, 
+                tcr.create_time createTime, m.faultDescription, tcr.device_name
+            FROM task_manage.t_task_check_point tcp
+            LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+            LEFT JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+            LEFT JOIN task_manage.t_check_record tcr ON tcr.task_id = tcp.task_id AND tcp.check_point_id = tcr.check_point_id AND d.id = tcr.device_id
+            LEFT JOIN (
+                SELECT cir.check_record_id, GROUP_CONCAT(case when cir.result_description != ' ' THEN cir.result_description else null END) faultDescription
+                FROM task_manage.t_check_item_record cir
+                WHERE cir.task_id = #{taskId}
+                GROUP BY cir.check_record_id, cir.create_time
+                ORDER BY cir.create_time DESC
+            ) m ON m.check_record_id = tcr.id
+            WHERE tcp.task_id = #{taskId} AND cp.status &lt;= 98
+            GROUP BY d.id
+            ORDER BY tcr.version_no DESC
+        ) t
+        GROUP BY t.id ORDER BY t.qr_no ASC
+    </select>
+
+    <!--<select id="findDeviceListByTaskId" resultType="TaskDeviceEntity">
+        SELECT
+            t.id, t.deviceQrNo, t.deviceName, t.buildingName, 
+		    t.floorName, t.checkPointId, t.qrNo, t.deviceStatus, MAX(t.version_no), 
+		    t.checkerName, t.orgName, t.createTime, t.pointName
+        FROM (
+            SELECT
+                d.id, d.qr_no deviceQrNo, dt.device_sys_name deviceName, b.building_name buildingName, 
+                f.floor_name floorName, cp.id checkPointId, cp.qr_no qrNo, tcr.check_result deviceStatus, tcr.version_no, 
+                tcr.checker_name checkerName, tcr.org_name orgName, tcr.create_time createTime, cp.point_name pointName
+            FROM task_manage.t_task_check_point tcp
+            LEFT JOIN device_manage.d_check_point cp
+            ON tcp.check_point_id = cp.id
+            LEFT JOIN device_manage.d_device d
+            ON cp.id = d.check_point_id AND d.status &lt; 99
+            LEFT JOIN device_manage.d_device_type dt
+            ON d.device_type_id = dt.id
+            LEFT JOIN project_manage.p_building b
+            ON cp.building_id = b.id
+            LEFT JOIN project_manage.p_building_floor f
+            ON cp.building_floor_id = f.id
+            LEFT JOIN task_manage.t_check_record tcr
+            ON tcr.task_id = tcp.task_id AND tcp.check_point_id = tcr.check_point_id AND d.id = tcr.device_id
+            WHERE tcp.task_id = #{taskId}
+            AND cp.status &lt; 99
+            ORDER BY tcr.version_no DESC
+            ) t
+        GROUP BY t.id
+        ORDER BY t.version_no
+    </select>-->
+    <!--<select id="findDeviceListByTaskId" resultType="TaskDeviceEntity">
+        SELECT
+        t.id, t.deviceQrNo, t.deviceName, t.buildingName, 
+        t.floorName, t.checkPointId, t.qrNo, t.deviceStatus, MAX(t.version_no), 
+        t.checkerName, t.orgName, t.createTime, t.pointName
+        FROM (
+        SELECT
+        d.id, d.qr_no deviceQrNo, dt.device_sys_name deviceName, b.building_name buildingName, 
+        f.floor_name floorName, cp.id checkPointId, cp.qr_no qrNo, tcr.check_result deviceStatus, tcr.version_no, 
+        ou.user_name checkerName, o.org_name orgName, tcr.create_time createTime, cp.point_name pointName, tcr.create_user_id
+        FROM task_manage.t_task_check_point tcp
+        LEFT JOIN device_manage.d_check_point cp
+        ON tcp.check_point_id = cp.id
+        LEFT JOIN device_manage.d_device d
+        ON cp.id = d.check_point_id AND d.status &lt;= 98
+        LEFT JOIN device_manage.d_device_type dt
+        ON d.device_type_id = dt.id
+        LEFT JOIN project_manage.p_building b
+        ON cp.building_id = b.id
+        LEFT JOIN project_manage.p_building_floor f
+        ON cp.building_floor_id = f.id
+        LEFT JOIN task_manage.t_check_record tcr
+        ON tcr.task_id = tcp.task_id AND tcp.check_point_id = tcr.check_point_id AND d.id = tcr.device_id
+        LEFT JOIN project_manage.p_org_user ou
+        ON ou.user_id = tcr.create_user_id AND ou.project_id = tcr.project_id
+        LEFT JOIN project_manage.p_organization o
+        ON o.id = ou.org_id
+        WHERE tcp.task_id = #{taskId}
+        AND cp.status &lt;= 98
+        ORDER BY tcr.version_no DESC
+        ) t
+        GROUP BY t.id
+        ORDER BY t.version_no
+    </select>-->
+
+    <!-- 统计任务设备数 -->
+    <select id="findDeviceCountByTaskId" resultType="java.lang.Integer">
+        SELECT COUNT (DISTINCT d.id)
+        FROM task_manage.t_task_check_point tcp
+        LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+        LEFT JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt; 99
+        WHERE tcp.task_id = #{taskId} AND cp.status &lt; 99
+    </select>
+
+    <!-- 根据任务id统计设备数量 -->
+    <select id="findDeviceNumByTaskId" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT d.id) num
+        FROM device_manage.d_device d
+        RIGHT JOIN task_manage.t_task_check_point tcp ON d.check_point_id = tcp.check_point_id
+        RIGHT JOIN device_manage.d_check_point dcp ON tcp.check_point_id = dcp.id AND dcp.status &lt; 99
+        WHERE tcp.task_id = #{taskId} AND d.status &lt; 99
+    </select>
+
+    <!-- 根据任务id查询设备列表 -->
+    <select id="findAppTaskDeviceListByTaskId" parameterType="AppTaskDevice" resultType="AppTaskDevice">
+        SELECT d.id deviceId, dt.device_sys_name deviceName, d.qr_no deviceQrNO, cp.task_id taskId,
+            dcp.point_location pointLocation, cp.project_id projectId
+        FROM task_manage.t_task_check_point cp
+        LEFT JOIN device_manage.d_device d ON cp.check_point_id = d.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        LEFT JOIN device_manage.d_check_point dcp ON d.check_point_id = dcp.id
+        WHERE cp.task_id = #{taskId} AND dcp.status &lt; 99
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- APP 根据设备id查询设备巡检项 -->
+    <select id="findDeviceItemByDeviceIdApp" parameterType="AppTaskDevice" resultType="AppTaskCheckItem">
+        SELECT dci.id deviceCheckItemId, dci.check_name chcekName
+        FROM device_manage.d_device d
+        LEFT JOIN device_manage.d_device_check_item dci ON d.device_type_id = dci.device_type_id
+        WHERE d.id = #{deviceId} AND dci.check_item_vs_type = #{checkItemVsType}
+        <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+            AND dci.project_id = #{projectId}
+        </if>
+    </select>
+
+    <sql id="deviceParamters">
+        d.id, dt.device_sys_name deviceName, b.building_name buildingName, f.floor_name floorName,
+        cp.id checkPointId, d.qr_no qrNo, d.device_status deviceStatus
+    </sql>
+
+    <!-- 根据 巡检点ID 查询 -->
+    <select id="findCheckPointIdDeviceList" parameterType="java.lang.Long" resultMap="deviceResultMap">
+        SELECT d.device_type_id, d.project_id, d.check_point_id, d.qr_no, d.num, d.num deviceCount, d.id,
+            dt.device_sys_name device_name
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        WHERE d.check_point_id = #{id} AND d.status <![CDATA[ < ]]> 99
+    </select>
+
+    <!-- 更新设备状态 -->
+    <update id="updateDeviceStatus">
+        UPDATE d_device d
+        SET d.device_status = #{status}, d.status_update_time = now()
+        WHERE id IN
+        <foreach item="item" collection="ids" index="index" separator=", " open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 根据巡更点查询设备列表-->
+    <select id="uploadCheckPointExcel" parameterType="TaskPointUpload" resultType="TaskDeviceEntity">
+        SELECT d.id, d.device_type_id deviceTypeId, cp.building_id buildingId, cp.building_floor_id floorId, cp.id checkPointId,
+            cp.point_name pointName, cp.qr_no qrNo, d.device_status deviceStatus, d.qr_no deviceQrNo
+        FROM device_manage.d_device d
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        <where>
+            cp.status &lt;= 98
+            AND d.status &lt;= 98
+            <if test="projectId != null and projectId != 0">
+                AND d.project_id = #{projectId}
+            </if>
+            <if test="pointUploadList != null and pointUploadList.size > 0">
+                AND cp.qr_no IN
+                <foreach item="item" collection="pointUploadList" index="index" separator=", " open="(" close=")">
+                    #{item.pointQrNo}
+                </foreach>
+            </if>
+            GROUP BY d.id
+        </where>
+    </select>
+
+    <!--*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-抽查功能-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-->
+    <!-- 查询我的抽查任务设备列表 -->
+    <select id="findMySpotCheckTaskDeviceList" parameterType="Task" resultMap="deviceResultMap">
+        SELECT w.*
+        FROM (
+            SELECT tcp.check_point_name as point_name, d.id , d.project_id, d.qr_no, dt.device_sys_name as device_name, cr.create_time as check_time,
+                if(cr.check_result is null, 2, cr.check_result) as device_status, cp.qr_no as point_qr_no,
+                cr.fault_description as description, cp.building_id, cp.building_floor_id, cp.point_location, dt.img_url, cp.id as check_point_id
+            FROM task_manage.t_task_check_point tcp
+            INNER JOIN device_manage.d_check_point cp ON cp.id = tcp.check_point_id AND cp.status &lt; 99
+            INNER JOIN device_manage.d_device d ON tcp.check_point_id = d.check_point_id AND d.status &lt; 99
+            INNER JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+            LEFT JOIN (
+                SELECT MAX(tcr.id) AS id, tcr.check_point_id, tcr.task_id, tcr.check_result, tcr.device_id, tcr.fault_description, tcr.create_time
+                FROM task_manage.t_check_record tcr
+                WHERE tcr.task_id = #{id}
+                GROUP BY tcr.task_id, tcr.check_point_id, tcr.device_id
+            ) AS temp ON d.id = temp.device_id AND tcp.check_point_id = temp.check_point_id AND tcp.task_id = temp.task_id
+            LEFT JOIN task_manage.t_check_record cr ON cr.id = temp.id
+            WHERE tcp.task_id = #{id}
+        ) w
+        WHERE 1 = 1
+        <if test="deviceStatus != null">
+            AND w.device_status = #{deviceStatus}
+        </if>
+        <if test="buildingId != null">
+            AND w.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null">
+            AND w.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="name != null">
+            AND (w.qr_no like CONCAT('%', #{name}, '%') or w.device_name like CONCAT('%', #{name}, '%'))
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询我的抽查任务设备列表数量 -->
+    <select id="findMySpotCheckTaskDeviceListCount" parameterType="Task" resultType="java.lang.Integer">
+        SELECT COUNT(w.id)
+        FROM (
+            SELECT tcp.check_point_name as point_name, d.id , d.project_id, d.qr_no, dt.device_sys_name as device_name,
+                if(cr.check_result is null, 2, cr.check_result) as device_status,
+                cr.fault_description as description, cp.building_id, cp.building_floor_id, cp.point_location, dt.img_url, tcp.id as check_point_id
+            FROM task_manage.t_task_check_point tcp
+            INNER JOIN device_manage.d_check_point cp on cp.id = tcp.check_point_id AND cp.status &lt; 99
+            INNER JOIN device_manage.d_device d on tcp.check_point_id = d.check_point_id AND d.status &lt; 99
+            INNER JOIN device_manage.d_device_type dt on d.device_type_id = dt.id
+            LEFT JOIN (
+                SELECT MAX(tcr.id) AS id, tcr.check_point_id, tcr.task_id, tcr.check_result, tcr.device_id, tcr.fault_description
+                FROM task_manage.t_check_record tcr
+                WHERE tcr.task_id = #{id}
+                GROUP BY tcr.task_id, tcr.check_point_id, tcr.device_id
+            ) AS temp on d.id = temp.device_id AND tcp.check_point_id = temp.check_point_id AND tcp.task_id = temp.task_id
+            LEFT JOIN task_manage.t_check_record cr on cr.id = temp.id
+            WHERE tcp.task_id = #{id}
+        ) w
+        WHERE 1 = 1
+        <if test="deviceStatus != null">
+            AND w.device_status = #{deviceStatus}
+        </if>
+        <if test="buildingId != null">
+            AND w.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null">
+            AND w.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="name != null">
+            AND (w.qr_no like CONCAT('%', #{name}, '%') or w.device_name like CONCAT('%', #{name}, '%'))
+        </if>
+    </select>
+
+    <!-- 查询设备详情 -->
+    <select id="findDeviceLocation" parameterType="java.lang.Long" resultMap="deviceResultMap">
+        SELECT cp.building_id, cp.building_floor_id, cp.point_location, dt.img_url, dt.device_sys_name as device_name , 
+            d.id , d.project_id, d.qr_no, cp.qr_no as point_qr_no, cp.point_name, d.num, d.num deviceCount,
+            dt.id as device_type_id, d.check_point_id,
+            cp.manage_region
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_check_point cp on cp.id = d.check_point_id AND cp.status &lt;  99
+        INNER JOIN device_manage.d_device_type dt on d.device_type_id = dt.id
+        WHERE d.id = #{id}
+    </select>
+
+    <!-- 根据巡更点查询设备列表 -->
+    <select id="findTaskSheetDevice" parameterType="java.util.Set" resultType="TaskDeviceEntity">
+        <if test="set != null and set.size > 0">
+            SELECT d.id, d.device_type_id deviceTypeId, cp.building_id buildingId, cp.building_floor_id floorId, cp.id checkPointId,
+                cp.point_name pointName, cp.qr_no qrNo, d.device_status deviceStatus, d.qr_no deviceQrNo
+            FROM device_manage.d_device d
+            LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+            WHERE cp.status &lt;= 98
+            AND d.status &lt;= 98
+            AND d.project_id = #{projectId}
+            AND cp.id IN
+            <foreach item="item" collection="set" index="index" separator=", " open="(" close=")">
+                <choose>
+                    <when test="item != null and item != 0">
+                        #{item}
+                    </when>
+                </choose>
+            </foreach>
+            GROUP BY d.id
+        </if>
+    </select>
+
+    <!-- 根据巡更点查询设备列表 -->
+    <select id="findTaskSheetCheckPoint" parameterType="TaskPointUpload" resultType="java.lang.Long">
+        <if test="deviceList != null and deviceList.size > 0">
+            SELECT cp.id checkPointId
+            FROM device_manage.d_check_point cp
+            WHERE cp.status &lt;= 98
+            AND cp.project_id = #{projectId}
+            AND cp.qr_no IN
+            <foreach item="item" collection="deviceList" index="index" separator=", " open="(" close=")">
+                <choose>
+                    <when test="item.pointQrNo != null and item.pointQrNo != ''">
+                        #{item.pointQrNo}
+                    </when>
+                </choose>
+            </foreach>
+            GROUP BY cp.id
+            <!--OR cp.point_location IN
+            <foreach item="item" collection="deviceList" index="index" separator=", " open="(" close=")" >
+                <choose>
+                    <when test="item.pointQrNo == null or item.pointQrNo == ''">
+                        #{item.pointLocation}
+                    </when>
+                </choose>
+            </foreach>-->
+        </if>
+    </select>
+
+    <!--查询设备的抽查项-->
+    <select id="findDeviceSpotCheckItem" parameterType="Device" resultType="CheckItemRecord">
+        SELECT dci.check_name as checkName, dci.check_type as checkType, dci.check_specification as checkSpecification, dci.type,
+          dci.check_action as checkAction, dci.sort, dt.terminal_code as terminalCode, dt.address, dci.id as checkId, dci.id as id
+        FROM device_manage.d_device_check_item dci
+        INNER JOIN device_manage.d_device d on dci.device_type_id = d.device_type_id
+        LEFT JOIN device_manage.d_device_terminal dt on dci.device_type_id = dt.device_type_id AND d.id = dt.device_id
+        AND d.check_point_id = dt.check_point_id AND dci.check_name = dt.terminal_name
+        WHERE dci.device_type_id = #{deviceTypeId} AND dci.check_action = 4 AND d.id = #{id} AND dci.status = 1
+        AND dci.check_item_vs_type = #{checkItemVsType}
+        <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+            AND dci.project_id = #{projectId}
+        </if>
+        GROUP BY dci.id ORDER BY dci.sort, dci.check_specification;
+    </select>
+
+    <select id="findTaskDeviceListByPage" parameterType="Task" resultType="TaskDeviceEntity">
+        SELECT t.id, t.deviceQrNo, t.deviceTypeId, t.buildingId, location, t.floorId, t.qrNo, t.deviceStatus, t.num, t.brand, t.spec, t.model, t.memo,
+            MAX(t.version_no), t.checkerName, t.orgName, t.createTime, t.pointName, t.checkPointId
+        FROM (
+            SELECT d.id, d.qr_no deviceQrNo, d.device_type_id deviceTypeId, d.num, d.num deviceCount, d.brand, d.spec, d.model, d.memo,
+                d.production_date, d.expiry_date, d.send_modify_time, d.expiry_date_end, d.send_modify_time_end,
+                cp.building_id buildingId, cp.point_location location,
+                cp.building_floor_id floorId, cp.id checkPointId, cp.qr_no qrNo, tcr.check_result deviceStatus, tcr.version_no,
+                tcr.checker_name checkerName, tcr.org_name orgName, tcr.create_time createTime, cp.point_name pointName
+            FROM task_manage.t_task_check_point tcp
+            LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+            LEFT JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+            LEFT JOIN task_manage.t_check_record tcr ON tcr.task_id = tcp.task_id AND tcp.check_point_id = tcr.check_point_id AND d.id = tcr.device_id
+            WHERE tcp.task_id = #{id}
+            AND cp.status &lt;= 98
+            <if test="deviceStatus != null and deviceStatus > -1">
+                AND tcr.check_result = #{deviceStatus}
+            </if>
+            <if test="deviceStatus != null and deviceStatus &lt; 0">
+                HAVING deviceStatus is null
+            </if>
+            ORDER BY tcr.version_no DESC
+        ) t
+        GROUP BY t.id
+        ORDER BY t.qrNo ASC
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 根据 任务ID 查询数量 -->
+    <select id="findCheckDeviceCountByTaskId" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT  d.id)
+        FROM task_manage.t_task_check_point tcp
+        LEFT JOIN device_manage.d_device d ON tcp.check_point_id = d.check_point_id AND d.status &lt;= 98
+        WHERE tcp.task_id = #{taskId}
+    </select>
+
+</mapper>

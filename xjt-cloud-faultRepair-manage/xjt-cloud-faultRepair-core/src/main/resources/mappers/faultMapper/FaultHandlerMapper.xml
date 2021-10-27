@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.fault.core.dao.fault.FaultHandlerDao" >
+
+    <resultMap id="faultHandlerResultMap" type="com.xjt.cloud.fault.core.entity.fault.FaultHandler" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="fault_repair_record_id" property="faultRepairRecordId" jdbcType="BIGINT" />
+        <result column="repair_user_id" property="repairUserId" jdbcType="BIGINT" />
+        <result column="examine_user_id" property="examineUserId" jdbcType="BIGINT" />
+    </resultMap>
+
+    <sql id="faultSql">
+       id, fault_repair_record_id, project_member_id, user_type
+    </sql>
+
+    <sql id="findFaultWhere">
+        WHERE 1 = 1
+        <if test="faultRepairRecordId != null">
+            AND fault_repair_record_id = #{faultRepairRecordId}
+        </if>
+        <if test="faultRepairRecordIds != null and faultRepairRecordIds.length > 0">
+            AND fault_repair_record_id IN
+            <foreach collection="faultRepairRecordIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="repairUserId != null and repairUserId > 0">
+            AND repair_user_id = #{repairUserId}
+        </if>
+        <if test="repairUserId != null and repairUserId == -1">
+            AND repair_user_id &gt; 0
+        </if>
+        <if test="examineUserId != null and examineUserId > 0">
+            AND examine_user_id = #{examineUserId}
+        </if>
+        <if test="examineUserId != null and examineUserId == -1">
+            AND examine_user_id &gt; 0
+        </if>
+        <if test="id != null and id != 0">
+            AND id = #{id}
+        </if>
+    </sql>
+
+    <!-- 新增数据 -->
+    <insert id="insertFaultHandler" parameterType="FaultHandler" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO f_fault_handler(fault_repair_record_id, repair_user_id, examine_user_id)
+        VALUES (#{faultRepairRecordId}, #{repairUserId}, #{examineUserId});
+    </insert>
+
+    <!-- 批量新增数据 -->
+    <insert id="saveFaultHandlers" parameterType="FaultHandler" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO f_fault_handler (fault_repair_record_id, repair_user_id, examine_user_id)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.faultRepairRecordId}, #{item.repairUserId}, #{item.examineUserId})
+        </foreach>
+    </insert>
+
+    <!-- 故障 处理人 维修人 列表 -->
+    <select id="findFaultHandlerList" parameterType="FaultHandler" resultMap="faultHandlerResultMap">
+        SELECT <include refid="faultSql"/>
+        FROM f_fault_handler
+        <include refid="findFaultWhere"/>
+    </select>
+
+    <!-- 根据 故障处理人实体 查询数量 -->
+    <select id="findFaultHandlerNum" parameterType="FaultHandler" resultType="java.lang.Integer">
+        SELECT COUNT(id)
+        FROM f_fault_handler
+        <include refid="findFaultWhere"/>
+    </select>
+
+    <!-- 删除 -->
+    <delete id="deletedFaultHandler" parameterType="FaultHandler">
+        DELETE FROM f_fault_handler
+        <include refid="findFaultWhere"/>
+    </delete>
+
+    <!-- 查询 维修人ID 字符串 -->
+    <select id="findRepairUserIdString" parameterType="FaultRepairRecord" resultType="java.lang.String">
+        SELECT GROUP_CONCAT(DISTINCT fh.repair_user_id)
+        FROM f_fault_handler fh
+        <include refid="findFaultWhere"/>
+        AND fh.repair_user_id IS NOT NULL;
+    </select>
+
+    <!-- 查询 审核人ID 字符串 -->
+    <select id="findExamineUserIdString" parameterType="FaultRepairRecord" resultType="java.lang.String">
+        SELECT GROUP_CONCAT(DISTINCT fh.examine_user_id)
+        FROM f_fault_handler fh
+        <include refid="findFaultWhere"/>
+        AND fh.examine_user_id IS NOT NULL;
+    </select>
+
+</mapper>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.sys.FeedbackDao" >
+    <resultMap id="feedbackResultMap" type="com.xjt.cloud.admin.manage.entity.sys.Feedback">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_phone" property="userPhone" jdbcType="VARCHAR" />
+        <result column="img_url1" property="imgUrl1" jdbcType="VARCHAR" />
+        <result column="img_url2" property="imgUrl2" jdbcType="VARCHAR" />
+        <result column="img_url3" property="imgUrl3" jdbcType="VARCHAR" />
+        <result column="img_url4" property="imgUrl4" jdbcType="VARCHAR" />
+        <result column="content" property="content" jdbcType="VARCHAR" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="handle_user_name" property="handleUserName" jdbcType="VARCHAR" />
+        <result column="handle_time" property="handleTime" jdbcType="TIMESTAMP" />
+        <result column="memo" property="memo" jdbcType="VARCHAR" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="selColumns">
+        id, create_user_id, user_phone, img_url1, img_url2, img_url3, img_url4, content,  status, create_user_name, create_time,
+        handle_user_name, handle_time, memo, project_id, project_name
+    </sql>
+
+    <sql id="findFeedbackWhere">
+        WHERE 1=1
+        <if test="createUserId != null and createUserId != ''">
+            AND create_user_id = #{createUserId}
+        </if>
+        <if test="createUserName != null and createUserName != ''">
+            AND create_user_name LIKE CONCAT('%', #{createUserName}, '%')
+        </if>
+        <if test="userPhone != null and userPhone != ''">
+            AND user_phone = #{userPhone}
+        </if>
+        <if test="content != null and content != ''">
+            AND content LIKE CONCAT('%', #{content}, '%')
+        </if>
+        <if test="projectName != null and projectName != ''">
+            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+        <if test="status != null and status != 0">
+            AND status = #{status}
+        </if>
+        <if test="status == null">
+            AND status &lt;= 98
+        </if>
+    </sql>
+
+    <!--查询问题反馈信息列表 -->
+    <select id="findFeedbackList" parameterType="Feedback" resultMap="feedbackResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM s_feedback
+        <include refid="findFeedbackWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询问题反馈信息列表总数量 -->
+    <select id="findFeedbackListTotalCount" parameterType="Feedback" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM s_feedback
+        <include refid="findFeedbackWhere"/>
+    </select>
+
+    <!--修改问题反馈信息 -->
+    <update id="modifyFeedback" parameterType="Feedback">
+        UPDATE s_feedback
+        <set>
+            <if test="userPhone != null and userPhone != ''">
+                user_phone = #{userPhone},
+            </if>
+            <if test="imgUrl1 != null and imgUrl1 != ''">
+                img_url1 = #{imgUrl1},
+            </if>
+            <if test="imgUrl2 != null and imgUrl2 != ''">
+                img_url2 = #{imgUrl2},
+            </if>
+            <if test="imgUrl3 != null and imgUrl3 != ''">
+                img_url3 = #{imgUrl3},
+            </if>
+            <if test="imgUrl4 != null and imgUrl4 != ''">
+                img_url4 = #{imgUrl4},
+            </if>
+            <if test="content != null and content != ''">
+                content = #{content},
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status},
+            </if>
+            <if test="handleUserName != null and handleUserName != ''">
+                handle_user_name = #{handleUserName},
+            </if>
+            <if test="handleTime != null">
+                handle_time = #{handleTime},
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

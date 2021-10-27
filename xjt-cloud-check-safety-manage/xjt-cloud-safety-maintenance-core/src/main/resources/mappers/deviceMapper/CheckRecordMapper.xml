@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.device.CheckRecordDao" >
+    <resultMap id="checkRecordResultMap" type="com.xjt.cloud.safety.core.entity.device.CheckRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="device_type_name" property="deviceTypeName" jdbcType="VARCHAR" />
+        <result column="device_check_item_id" property="deviceCheckItemId" jdbcType="VARCHAR" />
+        <result column="check_result" property="checkResult" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="check_img_urls" property="checkImgUrls" jdbcType="VARCHAR" />
+        <result column="device_sys_id" property="deviceSysId" jdbcType="BIGINT" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT" />
+
+
+    </resultMap>
+
+    <sql id="selColumns">
+        cr.id, cr.check_project_id, cr.device_sys_id,  cr.device_type_id,
+          cr.device_check_item_id, cr.status, cr.create_time,  cr.check_result, cr.check_img_urls,cr.create_user_id,cr.create_user_name,cr.score,
+         cr.inspection
+    </sql>
+
+    <sql id="findCheckRecordWhere">
+        WHERE cr.status &lt;= 98
+        <if test="id != null and id > 0">
+            AND cr.id = #{id}
+        </if>
+        <if test="checkProjectId != null and checkProjectId > 0">
+            AND cr.check_project_id = #{checkProjectId}
+        </if>
+        <if test="deviceSysId != null and deviceSysId > 0">
+            AND cr.device_sys_id = #{deviceSysId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId > 0">
+            AND cr.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="checkResult != null and checkResult > 0">
+            AND cr.check_result = #{checkResult}
+        </if>
+        <if test="deviceTypeName != null and deviceTypeName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceTypeName},'%')
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND ds.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND ds.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND ds.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <!-- 查询设备系统评估汇总信息列表-->
+    <select id="findCheckRecordDeviceSysCountReport" parameterType="CheckRecord" resultType="CheckReport">
+        SELECT t.id deviceSysId, t.device_sys_name deviceSysName, SUM(t.deviceTypeNum) deviceTypeNum, t.weight, SUM(t.checkNum) checkNum,
+            SUM(t.score)/COUNT(t.deviceTypeId) * t.weight score
+        FROM (
+        SELECT ds.id, ds.device_sys_name, dt.id deviceTypeId,COUNT(DISTINCT dci.id) deviceTypeNum,
+        CASE #{buildingType} WHEN 1 OR  2 THEN ds.workshop_weight WHEN 3 THEN ds.warehouse_weight ELSE ds.civil_architecture_weight END weight,
+        COUNT(DISTINCT cr.device_check_item_id)  checkNum, SUM(IF(cr.score IS NULL OR cr.check_result = 5,100,cr.score)) / COUNT(DISTINCT dci.id) score
+        FROM d_device_type ds
+        INNER JOIN d_device_type dt ON ds.id = dt.parent_id AND ds.type = 1 AND dt.type = 9
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id
+        LEFT JOIN t_check_record cr ON cr.device_sys_id = ds.id AND cr.device_type_id = dt.id AND cr.device_check_item_id = dci.id AND cr.check_project_id = #{checkProjectId}
+        WHERE 1 = 1
+        <if test="deviceSysIds != null">
+            AND ds.id IN
+            <foreach collection="deviceSysIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND ds.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND ds.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY dt.id
+        ) t GROUP BY id
+    </select>
+
+    <!-- 查询设备类型评估汇总信息列表-->
+    <select id="findCheckRecordDeviceTypeCountReport" parameterType="CheckRecord" resultMap="checkRecordResultMap">
+        SELECT dci.id device_check_item_id, dt.device_sys_name device_type_name, dt.id device_type_id,cr.id, cr.score, cr.check_result, dci.check_name checkName,
+        dci.check_specification checkSpecification,dci.code,cr.inspection,cr.last_modify_time,cr.check_img_urls,
+        dci.assess_item_a assessItemA,dci.assess_item_b assessItemB,dci.assess_item_c assessItemC,dci.assess_item_d assessItemD
+        FROM d_device_type dt
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id AND dt.type = 9
+        LEFT JOIN t_check_record cr ON cr.device_type_id = dt.id AND cr.device_check_item_id = dci.id AND cr.check_project_id = #{checkProjectId}
+        WHERE dt.parent_id = #{deviceSysId}
+        <if test="deviceCheckItemId != null and deviceCheckItemId != 0">
+            AND dci.id = #{deviceCheckItemId}
+        </if>
+        GROUP BY dci.id ORDER BY dt.id, dci.id
+    </select>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findCheckRecordListCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(distinct dci.id ) FROM d_device_type ds
+        INNER JOIN d_device_type dt ON ds.id = dt.parent_id AND ds.type = 1 AND dt.type = 9
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id
+        LEFT JOIN t_check_record cr ON dt.id = cr.device_type_id AND cr.device_check_item_id = dci.id AND cr.check_project_id =#{checkProjectId}
+        WHERE  1=1
+        <if test="deviceSysIds != null">
+            AND ds.id IN
+            <foreach collection="deviceSysIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceSysId != null and deviceSysId > 0">
+            AND cr.device_sys_id = #{deviceSysId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId > 0">
+            AND cr.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="deviceTypeName != null and deviceTypeName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceTypeName},'%')
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND ds.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND ds.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND ds.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="complete != null">
+            <if test="complete == 1">
+                AND cr.id IS NULL
+            </if>
+            <if test="complete == 2">
+                AND cr.id IS NOT NULL
+            </if>
+        </if>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findCheckRecordList" parameterType="CheckRecord" resultMap="checkRecordResultMap">
+        SELECT <include refid="selColumns"/>,dt.device_sys_name device_type_name,ds.device_sys_name,dci.check_specification checkSpecification,dci.code
+        FROM d_device_type ds
+        INNER JOIN d_device_type dt ON ds.id = dt.parent_id
+        AND ds.type = 1 AND dt.type = 9
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id
+        LEFT JOIN t_check_record cr ON dt.id = cr.device_type_id
+        AND cr.device_check_item_id = dci.id AND cr.check_project_id =#{checkProjectId}
+        WHERE  1=1
+        <if test="deviceSysIds != null">
+        AND ds.id IN
+        <foreach collection="deviceSysIds" item="item" separator="," open="(" close=")">
+                #{item}
+        </foreach>
+        </if>
+        <if test="deviceSysId != null and deviceSysId > 0">
+        AND cr.device_sys_id = #{deviceSysId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId > 0">
+        AND cr.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="deviceTypeName != null and deviceTypeName != ''">
+        AND dt.device_sys_name LIKE CONCAT('%',#{deviceTypeName},'%')
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+        AND ds.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+        AND ds.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+        AND ds.device_type IN
+        <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+        </foreach>
+        </if>
+        GROUP  BY dci.id
+        <if test="complete != null">
+             <if test="complete == 1">
+        HAVING cr.id IS NULL
+            </if>
+            <if test="complete == 2">
+        HAVING cr.id IS NOT NULL
+            </if>
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--添加设备巡检项-->
+    <insert id="saveCheckRecord" parameterType="CheckRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_check_record ( device_check_item_id,  check_result, check_img_urls,
+        device_sys_id,device_type_id,create_user_id,create_user_name,check_project_id,score,inspection,last_modify_time)
+         VALUES (#{deviceCheckItemId},  #{checkResult}, #{checkImgUrls},
+         #{deviceSysId},#{deviceTypeId}, #{createUserId},#{createUserName},#{checkProjectId},#{score},#{inspection},NOW());
+    </insert>
+
+    <!--修改设备巡检项-->
+    <update id="modifyCheckRecord" parameterType="CheckRecord">
+        UPDATE t_check_record
+        <set>
+            last_modify_time = NOW(),
+            <if test="deviceCheckItemId != null and deviceCheckItemId != 0">
+                device_check_item_id = #{deviceCheckItemId} ,
+            </if>
+            <if test="checkResult != null and checkResult != 0">
+                check_result = #{checkResult} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="checkImgUrls != null">
+                check_img_urls = #{checkImgUrls} ,
+            </if>
+            <if test="score != null">
+                score = #{score} ,
+            </if>
+            <if test="inspection != null">
+                inspection = #{inspection} ,
+            </if>
+            </set>
+            WHERE
+            <if test="id != null and id != 0">
+            id = #{id}
+            </if>
+            <if test="ids != null">
+                id IN
+                <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+    </update>
+
+    <!-- 查询所有检测统计列表 -->
+    <select id="findCheckRecordTotalReport" parameterType="CheckRecord" resultType="CheckReport">
+        SELECT
+            COUNT(DISTINCT cr.device_check_item_id) checkNum, COUNT(DISTINCT dci.id) totalNum
+        FROM d_device_type ds
+        INNER JOIN d_device_type dt ON ds.id = dt.parent_id AND ds.type = 1 AND dt.type = 9
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id
+        LEFT JOIN t_check_record cr ON dt.id = cr.device_type_id
+        AND cr.device_check_item_id = dci.id AND cr.check_project_id =#{checkProjectId}
+        WHERE  1=1
+        <if test="deviceSysIds != null">
+            AND ds.id IN
+            <foreach collection="deviceSysIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 查询所有检测统计列表 -->
+    <select id="findCheckRecordSynthesisScoreList" parameterType="CheckRecord" resultType="CheckReport">
+        SELECT dsw.device_type deviceType,dsw.device_type_name deviceSysTypeName, t.deviceSysId, t.deviceSysName, t.deviceTypeNum, t.weight, SUM(t.checkNum) checkNum, t.score,
+            CASE #{buildingType} WHEN 1 THEN dsw.workshop_weight WHEN 2 THEN dsw.other_workshop_weight
+            WHEN 3 THEN dsw.warehouse_weight ELSE dsw.civil_architecture_weight END typeWeight
+        FROM d_device_sys_weight dsw
+        INNER JOIN (
+            SELECT t.id deviceSysId, t.device_sys_name deviceSysName, t.device_type, COUNT(t.deviceTypeId) deviceTypeNum, t.weight, SUM(t.checkNum) checkNum,
+                IFNULL(SUM(t.score) / COUNT(t.deviceTypeId) * t.weight,0) score
+            FROM (
+                SELECT ds.id, ds.device_sys_name, ds.device_type, dt.id deviceTypeId,
+                    CASE #{buildingType} WHEN 1 OR  2 THEN ds.workshop_weight WHEN 3 THEN ds.warehouse_weight ELSE ds.civil_architecture_weight END  weight,
+                    COUNT(DISTINCT cr.device_type_id) checkNum,
+                    SUM(IF(cr.score IS NULL OR cr.check_result = 5,100,cr.score)) / COUNT(DISTINCT cr.device_check_item_id) score
+                FROM d_device_type ds
+                INNER JOIN d_device_type dt ON ds.id = dt.parent_id AND ds.type = 1 AND dt.type = 9
+                INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id
+                LEFT JOIN t_check_record cr ON cr.device_sys_id = ds.id AND cr.device_type_id = dt.id
+                AND cr.device_check_item_id = dci.id AND cr.check_project_id = #{checkProjectId}
+                <if test="deviceSysIds != null">
+                    AND cr.device_sys_id IN
+                    <foreach collection="deviceSysIds" item="item" separator="," open="(" close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                WHERE 1 = 1
+
+                GROUP BY dt.id
+            ) t GROUP BY id
+        ) t ON t.device_type = dsw.device_type
+        GROUP BY deviceType, deviceSysName
+        ORDER BY deviceType, deviceSysName
+    </select>
+
+    <!-- 查询所有测试统计列表 -->
+    <select id="findCheckRecordItemScoreList" parameterType="CheckRecord" resultType="CheckReport">
+        SELECT ds.id deviceSysId, ds.device_sys_name deviceSysName, dci.id deviceCheckItemId, dt.device_sys_name deviceTypeName, dt.id  deviceTypeId, cr.score,
+        cr.check_result checkResult, dci.check_name checkName, dci.check_specification checkSpecification, dci.code,cr.inspection,dsw.device_type_name deviceSysTypeName
+        FROM d_device_type ds
+        INNER JOIN d_device_type dt ON ds.id = dt.parent_id AND ds.type = 1 AND dt.type = 9
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id
+        INNER JOIN d_device_sys_weight dsw ON dsw.device_type = ds.device_type
+        LEFT JOIN t_check_record cr ON cr.device_type_id = dt.id AND cr.device_check_item_id = dci.id AND cr.check_project_id = #{checkProjectId}
+        WHERE 1 = 1
+        <if test="deviceSysIds != null">
+            AND ds.id IN
+            <foreach collection="deviceSysIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceType != null and deviceType!= 0">
+            AND dsw.device_type = #{deviceType}
+        </if>
+        GROUP BY dci.id ORDER BY deviceSysName, deviceTypeName, dci.id
+    </select>
+
+    <!--查询不合格项列表-->
+    <select id="findFailCheckRecordList" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT cp.id, cp.device_sys_code deviceSysCode, cp.device_type_code deviceTypeCode,
+            di.code, di.check_specification checkSpecification, di.grade, cr.check_num
+        FROM t_check_point cp
+        INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+        INNER JOIN d_device_check_item di ON cr.device_check_item_id = di.id
+        WHERE cp.check_project_id = #{checkProjectId} AND cr.check_result = 2
+    </select>
+
+    <!--查询检测汇总报表-->
+    <select id="findCheckReport" parameterType="java.lang.Long" resultType="CheckReport">
+        SELECT device_sys_id, device_sys_name deviceSysName, device_sys_code deviceSysCode, SUM(aTotal) gradeATotal, SUM(bTotal) gradeBTotal, SUM(cTotal) gradeCTotal,
+        SUM(aFailResult)gradeAFailResult, SUM(bFailResult)gradeBFailResult, SUM(cFailResult) gradeCFailResult,
+        IF(SUM(aFailResult) > 0 OR  SUM(bFailResult) > 4 OR  SUM(cFailResult) > 8,2,1) decisionResult
+        FROM (
+            SELECT device_sys_id, device_sys_name, device_sys_code, device_check_item_id,
+            SUM(IF(grade = 'A' ,1,0)) aTotal, SUM(IF(grade = 'B' ,1,0)) bTotal, SUM(IF(grade = 'C' ,1,0)) cTotal,
+            IF(grade = 'A' ,IF(check_fail_num > 0,1,0 ),0) aFailResult,
+            IF(grade = 'B' ,IF(check_fail_num / check_total_num * 100.00 > 10,1,0),0 ) bFailResult,
+            IF(grade = 'C' ,IF(check_fail_num / check_total_num * 100.00 > 30,1,0 ),0) cFailResult
+            FROM (
+                SELECT cp.device_sys_id, cp.device_sys_name, cp.device_sys_code, cr.device_check_item_id, dci.grade,
+                SUM(if(check_result = 1,cr.check_num,0)) check_ok_num, SUM(if(check_result = 2,cr.check_num,0)) check_fail_num,
+                SUM(if(check_result &lt;= 2,cr.check_num,0)) check_total_num
+                FROM t_check_point cp
+                INNER JOIN t_check_record cr ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+                INNER JOIN d_device_check_item dci ON cr.device_check_item_id = dci.id
+                WHERE cp.check_project_id = #{checkProjectId}
+                GROUP BY cr.device_check_item_id) t
+            GROUP BY device_check_item_id)t
+        GROUP BY device_sys_id
+    </select>
+
+    <!-- 查询 创建人 -->
+    <select id="findCreateUserName" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT cr.create_user_name
+        FROM maintenance_manage.t_check_record cr
+        WHERE cr.check_project_id = #{checkProjectId}
+        ORDER BY cr.id desc
+        limit 1;
+    </select>
+
+</mapper>

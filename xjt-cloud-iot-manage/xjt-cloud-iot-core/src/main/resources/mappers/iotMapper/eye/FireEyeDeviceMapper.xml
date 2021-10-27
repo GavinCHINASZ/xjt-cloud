@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.eye.FireEyeDeviceDao">
+
+    <resultMap id="fireEyeDeviceResultMap" type="com.xjt.cloud.iot.core.entity.eye.FireEyeDevice">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_type" property="deviceType" jdbcType="INTEGER"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="check_point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="video_location" property="videoLocation" jdbcType="VARCHAR" />
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <result column="channel_no" property="channelNo" jdbcType="INTEGER"/>
+        <result column="video_name" property="videoName" jdbcType="VARCHAR"/>
+        <result column="event_type" property="eventType" jdbcType="INTEGER"/>
+        <result column="device_state" property="deviceState" jdbcType="INTEGER"/>
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="building_floor_name" property="buildingFloorName" jdbcType="VARCHAR"/>
+
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="heartbeat_time" property="heartbeatTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="fireEyeDeviceSql">
+        fed.id, fed.project_id, fed.check_point_id, fed.device_id, fed.sensor_no, fed.channel_no, fed.video_name, fed.event_type, fed.device_state,
+        fed.heartbeat_time, fed.create_user_name, fed.video_location,
+        fed.create_user_id, fed.create_time, fed.last_modify_time, fed.update_user_id, fed.update_user_name
+    </sql>
+
+    <sql id="findFireEyeDeviceWhere">
+        WHERE fed.deleted = false
+        <if test="eventType != null">
+            AND fed.event_type = #{eventType}
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND fed.sensor_no LIKE CONCAT('%',#{sensorNo},'%')
+        </if>
+        <if test="channelNo != null">
+            AND fed.channel_no = #{channelNo}
+        </if>
+        <if test="videoName != null and videoName != ''">
+            AND fed.video_name LIKE CONCAT('%',#{videoName},'%')
+        </if>
+
+        <if test="videoLocation != null and videoLocation != ''">
+            AND fed.video_location LIKE CONCAT('%',#{videoLocation},'%')
+        </if>
+
+        <if test="deviceId != null and deviceId > 0">
+            AND fed.device_id = #{deviceId}
+        </if>
+        <if test="checkPointId != null and checkPointId > 0">
+            AND fed.check_point_id = #{checkPointId}
+        </if>
+
+        <if test="projectId != null and projectId > 0">
+            AND fed.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND fed.project_id in
+            <foreach collection="projectIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="id != null and id > 0">
+            AND fed.id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            AND fed.id in
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="buildingId != null and buildingId > 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId > 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+
+        <if test="deviceState != null">
+            AND fed.device_state = #{deviceState}
+        </if>
+
+        <if test="pointLocation != null and pointLocation != ''">
+            AND cp.point_location LIKE CONCAT('%',#{pointLocation},'%')
+        </if>
+        <if test="checkPointQrNo != null and checkPointQrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{checkPointQrNo},'%')
+        </if>
+    </sql>
+
+    <!-- 查询火眼设备 -->
+    <select id="findFireEyeDevice" parameterType="FireEyeDevice" resultMap="fireEyeDeviceResultMap">
+        SELECT <include refid="fireEyeDeviceSql"/>,
+            d.qr_no deviceQrNo, dt.device_sys_name deviceName, dt.device_type,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id
+        FROM e_fire_eye_device fed
+        LEFT JOIN device_manage.d_device d ON fed.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = fed.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        <include refid="findFireEyeDeviceWhere"/>
+        LIMIT 1;
+    </select>
+
+    <!-- 查询火眼设备状态 -->
+    <select id="findFireEyeDeviceState" parameterType="FireEyeDevice" resultType="FireEyeDevice">
+        SELECT COUNT(*) totalCount,
+            SUM(if(fed.device_state = 1, 1, 0)) onlineNum,
+            SUM(if(fed.device_state = 2, 1, 0)) offlineNum
+        FROM iot_manage.e_fire_eye_device fed
+        <include refid="findFireEyeDeviceWhere"/>
+    </select>
+
+    <!-- 查询设备列表 -->
+    <select id="findFireEyeDeviceList" parameterType="FireEyeDevice" resultMap="fireEyeDeviceResultMap">
+        SELECT <include refid="fireEyeDeviceSql"/>,
+            d.qr_no deviceQrNo, dt.device_sys_name deviceName, dt.device_type,
+            cp.point_location, cp.qr_no check_point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id
+        FROM e_fire_eye_device fed
+        LEFT JOIN device_manage.d_device d ON fed.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = fed.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+
+        <include refid="findFireEyeDeviceWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备列表数量 -->
+    <select id="findFireEyeDeviceListCount" parameterType="FireEyeDevice" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT fed.id)
+        FROM e_fire_eye_device fed
+        LEFT JOIN device_manage.d_device d ON fed.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = fed.check_point_id
+        <include refid="findFireEyeDeviceWhere"/>
+    </select>
+
+    <!-- 删除 -->
+    <update id="delFireEyeDevice" parameterType="FireEyeDevice">
+        UPDATE e_fire_eye_device
+        SET deleted = 1
+        WHERE
+        <if test="id != null and id > 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id in
+            <foreach collection="ids" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+    </update>
+
+    <!--修改-->
+    <update id="updFireEyeDevice" parameterType="FireEyeDevice">
+        UPDATE e_fire_eye_device
+        <set>
+            <if test="deleted != null">
+                deleted = #{deleted},
+            </if>
+            <if test="projectId != null">
+                project_id = #{projectId},
+            </if>
+            <if test="deviceId != null">
+                device_id = #{deviceId},
+            </if>
+            <if test="checkPointId != null">
+                check_point_id = #{checkPointId},
+            </if>
+            <if test="sensorNo != null and id == null">
+                sensor_no = #{sensorNo},
+            </if>
+            <if test="videoName != null and videoName != ''">
+                video_name = #{videoName},
+            </if>
+            <if test="videoLocation != null and videoLocation != ''">
+                video_location = #{videoLocation},
+            </if>
+            <if test="eventType != null">
+                event_type = #{eventType},
+            </if>
+            <if test="channelNo != null and channelNo > 0">
+                channel_no = #{channelNo},
+            </if>
+
+            <if test="deviceState != null">
+                device_state = #{deviceState},
+            </if>
+
+            <if test="heartbeatTime != null">
+                heartbeat_time = #{heartbeatTime},
+            </if>
+            <if test="updateUserId != null and updateUserId != 0">
+                update_user_id = #{updateUserId},
+            </if>
+            <if test="updateUserName != null and updateUserName != ''">
+                update_user_name = #{updateUserName}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id in
+            <foreach collection="ids" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 心跳更新 -->
+    <update id="updateFireEyeDevice" parameterType="FireEyeDevice">
+        UPDATE e_fire_eye_device
+        <set>
+            <if test="deleted != null">
+                deleted = #{deleted},
+            </if>
+            <if test="projectId != null">
+                project_id = #{projectId},
+            </if>
+            <if test="deviceId != null">
+                device_id = #{deviceId},
+            </if>
+            <if test="checkPointId != null">
+                check_point_id = #{checkPointId},
+            </if>
+
+            <if test="videoName != null and videoName != ''">
+                video_name = #{videoName},
+            </if>
+            <if test="videoLocation != null and videoLocation != ''">
+                video_location = #{videoLocation},
+            </if>
+            <if test="eventType != null">
+                event_type = #{eventType},
+            </if>
+
+            <if test="deviceState != null">
+                device_state = #{deviceState},
+            </if>
+
+            <if test="heartbeatTime != null">
+                heartbeat_time = #{heartbeatTime},
+            </if>
+            <if test="updateUserId != null and updateUserId != 0">
+                update_user_id = #{updateUserId},
+            </if>
+            <if test="updateUserName != null and updateUserName != ''">
+                update_user_name = #{updateUserName}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id in
+            <foreach collection="ids" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+        <if test="sensorNo != null and id == null">
+            sensor_no = #{sensorNo}
+        </if>
+    </update>
+
+
+    <!-- 新增 保存 -->
+    <insert id="saveFireEyeDevice" parameterType="FireEyeDevice" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO iot_manage.e_fire_eye_device(project_id, check_point_id, device_id, sensor_no, channel_no, video_name, event_type, device_state,
+            building_id, building_floor_id, video_location,
+            heartbeat_time, create_user_name, create_user_id, create_time, update_user_id, update_user_name)
+        VALUES (#{projectId}, #{checkPointId}, #{deviceId}, #{sensorNo}, #{channelNo}, #{videoName}, #{eventType}, 2,
+            #{buildingId}, #{buildingFloorId}, #{videoLocation},
+            #{heartbeatTime}, #{createUserName}, #{createUserId}, NOW(), #{updateUserId}, #{updateUserName});
+    </insert>
+
+    <!-- 查询出离线的 火眼设备 -->
+    <select id="fireEyeDeviceOffLineTask" parameterType="java.lang.Integer" resultMap="fireEyeDeviceResultMap">
+        SELECT <include refid="fireEyeDeviceSql"/>
+            ,d.qr_no deviceQrNo, d.id deviceId, dt.device_sys_name deviceName,
+            cp.point_location, cp.qr_no checkPointQrNo, cp.id checkPointId, cp.point_name checkPointName
+        FROM iot_manage.e_fire_eye_device fed
+        LEFT JOIN device_manage.d_device d ON fed.device_id = d.id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = ld.device_type_id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = ld.check_point_id
+        WHERE fed.device_state = 1 AND fed.end_heartbeat_time <![CDATA[ <= ]]> DATE_SUB(NOW(), INTERVAL #{date} MINUTE)
+        GROUP BY fed.id
+    </select>
+
+    <!-- 修改 火眼设备离线状态  心跳时间不在date分钟之内就离线 -->
+    <update id="updateFireEyeDeviceOffLineStatus" parameterType="java.lang.Integer">
+        UPDATE iot_manage.e_fire_eye_device
+        SET device_state = 2
+        WHERE end_heartbeat_time <![CDATA[ <= ]]> DATE_SUB(NOW(), INTERVAL #{date} MINUTE);
+     </update>
+
+    <!-- 查询火眼设备监测状态 0:正常, 1：烟雾预警、2：烟雾报警、4：火焰预警、8：火焰报警、16遮挡、32故障,98 心跳 -->
+    <select id="findFireEyeDeviceMonitoringStatus" parameterType="FireEyeDevice" resultType="FireEyeEventReport">
+        SELECT
+            COUNT(*) deviceCount,
+        ifnull(SUM(IF(fed.event_type != 0 AND fed.event_type != 98, 1, 0)),0) faultDeviceCount,
+        ifnull(SUM(IF(fed.event_type = 1, 1, 0)),0) smokeWarningCount,
+        ifnull(SUM(IF(fed.event_type = 2, 1, 0)),0) smokeCount,
+        ifnull(SUM(IF(fed.event_type = 4, 1, 0)),0) flameWarningCount,
+        ifnull(SUM(IF(fed.event_type = 8, 1, 0)),0) flameCount,
+        ifnull(SUM(IF(fed.event_type = 16, 1, 0)),0) occlusionCount,
+        ifnull(SUM(IF(fed.event_type = 32, 1, 0)),0) faultEventCount
+        FROM iot_manage.e_fire_eye_device fed
+        <include refid="findFireEyeDeviceWhere"/>
+    </select>
+
+    <!-- 根据 火眼事件 查询火眼设备 -->
+    <select id="findFireEyeDeviceByFireEyeEvent" parameterType="FireEyeEvent" resultMap="fireEyeDeviceResultMap">
+        SELECT <include refid="fireEyeDeviceSql"/>,
+            d.qr_no deviceQrNo, dt.device_sys_name deviceName, dt.device_type,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id
+        FROM e_fire_eye_device fed
+        LEFT JOIN device_manage.d_device d ON fed.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = fed.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        <include refid="findFireEyeDeviceWhere"/>
+        LIMIT 1;
+    </select>
+
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.message.core.dao.message.UserMsgManageDao">
+
+    <!--删除用户消息通知管理-->
+    <delete id="deleteUserMsgManage" parameterType="UserMsgManage">
+        DELETE FROM m_user_msg_manage
+        WHERE user_id = #{userId}
+        <if test="msgType != null">
+            AND msg_type =#{msgType};
+        </if>
+    </delete>
+
+    <!--保存用户消息通知管理-->
+    <insert id="saveUserMsgManage" parameterType="UserMsgManage">
+        INSERT INTO m_user_msg_manage (`user_id`,`msg_type`,`is_notify`)
+        VALUES
+        (#{userId},#{msgType},#{isNotify});
+    </insert>
+
+    <insert id="saveUserMsgManages" parameterType="UserMsgManage">
+        INSERT INTO m_user_msg_manage (`user_id`,`msg_type`,`is_notify`)
+        VALUES
+        <foreach collection="msgTypes" item="item" separator="," close=";">
+            (#{userId},#{item},#{isNotify});
+        </foreach>
+    </insert>
+</mapper>

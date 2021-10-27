@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.report.ReportFromRecordDao" >
+
+    <resultMap id="reportFromRecordResultMap" type="com.xjt.cloud.report.core.entity.report.ReportFromRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="content" property="content" jdbcType="VARCHAR" />
+        <id column="sort" property="sort" jdbcType="INTEGER" />
+        <id column="report_from_id" property="reportFromId" jdbcType="BIGINT" />
+        <id column="report_from_title_id" property="reportFromTitleId" jdbcType="BIGINT" />
+
+        <id column="title_name" property="titleName" jdbcType="VARCHAR" />
+
+        <id column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <id column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <id column="update_user_id" property="updateUserId" jdbcType="BIGINT" />
+        <id column="update_user_name" property="updateUserName" jdbcType="VARCHAR" />
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <id column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="selColumns">
+        rfr.id, rfr.report_from_id, rfr.report_from_title_id, rfr.sort, rfr.content, rfr.project_id,
+        rfr.create_user_id, rfr.update_user_name, rfr.update_user_id, rfr.create_user_name, rfr.create_time, rfr.last_modify_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="id != null and id > 0">
+            AND rfr.id = #{id}
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND rfr.project_id = #{projectId}
+        </if>
+        <if test="reportFromId != null and reportFromId > 0">
+            AND rfr.report_from_id = #{reportFromId}
+        </if>
+        <if test="reportFromTitleId != null and reportFromTitleId > 0">
+            AND rfr.report_from_title_id = #{reportFromTitleId}
+        </if>
+        <if test="createTime != null">
+            AND rfr.create_time LIKE CONCAT(#{createTime}, '%')
+        </if>
+    </sql>
+
+    <!-- 新增 日报报表 内容 -->
+    <insert id="saveReportFromRecord" parameterType="ReportFromRecord" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO report_manage.r_report_from_record(report_from_id, report_from_title_id, sort, content, project_id,
+            create_user_id, update_user_name, update_user_id, create_user_name, create_time)
+        VALUES (#{reportFromId}, #{reportFromTitleId}, #{sort}, #{content}, #{projectId},
+            #{createUserId}, #{createUserUame}, #{updateUserId}, #{updateUserName}, NOW());
+    </insert>
+
+    <!-- 批量保存 -->
+    <insert id="saveReportFromRecordList" parameterType="ReportFromRecord">
+        INSERT INTO report_manage.r_report_from_record(report_from_id, report_from_title_id, sort, content, project_id,
+            create_user_id, update_user_name, update_user_id, create_user_name, create_time)
+        VALUES
+        <foreach item="item" collection="list" index="index" separator=",">
+            (#{item.reportFromId}, #{item.reportFromTitleId}, #{item.sort}, #{item.content}, #{item.projectId},
+            #{item.createUserId}, #{item.updateUserName}, #{item.updateUserId}, #{item.createUserName}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 查看 日报报表 -->
+    <select id="findReportFromRecordList" parameterType="ReportFromRecord" resultMap="reportFromRecordResultMap">
+        SELECT <include refid="selColumns"/>, rft.title_name
+        FROM report_manage.r_report_from_record rfr
+        LEFT JOIN report_manage.r_report_from_title rft ON rft.id = rfr.report_from_title_id
+        <include refid="findWhere"/>
+        ORDER BY rft.id, rfr.create_time ASC
+    </select>
+
+    <!-- 查看 日报报表 -->
+    <select id="findReportFromRecordLists" parameterType="ReportFromRecord" resultMap="reportFromRecordResultMap">
+        SELECT rfr.report_from_id, GROUP_CONCAT(rfr.content) content, rfr.report_from_title_id
+        FROM report_manage.r_report_from_record rfr
+        LEFT JOIN report_manage.r_report_from_title rft ON rft.id = rfr.report_from_title_id
+        <include refid="findWhere"/>
+        GROUP BY rfr.report_from_title_id
+        ORDER BY rft.id, rfr.create_time ASC
+    </select>
+
+</mapper>

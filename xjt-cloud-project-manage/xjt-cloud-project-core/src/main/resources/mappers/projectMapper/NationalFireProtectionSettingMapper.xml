@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.NationalFireProtectionSettingServiceDao">
+
+    <resultMap id="nationalFireProtectionSettingMap" type="com.xjt.cloud.project.core.entity.NationalFireProtectionSetting">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="VARCHAR"/>
+        <result column="construction_unit" property="constructionUnit" jdbcType="VARCHAR"/>
+        <result column="project_address" property="projectAddress" jdbcType="VARCHAR"/>
+        <result column="project_introduce" property="projectIntroduce" jdbcType="VARCHAR"/>
+        <result column="on_duty_phone" property="onDutyPhone" jdbcType="VARCHAR"/>
+        <result column="is_project_name" property="isProjectName" jdbcType="BOOLEAN"/>
+        <result column="is_construction_unit" property="isConstructionUnit" jdbcType="BOOLEAN"/>
+        <result column="is_project_address" property="isProjectAddress" jdbcType="BOOLEAN"/>
+        <result column="is_project_introduce" property="isProjectIntroduce" jdbcType="BOOLEAN"/>
+        <result column="is_device_task_des" property="isDeviceTaskDes" jdbcType="BOOLEAN"/>
+        <result column="is_device_method_des" property="isDeviceMethodDes" jdbcType="BOOLEAN"/>
+        <result column="is_on_duty_phone" property="isOnDutyPhone" jdbcType="BOOLEAN"/>
+        <result column="is_fault_repair_fun" property="isFaultRepairFun" jdbcType="BOOLEAN"/>
+        <result column="is_water_device" property="isWaterDevice" jdbcType="BOOLEAN"/>
+        <result column="project_name" property="projectName" jdbcType="BOOLEAN"/>
+
+    </resultMap>
+
+    <!--保存项目全民消防设置-->
+    <insert id="saveProjectSetting" parameterType="NationalFireProtectionSetting" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO p_national_fire_protection_setting( `project_id`, `construction_unit`, `project_address`,`project_name`,
+        `project_introduce`, `on_duty_phone`,  `is_project_name`, `is_construction_unit`,
+        `is_project_address`, `is_project_introduce`,  `is_device_task_des`, `is_device_method_des`,
+         `is_on_duty_phone`, `is_fault_repair_fun`,  `create_time`, `create_user_id`,`is_water_device`)
+         VALUES
+         (#{projectId}, #{constructionUnit}, #{projectAddress},#{projectName},
+          #{projectIntroduce}, #{onDutyPhone},  #{isProjectName},#{isConstructionUnit},
+           #{isProjectAddress}, #{isProjectIntroduce}, #{isDeviceTaskDes}, #{isDeviceMethodDes},
+            #{isOnDutyPhone},#{isFaultRepairFun}, NOW(), #{createUserId},#{isWaterDevice});
+    </insert>
+
+
+    <!--删除项目全民消防设置-->
+    <delete id="deleteProjectSetting" parameterType="NationalFireProtectionSetting" >
+       delete from p_national_fire_protection_setting  where project_id = #{projectId}
+    </delete>
+
+    <!--查询项目全民消防设置-->
+    <select id="findByProjectSetting" parameterType="NationalFireProtectionSetting" resultMap="nationalFireProtectionSettingMap">
+        select `project_id`, `construction_unit`, `project_address`,
+        `project_introduce`, `on_duty_phone`,  `is_project_name`, `is_construction_unit`,`project_name`,
+        `is_project_address`, `is_project_introduce`,  `is_device_task_des`, `is_device_method_des`, `is_water_device`,
+         `is_on_duty_phone`, `is_fault_repair_fun` from p_national_fire_protection_setting
+         where project_id = #{projectId} order by create_time desc  limit 1;
+    </select>
+</mapper>

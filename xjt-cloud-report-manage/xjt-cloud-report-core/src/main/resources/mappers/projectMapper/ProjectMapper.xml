@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.project.ProjectDao">
+
+    <resultMap id="projectResultMap" type="com.xjt.cloud.report.core.entity.project.Project">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <id column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <id column="description" property="description" jdbcType="VARCHAR"/>
+        <id column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <id column="project_status" property="projectStatus" jdbcType="VARCHAR"/>
+        <id column="address" property="address" jdbcType="VARCHAR"/>
+        <id column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <id column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <id column="fire_safety_owner" property="fireSafetyOwner" jdbcType="VARCHAR"/>
+        <id column="fire_safety_owner_phone" property="fireSafetyOwnerPhone" jdbcType="VARCHAR"/>
+        <id column="fire_safety_manager" property="fireSafetyManager" jdbcType="VARCHAR"/>
+        <id column="fire_safety_manager_phone" property="fireSafetyManagerPhone" jdbcType="VARCHAR"/>
+        <id column="isOwner" property="isOwner" jdbcType="BOOLEAN"/>
+        <id column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <id column="phone" property="phone" jdbcType="VARCHAR"/>
+        <id column="owner_id" property="ownerId" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="selColumns">
+         p.id,p.project_name,p.description ,p.create_user_id,p.create_time,project_status,address,company_name,
+        p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone,if((p.owner_id = ou.user_id),true,false) as isOwner,p.image_url
+    </sql>
+
+    <sql id="selectColumns">
+        p.id,p.project_name,p.description ,p.create_user_id,p.create_time,project_status,address,company_name,
+        p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone,p.image_url
+    </sql>
+
+    <sql id="findProjectWhere">
+        <if test="projectName != null">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+    </sql>
+
+    <!-- 查询项目 -->
+    <select id="findById" parameterType="java.lang.Long" resultMap="projectResultMap">
+        SELECT
+            p.id, p.project_name, p.description, p.create_user_id, p.create_time, project_status,address, p.owner_id,
+            p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone, p.image_url
+        FROM project_manage.p_project p
+        where p.id = #{id}
+    </select>
+
+    <!--获取平台下项目列表-->
+    <select id="findByProjectList" parameterType="Project" resultMap="projectResultMap">
+        SELECT
+            <include refid="selColumns"/>
+        FROM project_manage.p_project p
+        INNER JOIN p_org_user ou ON ou.project_id = p.id where ou.user_id = #{ownerId} AND  p.deleted = false
+    </select>
+
+</mapper>

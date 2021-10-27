@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.vesa.VesaDeviceDao">
+    <resultMap id="vesaDeviceResultMap" type="com.xjt.cloud.iot.core.entity.vesa.VesaDevice">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <id column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <id column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <id column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <id column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <id column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <id column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <id column="sensor_name" property="sensorName" jdbcType="VARCHAR"/>
+        <id column="brand" property="brand" jdbcType="VARCHAR"/>
+        <id column="model" property="model" jdbcType="VARCHAR"/>
+        <id column="status" property="status" jdbcType="INTEGER"/>
+        <id column="fault_num" property="faultNum" jdbcType="INTEGER"/>
+        <id column="alarm_num" property="alarmNum" jdbcType="INTEGER"/>
+        <id column="action_num" property="actionNum" jdbcType="INTEGER"/>
+        <id column="fire_alarm1_num" property="fireAlarm1Num" jdbcType="INTEGER"/>
+        <id column="fire_alarm2_num" property="fireAlarm2Num" jdbcType="INTEGER"/>
+        <id column="device_status" property="deviceStatus" jdbcType="INTEGER"/>
+        <id column="status_update_time" property="statusUpdateTime" jdbcType="TIMESTAMP"/>
+        <id column="end_heartbeat_time" property="endHeartbeatTime" jdbcType="TIMESTAMP"/>
+        <id column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <id column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <id column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <id column="type" property="type" jdbcType="INTEGER"/>
+        <id column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <id column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <id column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <id column="point_qr_no" property="pointQrNo" jdbcType="VARCHAR"/>
+        <id column="qr_no" property="qrNo" jdbcType="VARCHAR"/>
+        <id column="device_type" property="deviceType" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="findVesaDeviceWhere">
+        WHERE w.status = 1
+        <if test="deviceStatus != null and deviceStatus != 0">
+            AND w.device_status = #{deviceStatus}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND w.project_id = #{projectId}
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND w.sensor_no LIKE CONCAT('%',#{sensorNo},'%')
+        </if>
+        <if test="sensorName != null and sensorName != ''">
+            AND w.sensor_name LIKE CONCAT('%',#{sensorName},'%')
+        </if>
+        <if test="buildingId != null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="pointLocation != null and pointLocation != ''">
+            AND cp.point_location = #{pointLocation}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND d.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        <if test="ids != null">
+            AND w.id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceStatuss != null">
+            AND w.device_status IN
+            <foreach item="item" collection="deviceStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <!-- 查询极早期设备列表总记录数-->
+    <select id="checkVesaDeviceSensorNo" parameterType="VesaDevice" resultMap="vesaDeviceResultMap">
+        SELECT id FROM v_vesa_device w
+        WHERE w.status = 1 AND w.sensor_no =#{sensorNo}  LIMIT 1
+    </select>
+
+    <!-- 查询极早期设备列表总记录数-->
+    <select id="findVesaDeviceListTotalCount" parameterType="VesaDevice" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT w.id) FROM v_vesa_device w
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id AND d.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = w.check_point_id AND cp.status = 1
+        <include refid="findVesaDeviceWhere"/>
+    </select>
+
+    <select id="findVesaDeviceList" parameterType="VesaDevice" resultMap="vesaDeviceResultMap">
+        SELECT w.id, w.device_type_id, w.project_id, w.check_point_id, w.device_id, w.type, w.device_status,
+            w.sensor_no, w.sensor_name
+            , w.fire_alarm2_num, w.fire_alarm1_num,0, w.action_num, w.alarm_num, w.fault_num, w.status, w.create_time,
+            w.end_heartbeat_time, w.status_update_time
+            , d.brand brand, d.model model, d.qr_no
+            , dt.device_sys_name, dt.device_type
+            , cp.point_location, cp.point_name, cp.qr_no point_qr_no, cp.building_id, cp.building_floor_id
+        FROM iot_manage.v_vesa_device w
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id AND d.status = 1 AND w.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = w.check_point_id AND cp.status = 1
+        <include refid="findVesaDeviceWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findVesaDeviceListApp" parameterType="VesaDevice" resultMap="vesaDeviceResultMap">
+        SELECT w.sensor_name, w.device_status
+        FROM iot_manage.v_vesa_device w
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id AND d.status = 1 AND w.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = w.check_point_id AND cp.status = 1
+        <include refid="findVesaDeviceWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询极早期设备列表-->
+    <select id="findVesaDevice" parameterType="VesaDevice" resultMap="vesaDeviceResultMap">
+        SELECT w.id, w.device_type_id, w.project_id, w.check_point_id, w.device_id, w.sensor_no, w.sensor_name,
+            w.status, w.device_status, w.create_time, w.status_update_time, w.create_user_name, w.create_user_id, w.type
+        FROM v_vesa_device w WHERE w.status = 1
+        <if test="sensorNo != null">
+            AND w.sensor_no = #{sensorNo}
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!-- 查询极早期设备列表-->
+    <select id="findVesaDeviceAndBuildingId" parameterType="VesaDevice" resultMap="vesaDeviceResultMap">
+        SELECT w.id, w.device_type_id, w.project_id, w.check_point_id, w.device_id, w.sensor_no, w.sensor_name,
+            w.status, w.device_status, w.create_time, w.status_update_time,cp.building_id,cp.building_floor_id, w.create_user_name, w.create_user_id, w.type
+        FROM v_vesa_device w
+        INNER JOIN device_manage.d_check_point cp ON w.check_point_id = cp.id AND cp.status &lt;= 98
+        WHERE w.status = 1
+        <if test="sensorNo != null">
+            AND w.sensor_no = #{sensorNo}
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!-- 查询极早期设备列表 by deviceId -->
+    <select id="findVesaDeviceById" parameterType="VesaDevice" resultMap="vesaDeviceResultMap">
+        SELECT w.id, w.sensor_no, w.sensor_name
+        FROM v_vesa_device w WHERE  w.status = 1 AND w.id = #{id}
+    </select>
+
+    <!--添加极早期设备-->
+    <insert id="saveVesaDevice" parameterType="VesaDevice" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO v_vesa_device (device_type_id, project_id, check_point_id, device_id, sensor_no, sensor_name, create_time,  create_user_name,
+            create_user_id,type,fire_alarm2_num,fire_alarm1_num,action_num,alarm_num,fault_num, device_status)
+        VALUES
+        (#{deviceTypeId}, #{projectId}, #{checkPointId}, #{deviceId}, #{sensorNo}, #{sensorName}, NOW(), #{createUserName},
+         #{createUserId},#{type},0,0,0,0,0, 2);
+    </insert>
+
+    <!--修改极早期设备-->
+    <update id="modifyVesaDevice" parameterType="VesaDevice">
+        UPDATE v_vesa_device
+        <set>
+            <if test="checkPointId != null and checkPointId != 0">
+                check_point_id = #{checkPointId} ,
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                device_id = #{deviceId} ,
+            </if>
+            <if test="sensorNo != null and sensorNo != ''">
+                sensor_no = #{sensorNo} ,
+            </if>
+            <if test="sensorName != null and sensorName != ''">
+                sensor_name = #{sensorName} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="deviceStatus != null">
+                device_status = #{deviceStatus} ,
+            </if>
+            <if test="endHeartbeatTime != null">
+                end_heartbeat_time = #{endHeartbeatTime} ,
+            </if>
+            <if test="statusUpdateTime != null">
+                status_update_time = #{statusUpdateTime} ,
+            </if>
+            <if test="type != null and type != 0">
+                type = #{type} ,
+            </if>
+            <if test="faultNum != null">
+                fault_num = #{faultNum} ,
+            </if>
+            <if test="alarmNum != null">
+                alarm_num = #{alarmNum} ,
+            </if>
+            <if test="actionNum != null">
+                action_num = #{actionNum} ,
+            </if>
+            <if test="fireAlarm1Num != null">
+                fire_alarm1_num = #{fireAlarm1Num} ,
+            </if>
+            <if test="fireAlarm2Num != null">
+                fire_alarm2_num = #{fireAlarm2Num} ,
+            </if>
+            <if test="fireAlarm1Status != null and fireAlarm1Status != 0">
+                fire_alarm1_status = #{fireAlarm1Status} ,
+            </if>
+            <if test="fireAlarm2Status != null and fireAlarm2Status != 0">
+                fire_alarm2_status = #{fireAlarm2Status} ,
+            </if>
+            <if test="faultStatus != null and faultStatus != 0">
+                fault_status = #{faultStatus} ,
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="ids != null">
+            id in
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 查询极早期设备汇总报表-->
+    <select id="findVesaDeviceSummaryReport" parameterType="VesaDevice" resultType="VesaDeviceReport">
+        SELECT COUNT(w.device_id) deviceTotal,
+            IFNULL(SUM(IF(w.device_status = 2,1,0)),0) offlineDeviceTotal,
+            IFNULL(SUM(IF(w.device_status = 1,1,0)),0) onlineDeviceTotal,
+            IFNULL(SUM(w.fire_alarm2_num),0) fireAlarm2Total,
+            IFNULL(SUM(w.fire_alarm1_num),0) fireAlarm1Total,
+            IFNULL(SUM(w.action_num),0) actionTotal,
+            IFNULL(SUM(w.alarm_num),0) alarmTotal,
+            IFNULL(SUM(w.fault_num),0) faultTotal
+        FROM iot_manage.v_vesa_device w
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id AND d.status = 1 AND w.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = w.check_point_id AND cp.status = 1
+        <include refid="findVesaDeviceWhere"/>
+    </select>
+
+    <!-- 保存设备离线事件信息-->
+    <insert id="saveVesaRecordOffLineEvent" parameterType="java.util.Date" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO v_vesa_event ( project_id, device_id, vesa_id, device_status, create_time, sensor_no, device_type_id, type )
+        SELECT project_id, device_id, id, now(), sensor_no, device_type_id, 4 FROM v_vesa_device
+        WHERE end_heartbeat_time &lt;= #{date} AND device_status = 1
+    </insert>
+
+    <update id="vesaOffLineTask" parameterType="VesaDevice">
+        UPDATE v_vesa_device SET device_status = 2, end_heartbeat_time = #{endHeartbeatRime}
+        WHERE end_heartbeat_time &lt;= #{endHeartbeatRime} AND device_status = 1
+    </update>
+
+</mapper>

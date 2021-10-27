@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.project.PermissionDao" >
+    <!--查询用户权限信息列表 -->
+    <select id="getUserPermissionList" parameterType="java.lang.Long" resultType="Permission">
+        SELECT pp.url url, IF(pp.per_type = 2 AND rp.source_type &lt;= 2, CONCAT(our.project_id),0) projectId
+        FROM project_manage.p_permission_path pp
+        INNER JOIN project_manage.p_role_permission rp ON rp.permission_id = pp.permission_id AND rp.status = 1
+        INNER JOIN project_manage.p_permission p ON pp.permission_id = p.id AND p.status = 1
+        INNER JOIN project_manage.p_org_user_role our ON our.role_id = rp.role_id
+        WHERE our.user_id = #{userId} AND pp.permission_type >= 2 AND pp.project_type = 3
+        GROUP BY projectId,url
+        ORDER BY projectId
+    </select>
+
+    <!--查询所有权限信息列表 -->
+    <select id="getPermissionList"  resultType="java.lang.String">
+        SELECT url
+        FROM project_manage.p_path
+        WHERE type >= 2 AND project_type = 3 GROUP BY url
+    </select>
+
+    <!--查询所有权限菜单列表 -->
+    <select id="findUserMenuList" parameterType="java.lang.Long" resultType="Permission">
+    SELECT p.id, p.path_name pathName, p.url , p.type, p.parent_id parentId, p.order_num orderNum
+    FROM project_manage.p_path p
+    INNER JOIN (
+        SELECT p.parent_id
+        FROM project_manage.p_permission_path pp
+        INNER JOIN project_manage.p_path p ON p.id = pp.path_id
+        INNER JOIN project_manage.p_role_permission rp ON rp.permission_id = pp.permission_id AND rp.status = 1
+        INNER JOIN project_manage.p_permission pe ON pp.permission_id = pe.id AND pe.status = 1
+        INNER JOIN project_manage.p_org_user_role our ON our.role_id = rp.role_id
+        WHERE our.user_id = #{userId} AND our.source_type = 1 AND pp.project_type = 3 AND p.type = 2
+        GROUP BY p.parent_id) t ON t.parent_id = p.id
+
+        UNION ALL
+        SELECT p.id, p.path_name pathName, p.url , p.type, p.parent_id parentId, p.order_num orderNum
+        FROM project_manage.p_permission_path pp
+        INNER JOIN project_manage.p_path p ON p.id = pp.path_id
+        INNER JOIN project_manage.p_role_permission rp ON rp.permission_id = pp.permission_id AND rp.status = 1
+        INNER JOIN project_manage.p_permission pe ON pp.permission_id = pe.id AND pe.status = 1
+        INNER JOIN project_manage.p_org_user_role our ON our.role_id = rp.role_id
+        WHERE our.user_id = #{userId} AND our.source_type = 1 AND pp.project_type = 3 AND p.type = 2
+        GROUP BY p.id, p.path_name , p.url , p.type, p.parent_id
+        ORDER BY parentId,orderNum
+    </select>
+
+    <sql id="findPermissionListWhere">
+        <if test="permissionName != null and permissionName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        <if test="sign != null and sign != ''">
+            AND p.sign LIKE CONCAT('%',#{sign},'%')
+        </if>
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="parentId != null">
+            AND (p.parent_id = #{parentId} OR p.id = #{parentId})
+        </if>
+        <if test="permissionType != null and permissionType != ''">
+            AND p.permission_type = #{permissionType}
+        </if>
+    </sql>
+
+    <!--权限列表查询-->
+    <select id="findPermissionListPage" parameterType="Permission" resultType="Permission">
+        SELECT pp.permission_name menuName, pp.sign menuSign, p.id, p.per_type AS perType,p.permission_name AS permissionName,p.permission_type AS permissionType,p.sign,p.status,p.sort,p.parent_id parentId,
+        p.type, p.memo
+        FROM project_manage.p_permission p
+        LEFT JOIN p_permission pp ON pp.id = p.parent_id
+        WHERE p.status &lt;=98
+        <include refid="findPermissionListWhere"></include>
+        ORDER BY permissionType
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--权限列表查询数量-->
+    <select id="findPermissionListPageCount" parameterType="Permission" resultType="java.lang.Integer">
+        SELECT count(*)
+        FROM project_manage.p_permission p
+        WHERE p.status &lt;=98 <include refid="findPermissionListWhere"></include>
+    </select>
+
+    <!--保存-->
+    <insert id="savePermission" parameterType="Permission" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO `project_manage`.`p_permission`
+        ( `permission_name`, `sort`, `sign`, `parent_id`, `per_type`, `permission_type`, `create_time`,
+         `status`,type,memo)
+         VALUES
+         (#{permissionName}, #{sort},  #{sign}, #{parentId}, #{perType}, #{permissionType}, NOW(),
+          1,#{type},#{memo});
+    </insert>
+
+    <!--修改-->
+    <update id="modifyPermission" parameterType="Permission">
+        UPDATE `project_manage`.`p_permission`
+        <set>
+            <if test="permissionName != null and permissionName != ''">
+                `permission_name` = #{permissionName},
+            </if>
+            <if test="sort != null and sort != 0">
+                `sort` = #{sort},
+            </if>
+            <if test="sign != null and sign != ''">
+                `sign` = #{sign},
+            </if>
+            <if test="parentId != null">
+                `parent_id` = #{parentId},
+            </if>
+            <if test="perType != null and perType != 0">
+                `per_type` = #{perType},
+            </if>
+            <if test="type != null and type != 0">
+                `type` = #{type},
+            </if>
+            <if test="permissionType != null and permissionType != ''">
+                `permission_type` = #{permissionType},
+            </if>
+            <if test="memo != null and memo != ''">
+                `memo` = #{memo},
+            </if>
+            <if test="status != null and status != 0">
+                `status` = #{status},
+            </if>
+        </set>
+        WHERE `id` = #{id};
+    </update>
+
+    <select id="findRoleRelationPermissionList" parameterType="Permission" resultType="Permission">
+        SELECT p.id, p.per_type  AS perType, '' permissionName, p.permission_type AS permissionType, '' sign, p.memo,
+        rp.id rolePermissionId,p.status, p.sort,p.permission_name menuName,p.sign menuSign,p.sort memuSort,'' permissionSort
+        FROM project_manage.p_permission p
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id AND p.parent_id = 0
+        LEFT JOIN (
+            SELECT *
+            FROM project_manage.p_permission
+            WHERE parent_id > 0 AND status = 1
+        ) t ON t.parent_id = p.id
+        WHERE  p.status &lt;= 98
+        <if test="roleId != null and roleId != 0">
+            AND rp.role_id =#{roleId}
+        </if>
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{menuName},'%')
+        </if>
+        <if test="permissionName != null and permissionName != ''">
+            AND t.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        <if test="groupByStr != null and groupByStr != ''">
+            GROUP BY ${groupByStr}
+        </if>
+        <if test="groupByStr == null">
+            GROUP BY p.id
+        </if>
+
+        UNION ALL
+        SELECT p.id, p.per_type  AS perType, p.permission_name AS permissionName, p.permission_type AS permissionType, p.sign, p.memo,
+        rp.id rolePermissionId,rp.status, p.sort,t.permission_name menuName,t.sign menuSign,t.sort memuSort,p.sort permissionSort
+        FROM project_manage.p_role_permission rp
+        LEFT JOIN project_manage.p_permission p ON rp.permission_id = p.id AND p.parent_id > 0
+        INNER JOIN (
+        SELECT *
+        FROM project_manage.p_permission
+        WHERE parent_id = 0 AND status = 1
+        ) t ON t.id = p.parent_id
+        WHERE  p.status &lt;= 98
+        <if test="roleId != null and roleId != 0">
+            AND rp.role_id =#{roleId}
+        </if>
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND t.permission_name LIKE CONCAT('%',#{menuName},'%')
+        </if>
+        <if test="permissionName != null and permissionName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        <if test="groupByStr != null and groupByStr != ''">
+            GROUP BY ${groupByStr}
+        </if>
+        ORDER BY memuSort,  permissionSort
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+
+    </select>
+
+    <select id="findRoleRelationPermissionListTotalCount" parameterType="Permission" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM (
+        SELECT p.id FROM project_manage.p_permission p
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id  AND p.parent_id = 0
+        LEFT JOIN (
+        SELECT *
+        FROM project_manage.p_permission
+        WHERE parent_id > 0 AND status = 1
+        ) t ON t.parent_id = p.id
+        WHERE  p.status &lt;= 98
+        <if test="roleId != null and roleId != 0">
+            AND rp.role_id =#{roleId}
+        </if>
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{menuName},'%')
+        </if>
+        <if test="permissionName != null and permissionName != ''">
+            AND t.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        <if test="groupByStr != null and groupByStr != ''">
+            GROUP BY ${groupByStr}
+        </if>
+        <if test="groupByStr == null">
+            GROUP BY p.id
+        </if>
+
+        UNION ALL
+        SELECT p.id FROM project_manage.p_role_permission rp
+        LEFT JOIN project_manage.p_permission p ON rp.permission_id = p.id  AND p.parent_id > 0
+        INNER JOIN (
+        SELECT *
+        FROM project_manage.p_permission
+        WHERE parent_id = 0 AND status = 1
+        ) t ON t.id = p.parent_id
+        WHERE  p.status &lt;= 98
+        <if test="roleId != null and roleId != 0">
+            AND rp.role_id =#{roleId}
+        </if>
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND t.permission_name LIKE CONCAT('%',#{menuName},'%')
+        </if>
+        <if test="permissionName != null and permissionName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        <if test="groupByStr != null and groupByStr != ''">
+            GROUP BY ${groupByStr}
+        </if>
+        ) t
+    </select>
+
+    <select id="findNotRoleRelationPermissionList" parameterType="Permission" resultType="Permission">
+        SELECT p.id, p.per_type  AS perType, '' permissionName, '' permissionType, '' sign,  rp.id rolePermissionId,
+        p.permission_name menuName,p.sign menuSign,p.sort memuSort,'' permissionSort, p.memo
+        FROM project_manage.p_permission p
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id AND rp.role_id = #{roleId}
+        WHERE p.status &lt;= 98 AND p.parent_id = 0
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{menuName},'%')
+        </if>
+        GROUP BY p.id
+        HAVING rp.id IS NULL
+
+        UNION ALL
+        SELECT p.id, p.per_type  AS perType, p.permission_name AS permissionName, p.permission_type AS permissionType, p.sign,  rp.id rolePermissionId,
+        t.permission_name menuName,t.sign menuSign,t.sort memuSort,p.sort permissionSort, p.memo
+        FROM project_manage.p_permission p
+        INNER JOIN (
+        SELECT *
+        FROM project_manage.p_permission
+        WHERE parent_id = 0 AND status = 1
+        ) t ON t.id = p.parent_id
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id AND rp.role_id = #{roleId}
+        WHERE p.status &lt;= 98 AND p.parent_id > 0
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="permissionName != null and permissionName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND t.permission_name LIKE CONCAT('%',#{menuName},'%')
+        </if>
+        HAVING rp.id IS NULL
+        ORDER BY memuSort,  permissionSort
+    </select>
+
+    <select id="findNotRoleRelationPermissionListTotalCount" parameterType="Role" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM (
+        SELECT p.id permissionId, rp.id
+        FROM project_manage.p_permission p
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id AND rp.role_id = #{roleId}
+        WHERE p.status &lt;= 98 AND p.parent_id = 0
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{menuName},'%')
+        </if>
+        GROUP BY p.id
+        HAVING rp.id IS NULL
+
+        UNION ALL
+        SELECT p.id permissionId, rp.id FROM project_manage.p_permission p
+        INNER JOIN (
+        SELECT *
+        FROM project_manage.p_permission
+        WHERE parent_id = 0 AND status = 1
+        ) t ON t.id = p.parent_id
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id AND rp.role_id = #{roleId}
+        WHERE p.status &lt;= 98 AND p.parent_id > 0
+        <if test="perType != null and perType != ''">
+            AND p.per_type = #{perType}
+        </if>
+        <if test="permissionName != null and permissionName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        <if test="menuName != null and menuName != ''">
+            AND t.permission_name LIKE CONCAT('%',#{menuName},'%')
+        </if>
+        HAVING rp.id IS NULL
+        ) t
+    </select>
+
+    <insert id="saveRoleRelationPermission" parameterType="Permission">
+        INSERT INTO project_manage.p_role_permission (role_id, permission_id, source_type)
+        VALUES(#{roleId}, #{id}, #{perType})
+    </insert>
+
+    <delete id="delRoleRelationPermission" parameterType="Permission">
+        DELETE FROM project_manage.p_role_permission
+        WHERE id = #{rolePermissionId}
+    </delete>
+
+    <update id="modifyRolePermission" parameterType="Permission">
+        UPDATE project_manage.p_role_permission
+        SET status = #{status}
+        WHERE permission_id = #{id}
+        <if test="projectId != null and projectId != 0">
+            AND source_id = #{projectId}
+        </if>
+        <if test="projectIds != null">
+            AND source_id IN (${projectIds})
+        </if>
+    </update>
+
+    <select id="findRoleProjectList" parameterType="Permission" resultType="Permission">
+        SELECT rp.role_id  AS roleId, p.per_type  AS perType,p.id, rp.id  rolePermissionId,  p.permission_name permissionName,
+        p.sign, p.permission_type permissionType,rp.status, p.memo
+        FROM project_manage.p_permission p
+        INNER JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id
+        WHERE p.per_type = 2 AND p.status &lt;= 98 AND p.id = #{id}
+        <if test="status != null and status != 0">
+            AND rp.status = #{status}
+        </if>
+        GROUP BY rp.role_id
+        ORDER BY permissionType
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findRoleProjectListTotalCount" parameterType="Permission" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM(
+        SELECT pr.id
+        FROM project_manage.p_permission p
+        INNER JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id
+        WHERE p.per_type = 2 AND p.status &lt;= 98 AND p.id = #{id}
+        <if test="status != null and status != 0">
+            AND rp.status = #{status}
+        </if>
+        GROUP BY pr.id
+        ) t
+    </select>
+
+    <!-- //////////////////////////////////////////  管理员默认权限管理///////////////////////////////////////-->
+    <select id="findProjectManagerRelationPermissionList" parameterType="Permission" resultType="Permission">
+        SELECT MAX(r.id) roleId, p.per_type  AS perType,p.id  AS permissionId, rp.id  rolePermissionId, r.source_id, p.permission_name permissionName,
+        p.sign, p.permission_type permissionType,t.permission_name menuName,t.sign menuSign, p.memo
+        FROM project_manage.p_permission p
+        INNER JOIN (
+        SELECT *
+        FROM project_manage.p_permission
+        WHERE parent_id = 0 AND status = 1
+        ) t ON t.id = p.parent_id
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id
+        LEFT JOIN project_manage.p_role r ON r.id = rp.role_id
+        WHERE  p.status &lt;= 98 AND p.parent_id > 0
+        <if test="permissionName != null and permissionName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        GROUP BY p.id
+        HAVING roleId IS NOT NULL
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findProjectManagerRelationPermissionListTotalCount" parameterType="Permission" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM (
+        SELECT MAX(r.id)  AS roleId, p.id  AS permissionId, rp.id  rolePermissionId, r.source_id, p.permission_name permissionName, p.sign, p.permission_type permissionType
+        FROM project_manage.p_permission p
+        INNER JOIN (
+        SELECT *
+        FROM project_manage.p_permission
+        WHERE parent_id = 0 AND status = 1
+        ) t ON t.id = p.parent_id
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id
+        LEFT JOIN project_manage.p_role r ON r.id = rp.role_id
+        WHERE p.status &lt;= 98 AND p.parent_id > 0
+        <if test="permissionName != null and permissionName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        GROUP BY p.id
+        HAVING roleId IS NOT NULL
+        ) t
+    </select>
+
+    <select id="findNotProjectManagerRelationPermissionList" parameterType="Permission" resultType="Permission">
+        SELECT MAX(r.id)  AS roleId, p.id  AS permissionId, rp.id  rpId, r.source_id, p.permission_name permissionName, p.sign, p.permission_type permissionType, p.memo
+         FROM project_manage.p_permission p
+        LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id
+        LEFT JOIN project_manage.p_role r ON r.id = rp.role_id
+        WHERE p.status &lt;= 98
+        <if test="permissionName != null and permissionName != ''">
+            AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+        </if>
+        GROUP BY p.id
+        HAVING  roleId IS NULL
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findNotProjectManagerRelationPermissionListTotalCount" parameterType="Role" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM (
+            SELECT MAX(r.id)  AS roleId, p.id  AS permissionId, rp.id  rpId, r.source_id, p.permission_name permissionName, p.sign, p.permission_type permissionType
+            FROM project_manage.p_permission p
+            LEFT JOIN project_manage.p_role_permission rp ON rp.permission_id = p.id
+            LEFT JOIN project_manage.p_role r ON r.id = rp.role_id
+            WHERE p.status &lt;= 98
+            <if test="permissionName != null and permissionName != ''">
+                AND p.permission_name LIKE CONCAT('%',#{permissionName},'%')
+            </if>
+            GROUP BY p.id
+            HAVING roleId IS NULL
+        ) t
+    </select>
+
+    <insert id="saveProjectManagerRelationPermission" parameterType="Permission">
+        INSERT INTO `project_manage`.`p_role_permission` ( `role_id`, `permission_id`, `source_type`, `source_id` )
+        SELECT roleId, permissionId, source_type, source_id FROM (
+            SELECT r.id  AS roleId, p.id  AS permissionId, rp.id    rpId, '2'      source_type, r.source_id
+             FROM project_manage.p_role r
+             LEFT JOIN project_manage.p_permission p ON p.per_type = r.source_type  AND p.status &lt;= 98
+             LEFT JOIN project_manage.p_role_permission rp ON r.id = rp.role_id AND rp.permission_id = p.id
+             WHERE p.per_type = 2
+            <if test="roleType == 1">
+                AND r.is_admin = 1 AND r.is_ordinary = 2 AND r.role_name = '项目管理员'
+            </if>
+            <if test="roleType == 2">
+                AND r.is_ordinary = 1
+            </if>
+             AND p.id = #{permissionId}
+        ) t
+        WHERE rpId IS NULL
+    </insert>
+
+    <delete id="delProjectManagerRelationPermission" parameterType="Permission">
+        DELETE FROM project_manage.p_role_permission
+        WHERE permission_id = #{permissionId}
+    </delete>
+</mapper>

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.BuildingDao">
+
+    <resultMap id="buildingResultMap" type="com.xjt.cloud.project.core.entity.Building">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="height" property="heightInt" jdbcType="BIGINT"/>
+        <result column="acreage" property="acreageInt" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="upstairs_floor" property="upstairsFloor" jdbcType="BIGINT"/>
+        <result column="underground_floor" property="undergroundFloor" jdbcType="BIGINT"/>
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR"/>
+        <result column="district" property="district" jdbcType="VARCHAR"/>
+        <result column="road_no" property="roadNo" jdbcType="VARCHAR"/>
+        <result column="device_count" property="deviceCount" jdbcType="INTEGER"/>
+        <result column="check_point_count" property="checkPointCount" jdbcType="INTEGER"/>
+        <result column="fault_device_count" property="faultDeviceCount" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        pb.id,pb.building_name,pb.height,pb.acreage,pb.upstairs_floor,pb.underground_floor,pb.province,pb.city,pb.img_url,
+        pb.district,pb.road_no,pb.lng,pb.lat,pb.project_id,pb.address
+    </sql>
+
+    <!--添加建筑物-->
+    <insert id="addBuilding" parameterType="Building" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO `p_building`(`id`, `building_name`, `province`, `city`, `district`, `road_no`, `lng`,
+        `lat`, `create_user_id`, `create_time`, `acreage`, `height`, `upstairs_floor`, `underground_floor`,
+         `project_id`,`address`,img_url)
+        VALUES (#{id}, #{buildingName}, #{province}, #{city}, #{district}, #{roadNo}, #{lng},
+        #{lat}, #{createUserId}, NOW(), #{acreageInt}, #{heightInt}, #{upstairsFloor}, #{undergroundFloor},
+        #{projectId},#{address},#{imgUrl})
+    </insert>
+
+    <!--删除建筑物-->
+    <update id="deleteBuilding" parameterType="java.util.List">
+        update `p_building`
+        set `deleted` = true
+        WHERE id IN
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+
+    </update>
+
+    <!--修改建筑物信息-->
+    <update id="updateBuilding" parameterType="Building">
+        update `p_building`
+        set
+        <if test="buildingName != null">
+            `building_name` = #{buildingName}
+        </if>
+        <if test="province != null">
+            , `province` = #{province}
+        </if>
+        <if test="city != null">
+            ,`city` = #{city}
+        </if>
+        <if test="district != null">
+            ,`district` = #{district}
+        </if>
+        <if test="roadNo != null">
+            , `road_no` = #{roadNo}
+        </if>
+        <if test="lng != null">
+            ,`lng` = #{lng}
+        </if>
+        <if test="lat != null">
+            , `lat` = #{lat}
+        </if>
+        <if test="updateUserId != null">
+            ,`update_user_id` = #{updateUserId}
+        </if>
+        <if test="updateUserName != null">
+            ,`update_user_name` = #{updateUserName}
+        </if>
+        <if test="acreageInt != null">
+            ,`acreage` = #{acreageInt}
+        </if>
+        <if test="heightInt != null">
+            ,`height` = #{heightInt}
+        </if>
+        <if test="upstairsFloor != null">
+            ,`upstairs_floor` = #{upstairsFloor}
+        </if>
+        <if test="undergroundFloor != null">
+            ,`underground_floor` = #{undergroundFloor}
+        </if>
+        <if test="address != null">
+            ,`address` = #{address}
+        </if>
+        <if test="imgUrl != null">
+            ,`img_url` = #{imgUrl}
+        </if>
+        WHERE id = #{id}
+    </update>
+
+
+    <!-- 查询项目建筑物列表总记录数-->
+    <select id="findByProjectListCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM p_building pb WHERE pb.project_id = #{projectId} AND pb.deleted = false
+        <if test="buildingName != null and buildingName != ''">
+            and   pb.building_name LIKE CONCAT('%',#{buildingName},'%')
+        </if>
+    </select>
+
+    <!--查询项目建筑物列表-->
+    <select id="findByProjectList" parameterType="Building" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>,COALESCE(sum(d.num),0) as device_count
+        from p_building pb
+        LEFT JOIN device_manage.d_check_point cp on cp.building_id = pb.id  and cp.status  <![CDATA[ < ]]>  99
+        LEFT JOIN device_manage.d_device d on d.check_point_id = cp.id and cp.status <![CDATA[ < ]]> 99
+         where pb.deleted = false and pb.project_id = #{projectId}
+        <if test="buildingName != null and buildingName != ''">
+            and pb.building_name LIKE CONCAT('%',#{buildingName},'%')
+        </if>
+        GROUP BY pb.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+
+    </select>
+
+    <select id="findByProjectAcreage" parameterType="java.lang.Long" resultType="java.lang.Long">
+         SELECT sum(pb.acreage)	FROM p_building pb WHERE pb.project_id = #{projectId}
+    </select>
+
+    <!--查询建筑物-->
+    <select id="findByBuilding" parameterType="Building" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        from p_building pb where pb.deleted = false
+        <if test="id != null and id != 0">
+           and  pb.id = #{id}
+        </if>
+        limit 1
+    </select>
+
+    <select id="findByBuildingName" parameterType="Building" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        from p_building pb where pb.deleted = false
+        <if test="projectId != null and projectId != 0">
+            and pb.project_id = #{projectId}
+        </if>
+        <if test="id != null and id != 0">
+            and  pb.id != #{id}
+        </if>
+        and pb.building_name = #{buildingName}
+        limit 1
+    </select>
+
+    <select id="findByBuildingAllList" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        from p_building pb where pb.deleted = false
+    </select>
+
+
+    <select id="findByBuildingDeviceCount" parameterType="java.lang.Long" resultType="java.lang.Integer">
+      SELECT count(*) from device_manage.d_check_point cp where cp.building_id = #{buildingId} and cp.status <![CDATA[ < ]]> 99
+    </select>
+
+    <!-- 以sql文查询建筑物与楼层信息信息-->
+    <select id="findBuildingListBySql" parameterType="java.lang.String" resultType="Building">
+        SELECT s.buildingName, s.buildingFloorName floorName, b.id  id, bf.id floorId FROM ( ${sql}) s
+        LEFT JOIN p_building b ON s.buildingName = b.building_name AND b.deleted = 0 AND b.project_id = s.projectId
+        LEFT JOIN p_building_floor bf ON s.buildingFloorName = bf.floor_name AND bf.building_id = b.id AND b.deleted = 0
+    </select>
+
+
+    <!--查询项目建筑物信息-->
+    <select id="findByProjectBuildInfo" parameterType="Project" resultType="Project">
+        SELECT b.project_id as id ,count(*) as buildingCount,sum(b.acreage/100) as buildingSumAcreage from p_building b
+        WHERE b.project_id = #{id} and b.deleted = false
+    </select>
+
+
+    <!--查询大屏项目地图数据-->
+    <select id="findScreenProjectMapData" parameterType="Building" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>,
+        count( DISTINCT dp.id ) AS check_point_count,
+        sum( if(d.num is null,0,d.num) ) AS device_count,
+        sum( if(d.device_status = 2 or  d.iot_status = 2,d.num,0)) as fault_device_count
+        FROM
+        p_building pb
+        LEFT JOIN device_manage.d_check_point dp ON dp.building_id = pb.id
+        LEFT JOIN device_manage.d_device d ON d.check_point_id = dp.id AND dp.building_id = pb.id
+        WHERE
+        pb.project_id in
+        <foreach collection="projectIds" item="projectId" index="index" open="(" close=")" separator=",">
+            #{projectId}
+        </foreach>
+         GROUP BY pb.id;
+    </select>
+
+</mapper>

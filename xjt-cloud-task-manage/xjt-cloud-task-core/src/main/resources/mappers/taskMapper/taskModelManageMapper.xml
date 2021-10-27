@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.TaskModelManageDao" >
+
+    <resultMap id="taskModelManageResultMap" type="com.xjt.cloud.task.core.entity.task.TaskModelManage" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="model_name" property="modelName" jdbcType="VARCHAR" />
+        <result column="model_type" property="modelType" jdbcType="INTEGER"/>
+        <result column="org_name" property="orgName" jdbcType="VARCHAR"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="taskModelManageSql">
+        tmg.id, tmg.deleted, tmg.project_id, tmg.model_name, tmg.model_type, tmg.org_name, tmg.create_user_name, tmg.create_time
+    </sql>
+
+    <sql id="findTaskModelManageListSql">
+        <where>
+            1 = 1
+            <if test="id != null">
+                AND tmg.id = #{id}
+            </if>
+            <if test="projectId != null">
+                AND tmg.project_id = #{projectId}
+            </if>
+
+            <if test="deleted != null">
+                AND tmg.deleted = #{deleted}
+            </if>
+
+            <if test="modelName != null and modelName != ''">
+                AND tmg.model_name LIKE CONCAT('%',#{modelName},'%')
+            </if>
+            <if test="orgName != null and orgName != ''">
+                AND tmg.org_name LIKE CONCAT('%',#{orgName},'%')
+            </if>
+            <if test="createUserName != null and createUserName != ''">
+                AND tmg.create_user_name LIKE CONCAT('%',#{createUserName},'%')
+            </if>
+
+            <if test="createTime != null and lastModifyTime != null">
+                AND tmg.create_time between #{createTime} and #{lastModifyTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询 模板管理 总行数 -->
+    <select id="findTaskModelManageTotalCount" parameterType="TaskModelManage" resultType="java.lang.Integer">
+        SELECT COUNT(tmg.id)
+        FROM task_manage.t_task_model_manage tmg
+        <include refid="findTaskModelManageListSql"/>
+    </select>
+
+    <!-- 查询 模板管理 list -->
+    <select id="findTaskModelManageList" parameterType="TaskModelManage" resultMap="taskModelManageResultMap">
+        SELECT <include refid="taskModelManageSql"/>
+        FROM task_manage.t_task_model_manage tmg
+        <include refid="findTaskModelManageListSql"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 模板管理 -->
+    <select id="findTaskModelManage" parameterType="TaskModelManage" resultMap="taskModelManageResultMap">
+        SELECT <include refid="taskModelManageSql"/>
+        FROM task_manage.t_task_model_manage tmg
+        <include refid="findTaskModelManageListSql"/>
+        LIMIT 1;
+    </select>
+
+    <!-- 修改 模板管理 -->
+    <update id="updateTaskModelManage" parameterType="TaskModelManage">
+        UPDATE task_manage.t_task_model_manage
+        <set>
+            <if test="deleted != null">
+                deleted = #{deleted}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach item="item" collection="ids" index="index" separator="," open="(" close=")" >
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 新增 模板管理 -->
+    <insert id="saveTaskModelManage" parameterType="TaskModelManage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO task_manage.t_task_model_manage(project_id, model_name, model_type, org_name, create_time, create_user_name)
+        VALUES (#{projectId}, #{modelName}, #{modelType}, #{orgName}, NOW(), #{createUserName});
+    </insert>
+
+</mapper>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.sys.core.dao.sys.TableColConfigDao" >
+    <resultMap id="tableColConfigResultMap" type="com.xjt.cloud.sys.core.entity.TableColConfig" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="user_id" property="userId" jdbcType="BIGINT" />
+        <result column="type" property="type" jdbcType="VARCHAR" />
+        <result column="cols_title" property="colsTitle" jdbcType="VARCHAR" />
+        <result column="cols_name" property="colsName" jdbcType="VARCHAR" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <!-- 查询用户项目表格配置信息列表 -->
+    <select id="findTableColConfigList" parameterType="TableColConfig" resultMap="tableColConfigResultMap">
+        SELECT id, user_id, project_id, type, cols_name, cols_title, create_time, last_modify_time FROM s_table_col_config
+        WHERE 1=1
+        <if test="userId != null and userId != 0">
+            AND user_id = #{userId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND project_id = #{projectId}
+        </if>
+        <if test="type != null and type != ''">
+            AND type = #{type}
+        </if>
+    </select>
+    <!-- 添加用户项目表格配置信息-->
+    <insert id="saveTableColConfig" parameterType="TableColConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO s_table_col_config (user_id, project_id, type, cols_name, cols_title, create_time) VALUES
+        (#{userId}, #{projectId}, #{type}, #{colsName}, #{colsTitle}, NOW())
+    </insert>
+    <!--保存用户项目表格配置信息-->
+    <update id="modifyTableColConfig" parameterType="TableColConfig" >
+        UPDATE s_table_col_config SET cols_name = #{colsName}, cols_title = #{colsTitle}
+        WHERE id = #{id}
+    </update>
+</mapper>

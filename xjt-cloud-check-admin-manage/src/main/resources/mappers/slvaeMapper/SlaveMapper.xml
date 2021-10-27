@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.slave.SlaveDao" >
+
+    <!-- 查询列表 -->
+    <select id="findDatabaseMasterSlaveStatus" resultType="java.util.HashMap">
+        show slave status
+    </select>
+
+
+</mapper>

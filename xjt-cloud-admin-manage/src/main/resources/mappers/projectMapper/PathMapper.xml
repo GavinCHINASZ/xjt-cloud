@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.project.PathDao">
+    <select id="findId" parameterType="java.lang.Long" resultType="Path">
+        SELECT p.id,p.url,p.type,p.project_type as projectType,p.path_name as pathName,
+        p.parent_id as parentId,p.order_num as orderNum
+        from project_manage.p_path p
+        where p.id = #{id}
+    </select>
+
+    <!--查询Path列表-->
+    <select id="findPathList" parameterType="Path" resultType="Path">
+        SELECT p.id,p.url,p.type,p.project_type as projectType,p.path_name as pathName,p.parent_id as
+        parentId,p.order_num as orderNum,pp.permission_id as ppid
+        from project_manage.p_path p
+        inner join project_manage.p_permission_path pp on p.id = pp.path_id
+        <if test="permissionId != null">
+            and pp.permission_id = #{permissionId}
+        </if>
+        where 1 = 1
+        <if test="parentId != null ">
+            and p.parent_id = #{parentId}
+        </if>
+        <if test="type!=null ">
+            and p.type = #{type}
+        </if>
+        <if test="projectType != null">
+            and p.project_type = #{projectType}
+        </if>
+        <if test="projectTypes != null">
+            and p.project_type in
+            <foreach collection="projectTypes" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            having ppid is null
+        </if>
+        ORDER BY p.order_num,p.project_type
+    </select>
+
+    <!--Path列表查询-->
+    <select id="findPathListPage" parameterType="Path" resultType="Path">
+        SELECT p.id,p.url,p.type,p.project_type as projectType,p.path_name as pathName,p.parent_id as
+        parentId,p.order_num as orderNum
+        from project_manage.p_path p
+        <if test="(url != null and url != '') or (pathName != null and pathName != '')">
+            <if test="type!=null and type == 1">
+                INNER JOIN project_manage.p_path p1 ON p1.parent_id = p.id
+                INNER JOIN project_manage.p_path p2 ON p2.parent_id = p1.id
+            </if>
+            <if test="type!=null and  type == 2">
+                INNER JOIN project_manage.p_path p1 ON p1.parent_id = p.id
+            </if>
+        </if>
+        where 1 = 1
+        <if test="parentId != null ">
+            and p.parent_id = #{parentId}
+        </if>
+
+        <if test="(url != null and url != '') or (pathName != null and pathName != '')">
+            <if test="type!=null and type == 1">
+                <if test="url != null and url != ''">
+                    and (p.url LIKE CONCAT('%',#{url},'%') OR
+                    p1.url LIKE CONCAT('%',#{url},'%') OR
+                    p2.url LIKE CONCAT('%',#{url},'%')
+                    )
+                </if>
+                <if test="pathName != null and pathName != ''">
+                    and (p.path_name LIKE CONCAT('%',#{pathName},'%') OR
+                    p1.path_name LIKE CONCAT('%',#{pathName},'%') OR
+                    p2.path_name LIKE CONCAT('%',#{pathName},'%')
+                    )
+                </if>
+            </if>
+            <if test="type!=null and type == 2">
+                <if test="url != null and url != ''">
+                    and (p.url LIKE CONCAT('%',#{url},'%') OR
+                    p1.url LIKE CONCAT('%',#{url},'%')
+                    )
+                </if>
+                <if test="pathName != null and pathName != ''">
+                    and (p.path_name LIKE CONCAT('%',#{pathName},'%') OR
+                    p1.path_name LIKE CONCAT('%',#{pathName},'%')
+                    )
+                </if>
+            </if>
+            <if test="type!=null and type == 3">
+                <if test="url != null and url != ''">
+                    and p.url LIKE CONCAT('%',#{url},'%')
+                </if>
+                <if test="pathName != null and pathName != ''">
+                    and p.path_name LIKE CONCAT('%',#{pathName},'%')
+                </if>
+            </if>
+        </if>
+
+
+        <if test="type!=null ">
+            and p.type = #{type}
+        </if>
+
+        <if test="projectType != null">
+            and p.project_type = #{projectType}
+        </if>
+        ORDER BY p.project_type,p.order_num
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--Path列表查询数量-->
+    <select id="findPathListPageCount" parameterType="Path" resultType="java.lang.Integer">
+        SELECT count(*)
+        from project_manage.p_path p
+        where 1 = 1
+        <if test="parentId != null ">
+            and p.parent_id = #{parentId}
+        </if>
+
+        <if test="type !=null ">
+            and p.type = #{type}
+        </if>
+
+        <if test="projectType != null">
+            and p.project_type = #{projectType}
+        </if>
+        ORDER BY p.order_num
+    </select>
+
+    <!--添加Path-->
+    <insert id="savePath" parameterType="Path" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO `project_manage`.`p_path`(`path_name`, `url`, `type`, `project_type`, `parent_id`, `order_num`)
+        VALUES
+        ( #{pathName}, #{url}, #{type}, #{projectType}, #{parentId}, #{orderNum})
+    </insert>
+
+    <!--修改Path -->
+    <update id="modifyPath" parameterType="Path">
+        UPDATE `project_manage`.`p_path`
+        SET
+        `url` = #{url},
+        `type` = #{type},
+        `project_type` = #{projectType},
+        `path_name` = #{pathName},
+        `parent_id` = #{parentId},
+        `order_num` = #{orderNum}
+        WHERE
+         `id` = #{id}
+    </update>
+
+    <delete id="delPath" parameterType="Path">
+        DELETE FROM `project_manage`.p_path
+        WHERE id = #{id}
+    </delete>
+    <!--查询权限树结构-->
+    <select id="findPermissionPathTree" parameterType="Path" resultType="Path">
+        SELECT
+        p.id,
+        p.url,
+        p.path_name as pathName,
+        if(p.parent_id is null,0,p.parent_id) as parentId,
+        if(pp.id is null,false,true) as checked,
+        p.type,p.project_type as projectType,
+        #{permissionId} as permissionId
+        FROM `project_manage`.p_path p
+        LEFT JOIN `project_manage`.p_permission_path pp ON p.id = pp.path_id and pp.permission_id = #{permissionId}
+        <if test="projectTypes!=null and projectTypes.size != 0">
+            where p.project_type in
+            <foreach collection="projectTypes" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+</mapper>

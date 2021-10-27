@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.device.DeviceDao" >
+    <resultMap id="videoResultMap" type="com.xjt.cloud.video.core.entity.Video" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <id column="device_ip" property="deviceIp" jdbcType="VARCHAR" />
+        <id column="device_port" property="devicePort" jdbcType="INTEGER" />
+        <id column="user_name" property="userName" jdbcType="VARCHAR" />
+        <id column="password" property="password" jdbcType="VARCHAR" />
+        <id column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <id column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <id column="device_status" property="deviceStatus" jdbcType="INTEGER" />
+        <id column="channel" property="channel" jdbcType="INTEGER" />
+    </resultMap>
+    <!-- 保存视频设备 -->
+    <insert id="saveVideo"  parameterType="Video" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO Video
+            (project_id, device_type, device_ip, device_port, user_name, password, check_point_id, device_id, device_status, channel)
+        VALUES (#{projectId}, #{deviceType}, #{deviceIp}, #{devicePort}, #{userName}, #{password}, #{chcekPointId}, #{deviceId}, #{deviceStatus}, #{channel})
+    </insert>
+    <!-- 修改视频设备信息 -->
+    <update id="updateVideoDeviceInfoById" parameterType="Video">
+        UPDATE Video
+        <set>
+            <if test="deviceIp != null and deviceIp != ''">
+                device_ip = #{deviceIp},
+            </if>
+            <if test="devicePort != null and devicePort != 0">
+                device_port = #{devicePort},
+            </if>
+            <if test="userName != null and userName != ''">
+                user_name = #{userName},
+            </if>
+            <if test="password != null and password != ''">
+                password = #{password},
+            </if>
+            <if test="channel != null and channel != 0">
+                channel = #{channel},
+            </if>
+            <if test="deviceStatus != null">
+                device_status = #{deviceStatus}
+            </if>
+        </set>
+        <where>
+            <if test="id != null and id != 0">
+                AND id = #{id}
+            </if>
+            <if test="parentId != null and parentId != 0">
+                AND parent_id = #{parent_id}
+            </if>
+            <if test="channel != null and channel != 0">
+                channel = #{channel}
+            </if>
+        </where>
+    </update>
+    <!-- 根据条件查询视频设备列表-->
+    <select id="findVideoDeviceList" parameterType="Video" resultMap="videoResultMap">
+        SELECT
+            <include refid="videoSections"></include>
+        FROM video_manage.video v
+            <include refid="findVideoSql"></include>
+    </select>
+    <select id="findParentIdIsNullList" resultMap="videoResultMap">
+        SELECT
+            <include refid="videoSections"></include>
+        FROM video_manage.video v
+        WHERE v.parent_id IS null
+        OR v.parent_id = ''
+
+    </select>
+    <sql id="videoSections">
+        id,project_id,device_type,device_ip,device_port,user_name,password,check_point_id,device_id,device_status,channel
+    </sql>
+    <sql id="findVideoSql">
+        <where>
+            <if test="projectId != 0 and projectId != null">
+                AND v.project_id = #{projectId}
+            </if>
+            <if test="deviceType != null">
+                AND v.device_type = #{deviceType}
+            </if>
+        </where>
+    </sql>
+</mapper>

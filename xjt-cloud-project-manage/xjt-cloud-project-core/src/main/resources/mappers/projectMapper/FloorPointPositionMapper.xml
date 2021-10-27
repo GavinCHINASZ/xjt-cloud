@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.FloorPointPositionDao">
+    <resultMap id="floorPointPositionResultMap" type="com.xjt.cloud.project.core.entity.FloorPointPosition">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="floor_id" property="floorId" jdbcType="BIGINT"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="org_id" property="orgId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="axis_x" property="axisX" jdbcType="INTEGER"/>
+        <result column="axis_y" property="axisY" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <result column="upper_id" property="upperId" jdbcType="BIGINT"/>
+        <result column="next_id" property="nextId" jdbcType="BIGINT"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--删除楼层巡检点点位-->
+    <delete id="delFloorPointPosition" parameterType="java.lang.Long">
+        DELETE FROM p_floor_point_position WHERE floor_id = #{floorId}
+        <if test="floorId != null">
+            AND floor_id = #{floorId}
+        </if>
+        <if test="id != null">
+            AND id = #{id}
+        </if>
+        <if test="checkPointId != null">
+            AND check_point_id = #{checkPointId}
+        </if>
+        <if test="orgId != null">
+            AND org_id = #{orgId}
+        </if>
+        <if test="deviceId != null">
+            AND device_id = #{deviceId}
+        </if>
+        <if test="ids != null">
+            AND id IN (${ids})
+        </if>
+        <if test="byDeviceIds != null">
+            AND device_id IN
+            <foreach collection="byDeviceIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="byCheckPointIds != null">
+            AND check_point_id IN
+            <foreach collection="byCheckPointIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+
+    <!--保存楼层巡检点点位-->
+    <insert id="saveFloorPointPosition" parameterType="FloorPointPosition" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO p_floor_point_position (floor_id, check_point_id, sort, axis_x, axis_y, create_time,upper_id,next_id,points,org_id,device_id)
+        VALUES
+        (#{floorId}, #{checkPointId}, #{sort}, #{axisX}, #{axisY}, now(),#{upperId},#{nextId},#{points},#{orgId},#{deviceId});
+    </insert>
+
+    <!--查询楼层巡检点点位-->
+    <select id="findFloorPointPositionList" parameterType="FloorPointPosition" resultMap="floorPointPositionResultMap">
+        SELECT fpp.id, fpp.floor_id, fpp.check_point_id, fpp.sort, fpp.axis_x, fpp.axis_y,fpp.upper_id,fpp.next_id,fpp.points,fpp.org_id,fpp.device_id,
+        fpp.create_time,cp.building_id, cp.point_location, d.last_modify_time,
+        d.device_status devicePointStatus,
+         cp.qr_no pointQrNo,cp.point_name, d.qr_no, d.device_type_id,d.status_update_time statusUpdateTime
+        FROM project_manage.p_floor_point_position fpp
+        INNER JOIN device_manage.d_check_point cp ON fpp.check_point_id = cp.id
+        INNER JOIN device_manage.d_device d ON d.id = fpp.device_id AND d.check_point_id = fpp.check_point_id
+        WHERE  cp.status &lt;=98 AND d.status &lt;=98
+        <if test="floorId != null and floorId != 0">
+            AND fpp.floor_id = #{floorId}
+        </if>
+        <if test="orgId != null and orgId != 0">
+            AND fpp.org_id = #{orgId}
+        </if>
+        <if test="id != null">
+            AND fpp.id = #{id}
+        </if>
+        <if test="checkPointId != null">
+            AND fpp.check_point_id = #{checkPointId}
+        </if>
+        <if test="deviceId != null">
+            AND fpp.evice_id = #{deviceId}
+        </if>
+        <if test="ids != null">
+            AND fpp.id IN (${ids})
+        </if>
+        <if test="byDeviceIds != null">
+            AND fpp.device_id IN
+            <foreach collection="byDeviceIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY d.id ORDER BY fpp.upper_id
+    </select>
+
+    <!--更新楼层巡检点点位-->
+    <update id="modifyFloorPointPosition" parameterType="FloorPointPosition">
+        UPDATE p_floor_point_position
+        <set>
+            <if test="floorId != null">
+                floor_id = #{floorId},
+            </if>
+            <if test="checkPointId != null">
+                check_point_id = #{checkPointId},
+            </if>
+            <if test="deviceId != null">
+                device_id = #{deviceId},
+            </if>
+            <if test="sort != null">
+                sort = #{sort},
+            </if>
+            <if test="axisX != null">
+                axis_x = #{axisX},
+            </if>
+            <if test="axisY != null">
+                axis_y = #{axisY},
+            </if>
+            <if test="upperId != null">
+                upper_id = #{upperId},
+            </if>
+            <if test="nextId != null">
+                next_id = #{nextId},
+            </if>
+            <if test="points != null">
+                points = #{points},
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id =  #{id}
+        </if>
+        <if test="oldUpperId != null">
+            id = #{oldUpperId}
+        </if>
+        <if test="oldNextId != null">
+            id = #{oldNextId}
+        </if>
+        <if test="oldUpperIds != null">
+            upper_id IN (${oldUpperIds})
+        </if>
+        <if test="oldNextIds != null">
+            next_id IN (${oldNextIds})
+        </if>
+    </update>
+
+</mapper>

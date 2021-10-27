@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.device.CheckItemDao">
+    <resultMap id="checkItemResultMap" type="com.xjt.cloud.admin.manage.entity.device.CheckItem">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="check_name" property="checkName" jdbcType="VARCHAR"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="check_specification" property="checkSpecification" jdbcType="VARCHAR"/>
+        <result column="min_value" property="minValue" jdbcType="INTEGER"/>
+        <result column="max_value" property="maxValue" jdbcType="INTEGER"/>
+        <result column="unit" property="unit" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="period_type" property="periodType" jdbcType="INTEGER"/>
+        <result column="item_available_results" property="itemAvailableResults" jdbcType="VARCHAR"/>
+        <result column="check_type" property="checkType" jdbcType="INTEGER"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="check_action" property="checkAction" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="check_item_vs_type" property="checkItemVsType" jdbcType="INTEGER"/>
+        <result column="device_sys_id" property="deviceSysId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <result column="device_type_name" property="deviceTypeName" jdbcType="VARCHAR"/>
+        <result column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <result column="item_index" property="itemIndex" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="findCheckItemWhere">
+        WHERE dci.status &lt;= 98
+        <if test="deviceTypeId != null and deviceTypeId > 0">
+            AND dci.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="checkType != null and checkType > 0">
+            AND dci.check_type = #{checkType}
+        </if>
+        <if test="checkItemVsType != null and checkItemVsType > 0">
+            AND dci.check_item_vs_type = #{checkItemVsType}
+        </if>
+        <if test="checkAction != null and checkAction > 0">
+            AND dci.check_action = #{checkAction}
+        </if>
+        <if test="id != null and id > 0">
+            AND dci.id = #{id}
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND p.id = #{projectId}
+        </if>
+        <if test="ids != null and ids != ''">
+            AND dci.id IN (${ids})
+        </if>
+        <if test="deviceSysName != null and deviceSysName !=''">
+            AND ds.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="deviceTypeName != null and deviceTypeName !=''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceTypeName},'%')
+        </if>
+        <if test="projectName != null and projectName !=''">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+        <if test="notProjectItem">
+            AND NOT EXISTS (SELECT * FROM device_manage.d_device_check_item dci1
+            WHERE dci1.project_id = #{saveProjectId} AND dci1.status = 1
+            AND dci.item_index = dci1.item_index)
+        </if>
+    </sql>
+
+    <sql id="selColumns">
+        dci.id, dci.check_name, dci.device_type_id, dci.check_specification, dci.min_value, dci.max_value, dci.unit, dci.period_type, dci.item_available_results,
+         dci.check_type, dci.description, dci.check_action, dci.create_time, dci.status,dci.type,dci.check_item_vs_type,dci.item_index,
+         dt.device_sys_name device_type_name,ds.id device_sys_id, ds.device_sys_name device_sys_name,p.project_name,p.id project_id
+    </sql>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findCheckItemListTotalCount" parameterType="CheckItem" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM device_manage.d_device_check_item dci
+        INNER JOIN device_manage.d_device_type dt ON dt.id = dci.device_type_id AND dt.type = 9 AND dt.status &lt;= 98
+        INNER JOIN device_manage.d_device_type ds ON dt.parent_id = ds.id AND ds.type = 1 AND ds.status &lt;= 98
+        LEFT JOIN project_manage.p_project p ON dci.project_id = p.id AND p.deleted = false
+        <if test="checkItemVsType != null and checkItemVsType > 0">
+            AND dci.check_item_vs_type = #{checkItemVsType}
+        </if>
+        <include refid="findCheckItemWhere"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findCheckItemList" parameterType="CheckItem" resultMap="checkItemResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM device_manage.d_device_check_item dci
+        INNER JOIN device_manage.d_device_type dt ON dt.id = dci.device_type_id AND dt.type = 9 AND dt.status &lt;= 98
+        INNER JOIN device_manage.d_device_type ds ON dt.parent_id = ds.id AND ds.type = 1 AND ds.status &lt;= 98
+        LEFT JOIN project_manage.p_project p ON dci.project_id = p.id AND p.deleted = false
+        <if test="checkItemVsType != null and checkItemVsType > 0">
+            AND dci.check_item_vs_type = #{checkItemVsType}
+        </if>
+        <include refid="findCheckItemWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--添加设备巡检项-->
+    <insert id="saveCheckItem" parameterType="CheckItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO device_manage.d_device_check_item (check_name, device_type_id, check_specification, min_value, max_value, unit, period_type, item_available_results,
+         check_type, description, check_action, status,type,project_id,check_item_vs_type)
+         VALUES (#{checkName}, #{deviceTypeId}, #{checkSpecification}, #{minValue}, #{maxValue}, #{unit}, #{periodType}, #{itemAvailableResults},
+         #{checkType}, #{description}, #{checkAction}, 1,#{type},0,1);
+    </insert>
+
+    <!--添加设备巡检项-->
+    <insert id="saveProjectCheckItem" parameterType="CheckItem">
+        INSERT INTO device_manage.d_device_check_item (check_name, device_type_id, check_specification, min_value,
+        max_value, unit, period_type, item_available_results,
+        check_type, description, check_action, status,type,project_id,check_item_vs_type,item_index)
+        SELECT dci.check_name, dci.device_type_id, dci.check_specification, dci.min_value, dci.max_value, dci.unit,
+        dci.period_type, dci.item_available_results,
+        dci.check_type, dci.description, dci.check_action, dci.status,dci.type,#{saveProjectId} projectId,3
+        checkItemVsType,dci.item_index
+        FROM device_manage.d_device_check_item dci
+        INNER JOIN device_manage.d_device_type dt ON dt.id = dci.device_type_id AND dt.type = 9 AND dt.status &lt;= 98
+        INNER JOIN device_manage.d_device_type ds ON dt.parent_id = ds.id AND ds.type = 1 AND ds.status &lt;= 98
+        LEFT JOIN project_manage.p_project p ON dci.project_id = p.id AND p.deleted = false
+        <if test="checkItemVsType != null and checkItemVsType > 0">
+            AND dci.check_item_vs_type = #{checkItemVsType}
+        </if>
+        <include refid="findCheckItemWhere"/>
+    </insert>
+
+    <!--修改设备巡检项-->
+    <update id="modifyCheckItem" parameterType="CheckItem">
+        UPDATE device_manage.d_device_check_item
+        <set>
+            <if test="checkName != null">
+                check_name = #{checkName} ,
+            </if>
+            <if test="deviceTypeId != null">
+                device_type_id = #{deviceTypeId} ,
+            </if>
+            <if test="checkSpecification != null">
+                check_specification = #{checkSpecification} ,
+            </if>
+            <if test="minValue != null">
+                min_value = #{minValue} ,
+            </if>
+            <if test="maxValue != null">
+                max_value = #{maxValue} ,
+            </if>
+            <if test="unit != null">
+                unit = #{unit} ,
+            </if>
+            <if test="periodType != null">
+                period_type = #{periodType} ,
+            </if>
+            <if test="itemAvailableResults != null">
+                item_available_results = #{itemAvailableResults} ,
+            </if>
+            <if test="checkType != null">
+                check_type = #{checkType} ,
+            </if>
+            <if test="description != null">
+                description = #{description} ,
+            </if>
+            <if test="checkAction != null">
+                check_action = #{checkAction} ,
+            </if>
+            <if test="status != null">
+                status = #{status} ,
+            </if>
+            <if test="type != null">
+                type = #{type} ,
+            </if>
+            <if test="projectId != null and projectId != 0">
+                project_id = #{projectId} ,
+            </if>
+            <if test="checkItemVsType != null and checkItemVsType != 0">
+                check_item_vs_type = #{checkItemVsType} ,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

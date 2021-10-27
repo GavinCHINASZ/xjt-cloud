@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.device.DeviceDao">
+    <resultMap id="deviceResultMap" type="com.xjt.cloud.admin.manage.entity.device.Device">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="VARCHAR"/>
+        <result column="project_name" property="projectName" jdbcType="BIGINT"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR"/>
+
+        <result column="iot_id" property="iotId" jdbcType="BIGINT"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="old_device_qr_no" property="oldDeviceQrNo" jdbcType="VARCHAR"/>
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR"/>
+        <result column="org_type" property="orgType" jdbcType="INTEGER"/>
+
+        <result column="num" property="num" jdbcType="INTEGER"/>
+        <result column="brand" property="brand" jdbcType="VARCHAR"/>
+        <result column="model" property="model" jdbcType="VARCHAR"/>
+        <result column="spec" property="spec" jdbcType="VARCHAR"/>
+        <result column="production_date" property="productionDate" jdbcType="TIMESTAMP"/>
+        <result column="expiry_date" property="expiryDate" jdbcType="TIMESTAMP"/>
+        <result column="expiry_date_end" property="expiryDateEnd" jdbcType="TIMESTAMP"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="send_modify_time" property="sendModifyTime" jdbcType="TIMESTAMP"/>
+        <result column="send_modify_time_end" property="sendModifyTimeEnd" jdbcType="TIMESTAMP"/>
+        <result column="status_update_time" property="statusUpdateTime" jdbcType="TIMESTAMP"/>
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER"/>
+        <result column="memo" property="memo" jdbcType="VARCHAR"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="pointQrNo" property="pointQrNo" jdbcType="VARCHAR"/>
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+        <result column="device_type" property="deviceType" jdbcType="INTEGER"/>
+        <result column="use_method" property="useMethod" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        d.id, d.device_type_id, d.project_id, d.check_point_id, d.iot_id, d.sensor_no, d.status,
+        d.old_device_qr_no, d.qr_no, d.num,
+        d.brand, d.model, d.spec, d.production_date, d.expiry_date,d.expiry_date_end, d.create_time, d.memo, d.device_status,
+        d.status_update_time,d.last_modify_time,
+        d.send_modify_time, d.send_modify_time_end,d.device_type,
+        cp.point_location, cp.qr_no pointQrNo, cp.point_name, cp.building_id, cp.building_floor_id, t.qr_no byQrNo
+    </sql>
+
+    <!-- 查询设备列表-->
+    <select id="findDeviceList" parameterType="Device" resultMap="deviceResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        <if test="sql != null and sql != ''">
+            RIGHT JOIN (${sql}) t ON t.qr_no = d.qr_no
+        </if>
+        <if test="sensorNoSql != null and sensorNoSql != ''">
+            RIGHT JOIN (${sensorNoSql}) t ON t.qr_no = d.sensor_no
+        </if>
+        WHERE d.status &lt;= 98 AND cp.status &lt;= 98
+    </select>
+</mapper>

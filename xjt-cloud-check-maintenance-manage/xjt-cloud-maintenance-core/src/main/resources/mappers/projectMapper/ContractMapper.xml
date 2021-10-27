@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.maintenance.core.dao.project.ContractDao">
+
+    <resultMap id="contractResultMap" type="com.xjt.cloud.maintenance.core.entity.project.Contract">
+        <result column="client_id" property="clientId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="contract_name" property="contractName" jdbcType="VARCHAR"/>
+        <result column="validity_period_begin" property="validityPeriodBegin" jdbcType="DATE"/>
+        <result column="validity_period_end" property="validityPeriodEnd" jdbcType="DATE"/>
+        <result column="file_path" property="filePath" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <!--添加建筑物-->
+    <insert id="saveContract" parameterType="Contract" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO p_contract (client_id, contract_name, money, validity_period_begin, validity_period_end, file_path,
+        create_time, status,project_id,create_user_id,create_user_name)
+         VALUES (#{clientId}, #{contractName}, #{moneyInt}, #{validityPeriodBegin}, #{validityPeriodEnd}, #{filePath},
+          NOW(), 1,#{projectId},#{createUserId},#{createUserName});
+    </insert>
+
+    <!--修改建筑物信息-->
+    <update id="modifyContract" parameterType="Contract">
+        update p_contract
+        <set>
+            <if test="clientId != null">
+                `client_id` = #{clientId},
+            </if>
+            <if test="contractName != null">
+                `contract_name` = #{contractName},
+            </if>
+            <if test="moneyInt != null">
+                `money` = #{moneyInt},
+            </if>
+            <if test="validityPeriodBegin != null">
+                `validity_period_begin` = #{validityPeriodBegin},
+            </if>
+            <if test="validityPeriodEnd != null">
+                `validity_period_end` = #{validityPeriodEnd},
+            </if>
+            <if test="filePath != null">
+                `file_path` = #{filePath},
+            </if>
+            <if test="status != null">
+                 `status` = #{status},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!--删除合同列表-->
+    <update id="delContract" parameterType="Contract">
+        UPDATE p_contract
+        SET
+                `status` = 99
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null">
+            id IN
+            <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+    </update>
+
+    <sql id="findContractWhere">
+        <if test="limitSign != null and limitSign == 'contract_data_limit'">
+            and c.create_user_id = #{createUserId}
+        </if>
+        <if test="clientId != null and clientId != 0 ">
+            and c.client_id = #{clientId}
+        </if>
+        <if test="contractName != null and contractName != '' ">
+            and c.contract_name LIKE CONCAT('%',#{contractName},'%')
+        </if>
+        <if test="clientName != null and clientName != '' ">
+            and cp.check_project_name LIKE CONCAT('%',#{clientName},'%')
+        </if>
+        <if test="projectId != null and projectId != 0 ">
+            AND c.project_id = #{projectId}
+        </if>
+    </sql>
+    <!-- 查询项目建筑物列表总记录数-->
+    <select id="findContractListCount" parameterType="Contract" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM p_contract c
+        INNER JOIN p_check_project cp ON cp.id = c.client_id
+        WHERE  c.status = 1
+        <include refid="findContractWhere"/>
+    </select>
+
+    <!--查询项目建筑物列表-->
+    <select id="findContractList" parameterType="Contract" resultMap="contractResultMap">
+        SELECT c.*,cp.check_project_name clientName FROM p_contract c
+        INNER JOIN p_check_project cp ON cp.id = c.client_id
+        WHERE  c.status = 1
+        <include refid="findContractWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+
+    </select>
+
+
+</mapper>

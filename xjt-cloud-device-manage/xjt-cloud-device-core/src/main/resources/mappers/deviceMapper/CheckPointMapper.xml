@@ -1,0 +1,608 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.device.core.dao.device.CheckPointDao" >
+
+    <resultMap id="checkPointResultMap" type="com.xjt.cloud.device.core.entity.CheckPoint" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="point_name" property="pointName" jdbcType="VARCHAR" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="org_id" property="orgId" jdbcType="BIGINT" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="baidu_lng" property="baiduLng" jdbcType="INTEGER" />
+        <result column="baidu_lat" property="baiduLat" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="memo" property="memo" jdbcType="VARCHAR" />
+        <result column="manage_region" property="manageRegion" jdbcType="VARCHAR" />
+        <result column="deviceStatus" property="deviceStatus" jdbcType="INTEGER" />
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR" />
+        <result column="pin_yin_initials" property="pinYinInitials" jdbcType="VARCHAR" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="statusUpdateTime" property="statusUpdateTime" jdbcType="TIMESTAMP" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="task_check_point_status" property="taskCheckPointStatus" jdbcType="INTEGER"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR" />
+        <result column="iot_id" property="iotId" jdbcType="BIGINT" />
+    </resultMap>
+
+    <sql id="selColumns">
+        cp.id, cp.building_id, cp.building_floor_id, cp.qr_no, cp.point_location, cp.point_name, cp.project_id, cp.org_id,cp.last_modify_time,
+        cp.status, cp.create_time, cp.memo, cp.manage_region, cp.lng, cp.lat, cp.img_url,cp.pin_yin_initials,cp.create_user_name,
+        cp.baidu_lng,cp.baidu_lat
+    </sql>
+
+    <sql id="findCheckPointWhere">
+        WHERE  cp.status &lt;= 98
+        <if test="buildingId != null">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="buildingIds != null">
+            AND cp.building_id IN
+            <foreach collection="buildingIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="buildingFloorIds != null">
+            AND cp.building_floor_id IN
+            <foreach collection="buildingFloorIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pinYinInitials != null and pinYinInitials != ''">
+            AND cp.pin_yin_initials LIKE CONCAT(#{pinYinInitials},'%')
+        </if>
+        <if test="pointName != null and pointName != ''">
+            AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+        </if>
+        <if test="qrNoOrName != null and qrNoOrName != ''">
+            AND (cp.point_name LIKE CONCAT('%',#{qrNoOrName},'%') OR cp.qr_no LIKE CONCAT('%',#{qrNoOrName},'%'))
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="pointLocation != null and pointLocation != ''">
+            AND cp.point_location LIKE CONCAT(#{pointLocation},'%')
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="createUserName != null and createUserName != ''">
+            AND cp.create_user_name LIKE CONCAT('%',#{createUserName },'%')
+        </if>
+        <if test="orgId != null and orgId != 0">
+            AND cp.org_id = #{orgId}
+        </if>
+        <if test="orgIds != null ">
+            AND cp.org_id IN
+            <foreach collection="orgIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceStatus != null ">
+            AND cp.status = #{deviceStatus}
+        </if>
+        <if test="deviceTypeId != null ">
+            AND d.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="deviceTypeIds != null">
+            AND d.device_type_id IN
+            <foreach collection="deviceTypeIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceType != null ">
+            AND d.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND d.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="nullQrNo != null">
+            <if test="nullQrNo == 1">
+                AND cp.building_id = 0
+            </if>
+            <if test="nullQrNo == 0">
+                AND cp.building_id &gt;= 1
+            </if>
+        </if>
+
+        <if test="pointLayout != null and pointLayout != 0">
+            <if test="pointLayout == 1">
+                AND fpp.id &gt;= 1
+            </if>
+            <if test="pointLayout == 2">
+                AND fpp.id IS NULL
+            </if>
+        </if>
+    </sql>
+    
+    <!-- 查询巡检点列表总行数-->
+    <select id="findCheckPointListCount" parameterType="CheckPoint" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT cp.id) FROM d_check_point cp
+        LEFT JOIN d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+        <if test="pointLayout != null and pointLayout != 0">
+            LEFT JOIN project_manage.p_floor_point_position fpp ON cp.id = fpp.check_point_id AND fpp.floor_id = cp.building_floor_id
+        </if>
+        <include refid="findCheckPointWhere"/>
+    </select>
+
+    <!-- 查询巡检点列表-->
+    <select id="findCheckPointList" parameterType="CheckPoint" resultMap="checkPointResultMap">
+        SELECT <include refid="selColumns"/>, MAX(d.device_status) deviceStatus, MAX(d.status_update_time) statusUpdateTime, SUM(d.num) num,d.sensor_no
+            <if test="taskId != null and taskId != 0">
+                ,tcp.task_check_point_status taskCheckPointStatus
+            </if>,d.iot_id
+        FROM d_check_point cp
+        LEFT JOIN d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+        <if test="pointLayout != null and pointLayout != 0">
+            LEFT JOIN project_manage.p_floor_point_position fpp ON cp.id = fpp.check_point_id AND fpp.floor_id = cp.building_floor_id
+        </if>
+        <if test="taskId != null and taskId != 0">
+            INNER JOIN task_manage.t_task_check_point tcp ON cp.id = tcp.check_point_id AND tcp.task_id = #{taskId}
+        </if>
+        <include refid="findCheckPointWhere"/>
+        GROUP BY cp.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询巡检点-->
+    <select id="findCheckPoint" parameterType="CheckPoint" resultMap="checkPointResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_check_point cp
+        WHERE
+        <if test="id != null and id != 0">
+            cp.id = #{id}
+        </if>
+        <if test="id == null and qrNo != null">
+            cp.qr_no = #{qrNo}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!--添加巡检点-->
+    <insert id="saveCheckPoint" parameterType="CheckPoint" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_check_point (building_id, building_floor_id, qr_no, point_location,point_name,baidu_lng,baidu_lat,
+            project_id, org_id, memo, manage_region, lng, lat, img_url,pin_yin_initials,create_user_id,create_user_name)
+        VALUES (#{buildingId}, #{buildingFloorId}, #{qrNo}, #{pointLocation},#{pointName},#{baiduLng},#{baiduLat},
+            #{projectId}, #{orgId}, #{memo}, #{manageRegion}, #{lng}, #{lat}, #{imgUrl},#{pinYinInitials},#{createUserId},#{createUserName});
+    </insert>
+
+    <!--修改巡检点-->
+    <update id="modifyCheckPoint" parameterType="CheckPoint">
+        UPDATE d_check_point
+        <set>
+            last_modify_time = NOW(),
+            <if test="createTime != null">
+                create_time = #{createTime} ,
+            </if>
+            <if test="buildingId != null and buildingId != 0">
+                building_id = #{buildingId} ,
+            </if>
+            <if test="buildingFloorId != null and buildingFloorId != 0">
+                building_floor_id = #{buildingFloorId} ,
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                qr_no = #{qrNo} ,
+            </if>
+            <if test="pointLocation != null and pointLocation != ''">
+                point_location = #{pointLocation} ,
+            </if>
+            <if test="pointName != null and pointName != ''">
+                point_name = #{pointName} ,
+            </if>
+            <if test="projectId != null and projectId != 0">
+                project_id = #{projectId} ,
+            </if>
+            <if test="orgId != null and orgId != 0">
+                org_id = #{orgId} ,
+            </if>
+            <if test="baiduLng != null">
+                baidu_lng = #{baiduLng} ,
+            </if>
+            <if test="baiduLat != null">
+                baidu_lat = #{baiduLat} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="lat != null">
+                lat = #{lat} ,
+            </if>
+            <if test="lng != null">
+                lng = #{lng} ,
+            </if>
+            <if test="manageRegion != null and manageRegion != ''">
+                manage_region = #{manageRegion} ,
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo} ,
+            </if>
+            <if test="imgUrl != null and imgUrl != ''">
+                img_url = #{imgUrl} ,
+            </if>
+            <if test="pinYinInitials != null and pinYinInitials != ''">
+                pin_yin_initials = #{pinYinInitials},
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                create_user_id = #{createUserId},
+            </if>
+            <if test="createUserName != null and createUserName != ''">
+                create_user_name = #{createUserName},
+            </if>
+        </set>
+        WHERE
+        <if test="byQrNo != null and byQrNo != ''">
+            qr_no = #{byQrNo}
+        </if>
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 查询下载巡检点设备列表-->
+    <select id="findDownloadPointDeviceList" parameterType="PointDevice" resultType="DownloadPointDevice">
+            SELECT cp.point_name pointName, cp.qr_no qrNo, cp.org_id orgId,org.org_name orgName,co.org_name companyName,
+                cp.point_location pointLocation, cp.manage_region manageRegion,
+                d.qr_no deviceQrNo, d.num, d.memo, d.brand, d.model, d.spec, d.production_date productionDate,cp.create_time,
+                dt.device_sys_name deviceSysName,
+                CONCAT(DATE_FORMAT(d.expiry_date, '%Y-%c-%d'),'至',DATE_FORMAT(d.expiry_date_end, '%Y-%c-%d')) expiryDateStr,
+                d.last_modify_time lastModifyTime,
+                CONCAT(DATE_FORMAT(d.send_modify_time, '%Y-%c-%d'),'至',DATE_FORMAT(d.send_modify_time_end, '%Y-%c-%d')) sendModifyTimeStr,
+                IF(d.device_status=1,'正常', '故障') deviceStatus, cp.building_id buildingId,b.building_name buildingName,
+                cp.building_floor_id buildingFloorId,bf.floor_name buildingFloorName, cp.project_id projectId,p.project_name projectName
+            FROM d_check_point cp
+            LEFT JOIN d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+            LEFT JOIN d_device_type dt ON dt.id = d.device_type_id AND dt.type = 9
+            LEFT JOIN project_manage.p_project p ON cp.project_id = p.id
+            LEFT JOIN project_manage.p_building b ON cp.building_id = b.id
+            LEFT JOIN project_manage.p_building_floor bf ON cp.building_floor_id = bf.id
+            LEFT JOIN project_manage.p_organization org ON cp.org_id = org.id
+            LEFT JOIN project_manage.p_organization co ON org.parent_id = co.id
+            WHERE cp.status &lt;= 98
+            <if test="nullQrNo == null or !nullQrNo">
+                AND cp.building_id >=1
+            </if>
+            <if test="orgId != null and orgId != 0">
+                AND cp.org_id = #{orgId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND cp.project_id = #{projectId}
+            </if>
+            <if test="buildingId != null">
+                AND cp.building_id = #{buildingId}
+            </if>
+            <if test="buildingFloorId != null">
+                AND cp.building_floor_id = #{buildingFloorId}
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+            <if test="createUserName != null and createUserName != ''">
+                AND cp.create_user_name LIKE CONCAT('%',#{createUserName },'%')
+            </if>
+            <if test="deviceQrNo != null and deviceQrNo != ''">
+                AND d.qr_no = #{deviceQrNo}
+            </if>
+            <if test="deviceSysName != null and deviceSysName != ''">
+                AND dt.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND cp.id IN
+                <foreach collection="ids" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="orderCols != null">
+                ORDER BY
+                <foreach collection="orderCols" item="colName" separator=",">
+                    ${colName}
+                    <if test="orderDesc">
+                        DESC
+                    </if>
+                </foreach>
+            </if>
+
+            <if test="orderStr != null">
+                ORDER BY ${orderStr}
+            </if>
+
+    </select>
+
+    <!-- 查询巡检点与设备汇总信息-->
+    <select id="findCheckPointAndDeviceReport" parameterType="PointDeviceReport" resultType="PointDeviceReport">
+        SELECT SUM(IF(type='checkPoint' AND status = 1,num,0)) pointNormalNum,
+            SUM(IF(type='checkPoint' AND status = 2,num,0)) pointExceptionNum,
+            SUM(IF(type='device' AND status = 1,num,0)) deviceNormalNum,
+            SUM(IF(type='device' AND status = 2,num,0)) deviceExceptionNum
+        FROM(
+        SELECT COUNT(DISTINCT cp.id) num, cp.status, 'checkPoint' type
+        FROM  d_check_point cp
+        WHERE cp.status &lt;= 98 AND cp.building_id >= 1
+        <if test="projectId != null and projectId != 0">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="buildingId != null">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        GROUP BY cp.status
+        UNION ALL
+        SELECT SUM(d.num) num , d.device_status status, 'device' type
+        FROM d_device d
+        LEFT JOIN d_check_point cp ON cp.id = d.check_point_id AND d.status &lt;= 98
+        WHERE d.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND d.project_id = #{projectId}
+        </if>
+        <if test="buildingId != null">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        GROUP BY d.device_status )t
+    </select>
+
+    <!-- 查询巡检点与设备汇总信息按建筑物分组-->
+    <select id="findCheckPointAndDeviceReportGroupBuilding" parameterType="PointDeviceReport" resultType="PointDeviceReport">
+        SELECT COUNT(DISTINCT CASE WHEN cp.status = 1 THEN cp.id END) pointNormalNum,
+            COUNT(DISTINCT CASE WHEN cp.status = 2 THEN cp.id END) pointExceptionNum,
+            SUM(CASE WHEN d.device_status = 1 THEN d.num END) deviceNormalNum,
+            SUM(CASE WHEN d.device_status = 2 THEN d.num END) deviceExceptionNum,
+            b.id buildingId
+        FROM project_manage.p_building b
+        LEFT JOIN d_check_point cp ON b.id = cp.building_id AND cp.status &lt;= 98
+        AND cp.building_id >= 1
+        <if test="projectId != null and projectId != 0">
+            AND cp.project_id = #{projectId}
+        </if>
+        LEFT JOIN d_device d ON cp.id = d.check_point_id AND d.status &lt;= 98
+        WHERE b.deleted = 0
+        <if test="projectId != null and projectId != 0">
+            AND b.project_id = #{projectId}
+        </if>
+        GROUP BY buildingId
+    </select>
+
+    <!-- 查询未关完物联设备巡检点列表-->
+    <select id="findCheckPointBoundIot" parameterType="Device" resultMap="checkPointResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_device d
+        INNER JOIN d_check_point cp ON cp.id = d.check_point_id AND cp.status &lt;= 98
+        INNER JOIN d_device_type dt ON dt.id = d.device_type_id AND dt.status &lt;= 98
+        <include refid="boundCheckPointListSql"/>
+        GROUP BY cp.id
+        ORDER BY cp.create_time DESC
+    </select>
+
+    <!-- 查询已关联物联设备的楼层-->
+    <select id="findBuildingFloorBoundIot" parameterType="CheckPoint" resultType="Building">
+        SELECT bf.floor_name floorName, bf.floor floorId, bf.id, IF(ISNULL(MAX(d.id)),false,true) iotStatus
+        FROM project_manage.p_building_floor bf
+        LEFT JOIN d_check_point cp ON cp.building_floor_id = bf.id AND cp.status &lt;= 98 AND bf.deleted = false AND cp.project_id=${projectId}
+        LEFT JOIN d_device d ON d.check_point_id = cp.id AND d.status &lt;= 98 AND d.iot_id >= 1
+        <if test="deviceType != null and deviceType != 0">
+            AND d.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND d.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        WHERE bf.building_id = ${buildingId}
+        GROUP BY bf.id ORDER BY bf.floor
+    </select>
+
+    <sql id="boundCheckPointListSql">
+        <where>
+            d.status &lt;= 98
+            <if test="iotId != null and iotId == 0">
+                AND d.iot_id = 0
+            </if>
+            <if test="iotId != null and iotId >= 1">
+                AND d.iot_id = #{iotId}
+            </if>
+            <if test="iotId == null">
+                AND d.iot_id >= 1
+            </if>
+            <if test="buildingId != null">
+                AND cp.building_id = #{buildingId}
+            </if>
+            <if test="buildingFloorId != null">
+                AND cp.building_floor_id = #{buildingFloorId}
+            </if>
+
+            <if test="pointQrNo != null and pointQrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{pointQrNo},'%')
+            </if>
+
+            <if test="projectId != null and projectId != 0">
+                AND d.project_id = #{projectId}
+            </if>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                AND d.device_type_id = #{deviceTypeId}
+            </if>
+            <if test="checkPointId != null and checkPointId != 0">
+                AND d.check_point_id = #{checkPointId}
+            </if>
+            <if test="deviceType != null and deviceType != 0">
+                AND d.device_type = #{deviceType}
+            </if>
+            <if test="deviceTypes != null">
+                AND d.device_type IN
+                <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+
+    <!--/////////////////////////////////////////导入表格  ///////////////////////////////////////// -->
+    <!-- 查询巡检点列表-->
+    <select id="findPointListByList" parameterType="CheckPoint" resultType="PointDevice">
+        SELECT id, qr_no qrNo
+        FROM d_check_point
+        WHERE qr_no IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.qrNo}
+        </foreach>
+    </select>
+
+    <!-- 批量添加巡检点-->
+    <insert id="saveCheckPointList" parameterType="PointDevice" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_check_point (building_id, building_floor_id, qr_no, point_location,point_name, project_id, org_id,
+            manage_region, pin_yin_initials,create_user_name,create_user_id)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.buildingId}, #{item.buildingFloorId}, #{item.qrNo}, #{item.pointLocation},#{item.pointName}, #{item.projectId}, #{item.orgId},
+              #{item.manageRegion}, #{item.pinYinInitials}, #{item.createUserName}, #{item.createUserId})
+        </foreach>
+    </insert>
+
+    <!-- 批量添加设备-->
+    <insert id="saveDeviceList" parameterType="PointDevice" useGeneratedKeys="true" keyProperty="deviceId">
+        INSERT INTO d_device (create_time,device_type_id, project_id, check_point_id, qr_no, num, brand, model, spec, production_date,
+            expiry_date,send_modify_time,expiry_date_end,send_modify_time_end,device_type,memo,create_user_name,create_user_id)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (NOW(),#{item.deviceSysId}, #{item.projectId}, #{item.id},#{item.qrNo}, #{item.num}, #{item.brand}, #{item.model}, #{item.spec}, #{item.productionDate},
+            #{item.expiryDate},#{item.sendModifyTime},#{item.expiryDateEnd},#{item.sendModifyTimeEnd},#{item.saveDeviceType},#{item.memo}, #{item.createUserName}, #{item.createUserId})
+        </foreach>
+    </insert>
+
+    <!-- 批量修改巡检点-->
+    <update id="modifyCheckPointList" parameterType="PointDevice">
+        UPDATE d_check_point
+        <trim prefix="set" suffixOverrides=",">
+            last_modify_time = NOW(),
+            building_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.buildingId}
+            </foreach>
+            building_floor_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.buildingFloorId}
+            </foreach>
+            point_location =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.pointLocation}
+            </foreach>
+            point_name =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.pointName}
+            </foreach>
+            project_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.projectId}
+            </foreach>
+            org_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.orgId}
+            </foreach>
+            manage_region =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.manageRegion}
+            </foreach>
+            pin_yin_initials =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.pinYinInitials}
+            </foreach>
+            create_user_id=
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.createUserId}
+            </foreach>
+            create_user_name=
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when qr_no = #{item.qrNo} then #{item.createUserName}
+            </foreach>
+        </trim>
+        WHERE qr_no IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.qrNo}
+        </foreach>
+    </update>
+
+    <!-- 批量修改设备-->
+    <update id="modifyDeviceList" parameterType="PointDevice">
+        UPDATE d_device d
+        <trim prefix="set" suffixOverrides=",">
+            last_modify_time = NOW(),
+            d.check_point_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.id}
+            </foreach>
+            d.device_type_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.deviceSysId}
+            </foreach>
+            d.device_type =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.saveDeviceType}
+            </foreach>
+            d.memo =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.memo}
+            </foreach>
+            d.project_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.projectId}
+            </foreach>
+            d.num =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.num}
+            </foreach>
+            d.brand =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.brand}
+            </foreach>
+            d.model =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.model}
+            </foreach>
+            d.spec =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.spec}
+            </foreach>
+            d.expiry_date =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.expiryDate}
+            </foreach>
+            d.expiry_date_end =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.expiryDateEnd}
+            </foreach>
+            d.send_modify_time =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.sendModifyTime}
+            </foreach>
+            d.send_modify_time_end =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when d.qr_no = #{item.deviceQrNo} then #{item.sendModifyTimeEnd}
+            </foreach>
+        </trim>
+        WHERE d.qr_no IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.deviceQrNo}
+        </foreach>
+    </update>
+</mapper>

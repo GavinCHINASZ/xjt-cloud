@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.task.CheckRecordDao" >
+    <resultMap id="checkRecordResultMap" type="com.xjt.cloud.report.core.entity.task.CheckRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="task_id" property="taskId" jdbcType="BIGINT" />
+        <id column="task_name" property="taskName" jdbcType="VARCHAR" />
+        <id column="task_parent_id" property="taskParentId" jdbcType="BIGINT" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <id column="check_result" property="checkResult" jdbcType="INTEGER" />
+        <id column="org_name" property="orgName" jdbcType="VARCHAR" />
+        <id column="task_status" property="taskStatus" jdbcType="INTEGER" />
+        <id column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <id column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <id column="checker_name" property="checkerName" jdbcType="VARCHAR"/>
+        <id column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <id column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="findCheckRecordSql">
+        <where>
+            <if test="id != null">
+                AND cr.id = #{id}
+            </if>
+            <if test="taskId != null">
+                AND cr.task_id = #{taskId}
+            </if>
+            <if test="projectId != null">
+                AND cr.project_id = #{projectId}
+            </if>
+            <if test="taskParentId != null">
+                AND cr.task_parent_id = #{taskParentId}
+            </if>
+            <if test="deviceId != null">
+                AND cr.device_id = #{deviceId}
+            </if>
+            <if test="checkResult != null">
+                AND cr.check_result = #{checkResult}
+            </if>
+            <if test="taskStatus != null">
+                AND cr.task_status = #{taskStatus}
+            </if>
+            <if test="checkPointId != null">
+                AND cr.check_point_id = #{checkPointId}
+            </if>
+            <if test="startDate != null">
+                AND cr.create_time >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND cr.create_time &lt; #{endDate}
+            </if>
+            <if test="createTime != null">
+                AND cr.create_time >= #{createTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询巡检记录   -->
+    <select id="findCheckResultBySql" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT cr.id, cr.check_result checkResult, cr.device_id deviceId, MAX(cr.create_time) createTime
+		FROM task_manage.t_check_record cr
+		LEFT JOIN task_manage.t_task t ON cr.task_id = t.ID
+		WHERE cr.project_id = #{projectId} AND t.task_type = #{taskType} AND ( cr.create_time BETWEEN #{createTime} AND #{lastModifyTime})
+        GROUP BY cr.device_id
+    </select>
+
+</mapper>

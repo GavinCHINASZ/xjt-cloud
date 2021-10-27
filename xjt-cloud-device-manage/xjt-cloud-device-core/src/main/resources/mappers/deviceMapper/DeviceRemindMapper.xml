@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.device.core.dao.device.DeviceRemindDao" >
+
+    <resultMap id="deviceRemindResultMap" type="com.xjt.cloud.device.core.entity.DeviceRemind" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_remind" property="deviceRemind" jdbcType="INTEGER" />
+        <result column="device_order" property="deviceOrder" jdbcType="INTEGER" />
+        <result column="repair_remind" property="repairRemind" jdbcType="INTEGER" />
+        <result column="repair_order" property="repairOrder" jdbcType="INTEGER" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="selColumns">
+        id, project_id, device_remind, device_order, repair_remind, repair_order, create_user_id, create_user_name, create_time, last_modify_time
+    </sql>
+
+    <sql id="findCheckWhere">
+        WHERE  1= 1
+        <if test="id != null and id != 0">
+            AND dr.id = #{id}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND dr.project_id = #{projectId}
+        </if>
+    </sql>
+
+    <!-- 查询 设备过期提醒 -->
+    <select id="findDeviceRemind" parameterType="DeviceRemind" resultMap="deviceRemindResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_device_remind dr
+        <include refid="findCheckWhere"/>
+        LIMIT 1;
+    </select>
+
+    <!-- 查询 设备过期提醒 列表 -->
+    <select id="findDeviceRemindTaskList" resultMap="deviceRemindResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_device_remind dr
+    </select>
+
+    <!-- 修改设备 -->
+    <update id="updateDeviceRemind" parameterType="DeviceRemind">
+        UPDATE d_device_remind
+        <set>
+            <if test="deviceRemind != null">
+                device_remind = #{deviceRemind},
+            </if>
+            <if test="deviceOrder != null">
+                device_order = #{deviceOrder},
+            </if>
+            <if test="repairRemind != null">
+                repair_remind = #{repairRemind},
+            </if>
+            <if test="repairOrder != null">
+                repair_order = #{repairOrder},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 添加设备过期提醒 -->
+    <insert id="saveDeviceRemind" parameterType="DeviceRemind" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_device_remind (project_id, device_remind, device_order, repair_remind, repair_order, create_user_id, create_user_name, create_time)
+        VALUES (#{projectId}, #{deviceRemind}, #{deviceOrder}, #{repairRemind}, #{repairOrder}, #{createUserId}, #{createUserName}, NOW());
+    </insert>
+
+</mapper>

@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.smoke.SmokeDeviceDao" >
+
+    <resultMap id="smokeDeviceResultMap" type="com.xjt.cloud.iot.core.entity.smoke.SmokeDevice" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="network_type" property="networkType" jdbcType="VARCHAR" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER" />
+
+        <result column="sensor_id" property="sensorId" jdbcType="VARCHAR" />
+        <result column="electric_quantity" property="electricQuantity" jdbcType="INTEGER" />
+        <result column="dev_id" property="devId" jdbcType="VARCHAR" />
+        <result column="event_type" property="eventType" jdbcType="INTEGER" />
+        <result column="signal_value" property="signalValue" jdbcType="INTEGER" />
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER"/>
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="building_floor_name" property="buildingFloorName" jdbcType="VARCHAR"/>
+
+        <result column="heartbeat_time" property="heartbeatTime" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="selColumns">
+         sd.id, sd.device_id, sd.dev_id, sd.device_status, sd.project_id, sd.check_point_id, sd.sensor_id, sd.event_type, sd.signal_value, sd.network_type,
+         sd.electric_quantity, sd.recover_status, sd.heartbeat_time, sd.building_id, sd.building_floor_id, sd.device_type_id, sd.deleted,
+         sd.create_time, sd.last_modify_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="deleted != null">
+            AND sd.deleted = #{deleted}
+        </if>
+
+        <if test="id != null and id > 0">
+            AND sd.id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            AND sd.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="projectId != null and projectId > 0">
+            AND sd.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND sd.project_id IN
+            <foreach item="item" collection="projectIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="checkPointId != null and checkPointId > 0">
+            AND cp.id = #{checkPointId}
+        </if>
+        <if test="pointName != null and pointName != ''">
+            AND cp.point_name LIKE CONCAT('%', #{pointName}, '%')
+        </if>
+        <if test="checkPointQrNo != null and checkPointQrNo != ''">
+            AND (cp.qr_no LIKE CONCAT('%', #{checkPointQrNo}, '%') OR cp.point_name LIKE CONCAT('%', #{checkPointQrNo}, '%'))
+        </if>
+
+        <if test="deviceId != null and deviceId > 0">
+            AND sd.device_id = #{deviceId}
+        </if>
+        <if test="deviceQrNo != null and deviceQrNo != ''">
+            AND d.qr_no LIKE CONCAT('%', #{deviceQrNo}, '%')
+        </if>
+
+        <if test="sensorId != null and sensorId != ''">
+            AND sd.sensor_id LIKE CONCAT('%', #{sensorId}, '%')
+        </if>
+        <if test="devId != null and devId != ''">
+            AND sd.dev_id = #{devId}
+        </if>
+
+        <if test="recoverStatus != null and recoverStatus == 1">
+            AND sd.recover_status &lt; 2
+        </if>
+        <if test="recoverStatus != null and recoverStatus == 2">
+            AND sd.recover_status = #{recoverStatus}
+        </if>
+
+        <if test="recoverStatuss != null and recoverStatuss.length > 0">
+            AND se.recover_status IN
+            <foreach item="item" collection="recoverStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="eventType != null and eventType > 0">
+            AND sd.event_type = #{eventType}
+        </if>
+        <if test="eventTypeArray != null and eventTypeArray.length > 0">
+            AND sd.event_type IN
+            <foreach item="item" collection="eventTypeArray" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="monitorStatuss != null and monitorStatuss.length > 0">
+            AND sd.event_type IN
+            <foreach item="item" collection="monitorStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="deviceStatus != null and deviceStatus > 0">
+            AND sd.device_status = #{deviceStatus}
+        </if>
+        <if test="deviceStatuss != null and deviceStatuss.length > 0">
+            AND sd.device_status IN
+            <foreach item="item" collection="deviceStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="signalIntensitys != null and signalIntensitys.length > 0">
+            AND sd.signal_status IN
+            <foreach item="item" collection="signalIntensitys" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="electricQuantityStatus != null and electricQuantityStatus == 1">
+            AND sd.electric_quantity >= 2000
+        </if>
+        <if test="electricQuantityStatus != null and electricQuantityStatus == 2">
+            AND sd.electric_quantity &lt; 2000
+        </if>
+
+        <if test="buildingId != null and buildingId > 0">
+            AND sd.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId > 0">
+            AND sd.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="buildingFloorIds != null and buildingFloorIds.length > 0">
+            AND cp.building_floor_id IN
+            <foreach item="item" collection="buildingFloorIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="createTime != null">
+            AND sd.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+    </sql>
+
+    <!-- 查询 烟感设备 -->
+    <select id="findSmokeDeviceList" parameterType="SmokeDevice" resultMap="smokeDeviceResultMap">
+        SELECT <include refid="selColumns"/>
+            ,d.qr_no device_qr_no, dt.device_sys_name device_name, dt.device_type,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name
+        FROM iot_manage.s_smoke_device sd
+        LEFT JOIN device_manage.d_device d ON sd.device_id = d.id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = sd.device_type_id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = sd.check_point_id
+        <include refid="findWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 烟感设备 -->
+    <select id="findSmokeDeviceListTotalCount" parameterType="SmokeDevice" resultType="java.lang.Integer">
+        SELECT COUNT(sd.id)
+        FROM iot_manage.s_smoke_device sd
+        LEFT JOIN device_manage.d_device d ON sd.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = sd.check_point_id
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 保存 烟感设备 -->
+    <insert id="saveSmokeDevice" parameterType="SmokeDevice" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO iot_manage.s_smoke_device(device_id, dev_id, project_id, check_point_id, sensor_id, event_type, signal_value, network_type,
+            electric_quantity, heartbeat_time, building_id, building_floor_id, device_type_id, create_time)
+        VALUES (#{deviceId}, #{devId}, #{projectId}, #{checkPointId}, #{sensorId}, #{eventType}, #{signalValue}, #{networkType},
+            #{electricQuantity}, null, #{buildingId}, #{buildingFloorId}, #{deviceTypeId}, NOW());
+    </insert>
+
+    <!-- 批量保存 烟感设备 -->
+    <insert id="saveSmokeDeviceList" parameterType="SmokeDevice" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO iot_manage.s_smoke_device(device_id, dev_id, project_id, check_point_id, sensor_id, event_type, signal_value, network_type,
+            electric_quantity, heartbeat_time, building_id, building_floor_id, device_type_id, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.deviceId}, #{item.devId}, #{item.projectId}, #{item.checkPointId}, #{item.sensorId}, #{item.eventType}, #{item.signalValue}, #{item.networkType},
+            #{item.electricQuantity}, null, #{item.buildingId}, #{item.buildingFloorId}, #{item.deviceTypeId}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 查询 烟感设备 -->
+    <select id="findSmokeDevice" parameterType="SmokeDevice" resultMap="smokeDeviceResultMap">
+        SELECT <include refid="selColumns"/>
+            ,d.qr_no device_qr_no, dt.device_sys_name device_name, dt.device_type,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name
+        FROM iot_manage.s_smoke_device sd
+        LEFT JOIN device_manage.d_device d ON sd.device_id = d.id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = sd.device_type_id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = sd.check_point_id
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 更新 烟感设备 -->
+    <update id="updateSmokeDevice" parameterType="SmokeDevice">
+        UPDATE iot_manage.s_smoke_device
+        <set>
+            <if test="buildingId != null">
+                building_id = #{buildingId},
+            </if>
+            <if test="buildingFloorId != null">
+                building_floor_id = #{buildingFloorId},
+            </if>
+
+            <if test="deviceId != null">
+                device_id = #{deviceId},
+            </if>
+            <if test="deviceTypeId != null">
+                device_type_id = #{deviceTypeId},
+            </if>
+            <if test="checkPointId != null">
+                check_point_id = #{checkPointId},
+            </if>
+            <if test="sensorId != null and sensorId != ''">
+                sensor_id = #{sensorId},
+            </if>
+            <if test="devId != null and devId != ''">
+                dev_id = #{devId},
+            </if>
+            <if test="recoverStatus != null and recoverStatus > 0">
+                recover_status = #{recoverStatus},
+            </if>
+            <if test="deviceStatus != null and deviceStatus > 0">
+                device_status = #{deviceStatus},
+            </if>
+
+            <if test="electricQuantity != null">
+                electric_quantity = #{electricQuantity},
+            </if>
+            <if test="eventType != null and eventType > 0">
+                event_type = #{eventType},
+            </if>
+            <if test="networkType != null and networkType != ''">
+                network_type = #{networkType},
+            </if>
+            <if test="heartbeatTime != null">
+                heartbeat_time = #{heartbeatTime}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除 烟感设备 -->
+    <update id="deletedSmokeDevice" parameterType="java.util.List">
+        UPDATE iot_manage.s_smoke_device
+        <set>
+            deleted = TRUE
+        </set>
+        WHERE
+        id IN
+        <foreach item="item" collection="list" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 查询 烟感设备报表汇总 饼图 -->
+    <select id="findSomkeDeviceSummaryReport" parameterType="SmokeDevice" resultType="SmokeDeviceReport">
+        SELECT COUNT(sd.id) deviceTotal,
+            IFNULL(SUM(IF(sd.recover_status = 2 || sd.electric_quantity &lt;= 2000 ||
+                    sd.heartbeat_time is null || sd.device_status = 2, 1, 0)), 0) failDevice,
+            IFNULL(SUM(IF(sd.heartbeat_time is null || sd.device_status = 2, 1, 0)), 0) offLine,
+            IFNULL(SUM(IF(sd.event_type = 1 AND sd.recover_status = 2, 1, 0)), 0) smokeNum,
+            IFNULL(SUM(IF(sd.event_type = 5 AND sd.recover_status = 2, 1, 0)), 0) sensorFault,
+            IFNULL(SUM(IF(sd.electric_quantity &lt;= 2000, 1, 0)), 0) lowPower
+        FROM iot_manage.s_smoke_device sd
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 保存烟感设备离线事件信息 -->
+    <insert id="saveSmokeOffLineEvent" parameterType="java.util.Date" >
+        INSERT INTO iot_manage.s_smoke_event (smoke_device_id, device_id, project_id, sensor_id, dev_id, electric_quantity, deal_status, event_type, create_time,
+            recover_status)
+        SELECT id, device_id, project_id, sensor_id, dev_id, electric_quantity, 0, 21, NOW(),
+            2
+        FROM iot_manage.s_smoke_device
+        WHERE heartbeat_time &lt;= #{date} AND device_status = 1
+    </insert>
+
+    <!-- 修改设备离线状态  心跳时间不在 分钟之内就离线 -->
+    <update id="smokeOffLineTask" parameterType="SmokeDevice">
+        UPDATE iot_manage.s_smoke_device
+        SET device_status = 2
+        WHERE heartbeat_time &lt;= #{heartbeatTime} AND device_status = 1
+    </update>
+
+    <update id="smokeOffLineModifyDeviceIotStatus" parameterType="java.util.Date">
+        UPDATE device_manage.d_device d
+        INNER JOIN iot_manage.s_smoke_device sd ON sd.device_id = d.id
+        SET d.iot_status = 2
+        WHERE w.heartbeat_time &lt;= #{date} AND w.device_status = 1
+    </update>
+
+    <!-- 查询 设备id -->
+    <select id="findSmokeDeviceId" parameterType="SmokeDevice" resultType="java.lang.Long">
+        SELECT sd.device_id
+        FROM iot_manage.s_smoke_device sd
+        <include refid="findWhere"/>
+    </select>
+</mapper>

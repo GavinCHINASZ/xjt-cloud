@@ -1,0 +1,714 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.vesa.VesaDeviceRecordDao" >
+
+    <resultMap id="vesaRecordResultMap" type="com.xjt.cloud.iot.core.entity.vesa.VesaRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR" />
+        <result column="sensor_name" property="sensorName" jdbcType="VARCHAR" />
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER" />
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER" />
+        <result column="recover_time" property="recoverTime" jdbcType="TIMESTAMP" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+
+        <result column="vesa_device_id" property="vesaDeviceId" jdbcType="BIGINT" />
+        <result column="event_type" property="eventType" jdbcType="INTEGER" />
+        <result column="record_type" property="recordType" jdbcType="INTEGER" />
+        <result column="loop_name" property="loopName" jdbcType="VARCHAR" />
+        <result column="event_desc" property="eventDesc" jdbcType="VARCHAR" />
+        <result column="detector" property="detector" jdbcType="VARCHAR" />
+        <result column="detector_type" property="detectorType" jdbcType="VARCHAR" />
+        <result column="position" property="position" jdbcType="VARCHAR" />
+        <result column="raw_data" property="rawData" jdbcType="VARCHAR" />
+
+        <result column="date_num" property="dateNum" jdbcType="INTEGER" />
+        <result column="fault_no" property="faultNo" jdbcType="INTEGER" />
+        <result column="fault_desc" property="faultDesc" jdbcType="VARCHAR" />
+        <result column="fault_name" property="faultName" jdbcType="VARCHAR" />
+        <result column="handle_measure" property="handleMeasure" jdbcType="VARCHAR" />
+
+        <result column="date_type" property="dateType" jdbcType="VARCHAR" />
+        <result column="date" property="date" jdbcType="TIMESTAMP" />
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <result column="point_name" property="pointName" jdbcType="VARCHAR" />
+        <result column="point_qr_no" property="pointQrNo" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="area_type" property="areaType" jdbcType="INTEGER"/>
+        <result column="unit" property="unit" jdbcType="VARCHAR"/>
+        <result column="confirm" property="confirm" jdbcType="INTEGER"/>
+        <result column="event_handle_time" property="eventHandleTime" jdbcType="TIMESTAMP"/>
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <!-- 保存极早期设备记录信息 -->
+    <insert id="saveVesaRecord" parameterType="VesaRecord" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO v_vesa_record (project_id, device_id, vesa_id, sensor_no, sensor_name,
+            event_type, record_type, fault_no, fault_desc, event_desc, handle_measure, loop_name, detector, detector_type, position,
+            create_time, raw_data)
+        VALUES (#{projectId}, #{deviceId}, #{vesaId}, #{sensorNo} , #{sensorName},
+            #{eventType}, #{recordType}, #{faultNo}, #{faultDesc}, #{eventDesc}, #{handleMeasure}, #{loopName}, #{detector}, #{detectorType}, #{position},
+            #{createTime}, #{rawData})
+    </insert>
+
+    <!-- 保存极早期设备事件信息-->
+    <insert id="saveVesaRecordEvent" parameterType="VesaRecord" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO v_vesa_event (project_id, device_id, vesa_id, sensor_no, sensor_name,
+            event_type, fault_no, fault_desc,event_desc, handle_measure, loop_name, detector, detector_type, position,
+            create_time, record_id,area_type,unit)
+        VALUES (#{projectId}, #{deviceId}, #{vesaId}, #{sensorNo}, #{sensorName},
+            #{eventType}, #{faultNo}, #{faultDesc}, #{eventDesc}, #{handleMeasure}, #{loopName}, #{detector}, #{detectorType}, #{position},
+            NOW(), #{id},#{areaType},#{unit});
+    </insert>
+
+    <update id="modifyVesaRecordEvent" parameterType="VesaRecord">
+        UPDATE v_vesa_event
+        SET  recover_status = 1,recover_record_id=#{recoverRecordId},recover_time=#{recoverTime}
+        WHERE id = #{id}
+    </update>
+
+    <sql id="selColumns">
+        w.id, w.project_id, w.device_id, w.sensor_no, w.status,
+        w.event_type, w.event_desc, w.loop_name, w.detector, w.detector_type, w.position,
+        w.create_time, d.qr_no,we.type vesa_type,cp.building_id,cp.building_floor_id,cp.point_location,cp.qr_no point_qr_no,cp.point_name
+    </sql>
+
+    <sql id="findVesaEventWhere">
+        WHERE w.status = 1
+        <!--<if test="deviceStatus != null and deviceStatus != 0">
+            AND w.device_status = #{deviceStatus}
+        </if>-->
+        <if test="projectId != null and projectId != 0">
+            AND w.project_id = #{projectId}
+        </if>
+        <if test="eventType != null">
+            AND w.event_type = #{eventType}
+        </if>
+        <if test="byFaultEventType != null">
+            AND w.event_type = #{byFaultEventType}
+        </if>
+        <if test="eventTypeArr != null">
+            AND w.event_type IN
+            <foreach item="item" collection="eventTypeArr" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="recoverStatus != null">
+            AND w.recover_status = #{recoverStatus}
+        </if>
+        <if test="recoverStatusArr != null">
+            AND w.recover_status IN
+            <foreach item="item" collection="recoverStatusArr" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="ids != null">
+            AND w.id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="sensorNo != null and sensorNo != ''">
+            AND w.sensor_no LIKE CONCAT('%',#{sensorNo},'%')
+        </if>
+        <if test="sensorName != null and sensorName != ''">
+            AND w.sensor_name LIKE CONCAT('%',#{sensorName},'%')
+        </if>
+        <if test="eventDesc != null and eventDesc != ''">
+            AND w.event_desc LIKE CONCAT('%',#{eventDesc},'%')
+        </if>
+        <if test="loopName != null and loopName != ''">
+            AND w.loop_name LIKE CONCAT('%',#{loopName},'%')
+        </if>
+        <if test="detector != null and detector != ''">
+            AND w.detector LIKE CONCAT('%',#{detector},'%')
+        </if>
+        <if test="detectorType != null and detectorType != ''">
+            AND w.detector_type LIKE CONCAT('%',#{detectorType},'%')
+        </if>
+        <if test="position != null and position != ''">
+            AND w.position LIKE CONCAT('%',#{position},'%')
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+
+        <if test="startTime != null and endTime != null">
+            AND w.create_time BETWEEN #{startTime} AND #{endTime}
+        </if>
+        <if test="beginTime != null and endTime != null">
+            AND w.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        </if>
+        <if test="createTime != null and endTime != null">
+            AND w.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="handleStatuss != null">
+            <foreach item="item" collection="handleStatuss" >
+                <if test="item == 1">AND veh.create_time IS NOT NULL</if>
+                <if test="item == 2">AND veh.create_time IS NULL</if>
+            </foreach>
+        </if>
+        <if test="handleStatus != null and handleStatus != 0">
+            <if test="handleStatus == 1">AND veh.create_time IS NOT NULL</if>
+            <if test="handleStatus == 2">AND veh.create_time IS NULL</if>
+        </if>
+        <!--<if test="eventTypeSql != null and eventTypeSql != ''">
+            AND #{eventTypeSql}
+        </if>-->
+        <!--        <if test="deviceSysName != null and deviceSysName != ''">
+                    AND dt.device_sys_name LIKE CONCAT('%',#{eventTypeSql}, '%')
+                </if>-->
+
+        <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+            AND veh.device_fault_type_id = #{deviceFaultTypeId}
+        </if>
+    </sql>
+
+    <!-- 查询极早期设备事件记录总数-->
+    <select id="findVesaDeviceEventListTotalCount" parameterType="VesaRecord" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT w.id)
+        FROM v_vesa_event w
+        LEFT JOIN iot_manage.v_vesa_event_handle veh ON w.id = veh.event_id
+        INNER JOIN v_vesa_device we ON we.status = 1 AND w.device_id = we.device_id
+        INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+        <include refid="findVesaEventWhere"/>
+    </select>
+
+    <!-- 查询极早期设备事件记录列表 导出 -->
+    <select id="findVesaDeviceEventLists" parameterType="VesaRecord" resultMap="vesaRecordResultMap">
+        SELECT t.id, t.project_id, t.recover_status, t.recover_time, t.device_id, t.sensor_no, t.sensor_name, t.status,
+            t.event_type, t.event_desc, t.handle_measure, t.loop_name, t.detector, t.detector_type, t.position,
+            t.create_time, t.area_type, t.unit, t.check_point_id, t.point_qr_no, t.point_name,
+            s.date_num
+        FROM (
+            SELECT w.id, w.project_id, w.recover_status, w.recover_time, w.device_id, w.sensor_no, w.sensor_name, w.status,
+                w.event_type, w.event_desc, w.handle_measure, w.loop_name, w.detector, w.detector_type, w.position,
+                w.create_time, w.area_type, w.unit,
+                cp.id check_point_id, cp.qr_no point_qr_no, cp.point_name
+            FROM v_vesa_event w
+            INNER JOIN v_vesa_device we ON we.status = 1 AND w.device_id = we.device_id
+            INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+            INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+            INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+            <include refid="findVesaEventWhere"/>
+        ) t
+        LEFT JOIN (
+            SELECT w.event_type, COUNT(w.event_type) date_num
+            FROM v_vesa_event w
+            INNER JOIN v_vesa_device we ON we.status = 1 AND w.device_id = we.device_id
+            INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+            INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+            INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+            <include refid="findVesaEventWhere"/>
+            GROUP BY w.event_type
+        ) s ON s.event_type = t.event_type
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询极早期设备事件记录列表 -->
+    <select id="findVesaDeviceEventList" parameterType="VesaRecord" resultMap="vesaRecordResultMap">
+        SELECT w.id, w.project_id, w.recover_status, w.recover_time, w.device_id, w.sensor_no, w.sensor_name, w.status, w.vesa_id vesa_device_id,
+            w.event_type, w.event_desc, w.handle_measure, w.loop_name, w.detector, w.detector_type, w.position, w.create_time,w.area_type,w.unit,
+            MAX(veh.create_time) event_handle_time, IF(veh.id IS NULL, 1, 2) confirm,
+            veh.description handleDescription, veh.create_user_name handleUserName,
+            MAX(IF(veh.id IS NULL, 2, 1)) eventExistStatus, MAX(IF(veh.id IS NULL, 2, 1)) handleStatus,
+            cp.id check_point_id, cp.qr_no point_qr_no, cp.point_name, dt.device_sys_name
+            ,dft.fault_type
+        FROM v_vesa_event w
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.event_id, ta.device_type, ta.description, ta.create_time, ta.create_user_name
+            FROM iot_manage.v_vesa_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id
+                FROM iot_manage.v_vesa_event_handle
+                WHERE project_id = #{projectId}
+                <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                    AND device_fault_type_id = #{deviceFaultTypeId}
+                </if>
+                <if test="handleDeviceType != null">
+                    AND device_type = #{handleDeviceType}
+                </if>
+                <if test="createTime != null">
+                    AND create_time >= #{createTime}
+                </if>
+                GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) veh ON w.id = veh.event_id
+
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = veh.device_fault_type_id
+
+        INNER JOIN v_vesa_device we ON we.status = 1 AND w.device_id = we.device_id
+        INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+        <include refid="findVesaEventWhere"/>
+        GROUP BY w.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询极早期设备事件记录列表  AND w.recover_record_id = null  DESC LIMIT 1 -->
+    <select id="findVesaUnrecoverEvent" parameterType="VesaRecord" resultMap="vesaRecordResultMap">
+        SELECT w.id, w.project_id, w.device_id, w.sensor_no, w.status, w.create_time, w.recover_status, w.recover_time
+        FROM v_vesa_event w
+        WHERE w.status = 1 AND w.sensor_no = #{sensorNo} AND w.recover_status = 0 AND w.event_type = #{eventType}
+        <if test="loopName != null">
+            AND w.loop_name = #{loopName}
+        </if>
+        <if test="detector != null">
+            AND w.detector = #{detector}
+        </if>
+        <if test="eventDesc != null">
+            AND w.event_desc = #{eventDesc}
+        </if>
+        ORDER BY w.create_time
+    </select>
+
+    <!-- 查询极早期设备事件记录列表 -->
+    <select id="findLatestVesaDeviceOfflineEvent" parameterType="VesaRecord" resultMap="vesaRecordResultMap">
+        SELECT w.id, w.project_id, w.device_id, w.sensor_no, w.status, w.create_time, w.recover_status, w.recover_time
+        FROM v_vesa_event w
+        WHERE w.status = 1 AND w.sensor_no = #{sensorNo} AND w.project_id = #{projectId}
+        AND recover_status = 0 AND event_type = 5
+        <!--<if test="deviceStatus != null and deviceStatus != 0">
+            /*AND w.device_status = #{deviceStatus} AND w.type  = 4
+        </if>*/-->
+        ORDER BY w.create_time DESC LIMIT 1
+    </select>
+
+    <!-- 查询极早期事件汇总曲线图 AIP接口 VesaDeviceReport vesaRecordResultMap-->
+<!--
+    <select id="findVesaCurrentEventReportCount" parameterType="VesaRecord" resultType="VesaDeviceReport">
+        SELECT  IFNULL(w.eventTotal, 0) eventTotal, IFNULL(w.fireAlarm2Total, 0) fireAlarm2Total,IFNULL(w.fireAlarm1Total, 0) fireAlarm1Total,IFNULL(w.actionTotal, 0) actionTotal,
+        IFNULL(w.alarmTotal, 0) alarmTotal, IFNULL(w.faultTotal, 0) faultTotal,
+        IFNULL(w.offLineEventTotal, 0) offLineEventTotal,<include refid="formatDateCol"></include> queryDate
+        FROM
+        (
+        SELECT COUNT(w.id) eventTotal,
+        IFNULL(SUM(IF(w.event_type = 0,1,0)),0) faultTotal,
+        IFNULL(SUM(IF(w.event_type = 1,1,0)),0) alarmTotal,
+        IFNULL(SUM(IF(w.event_type = 2,1,0)),0) actionTotal,
+        IFNULL(SUM(IF(w.event_type = 3,1,0)),0) fireAlarm1Total,
+        IFNULL(SUM(IF(w.event_type = 4,1,0)),0) fireAlarm2Total,
+        IFNULL(SUM(IF(w.event_type = 5,1,0)),0) offLineEventTotal,
+        <include refid="formatDate"></include>
+        FROM  v_vesa_event w
+        INNER JOIN v_vesa_device we ON /*w.vesa_id = we.id AND */ we.status = 1 AND w.device_id = we.device_id
+        WHERE w.status = 1 AND w.project_id = #{projectId} AND <include refid="formatCreateDate"></include> = #{date}
+        GROUP BY createTime
+        ) w
+        RIGHT JOIN (
+        <include refid="formatTimeRow"></include>
+        ) dayList
+        ON <include refid="formatTimeOn"></include>
+    </select>
+-->
+
+<!--    <sql id="formatDate">
+        <if test="dateType != null and dateType == 'day'">
+            DATE_FORMAT(w.create_time,'%H') createTime
+        </if>
+        <if test="dateType != null and dateType == 'month'">
+            DATE_FORMAT(w.create_time,'%m-%d') createTime
+        </if>
+        <if test="dateType != null and dateType == 'year'">
+            DATE_FORMAT(w.create_time,'%m') createTime
+        </if>
+    </sql>
+
+
+    <sql id="formatDateCol">
+        <if test="dateType != null and dateType == 'day'">
+            DATE_FORMAT(dayList.createTime,'%H')
+        </if>
+        <if test="dateType != null and dateType == 'month'">
+            DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="dateType != null and dateType == 'year'">
+            DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+    </sql>
+
+    <sql id="formatDateOn">
+        <if test="dateType != null and dateType == 'day'">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%H')
+        </if>
+        <if test="dateType != null and dateType == 'month'">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="dateType != null and dateType == 'year'">
+            w.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+    </sql>
+
+
+    <sql id="formatDateRow">
+        SELECT
+        <if test="dateType != null and dateType == 'day'">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${dateType}),'%H') createTime
+        </if>
+        <if test="dateType != null and dateType != 'month'">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${dateType}),'%Y-%m-%d') createTime
+        </if>
+        <if test="dateType != null and dateType == 'year'">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${dateType}),'%Y-%m') createTime
+        </if>
+        FROM (
+        SELECT @date := DATE_ADD(#{date}, interval -1 ${dateType}) FROM b_base_data LIMIT 12 /*#{dateCount}*/ ) days
+    </sql>-->
+
+
+<!--    <sql id="formatCreateDate">
+        <if test="dateType != null and dateType == 'day'">
+            DATE_FORMAT(w.create_time,'%Y-%m-%d')
+        </if>
+        <if test="dateType != null and dateType == 'month'">
+            DATE_FORMAT(w.create_time,'%Y-%m')
+        </if>
+        <if test="dateType != null and dateType == 'year'">
+            DATE_FORMAT(w.create_time,'%Y')
+        </if>
+    </sql>-->
+
+    <!-- 查询极早期设备事件汇总曲线图 VesaDeviceReport vesaRecordResultMap-->
+    <select id="findVesaDeviceEventReportCount" parameterType="VesaRecord" resultType="VesaDeviceReport">
+        SELECT IFNULL(w.eventTotal, 0) eventTotal, IFNULL(w.fireAlarm2Total, 0) fireAlarm2Total,IFNULL(w.fireAlarm1Total, 0) fireAlarm1Total,
+            IFNULL(w.actionTotal, 0) actionTotal, IFNULL(w.alarmTotal, 0) alarmTotal, IFNULL(w.faultTotal, 0) faultTotal,
+            IFNULL(w.offLineEventTotal, 0) offLineEventTotal,<include refid="formatTimeCol"></include> startTime
+        FROM(
+            SELECT COUNT(ww.id) eventTotal,
+                IFNULL(SUM(IF(ww.event_type = 0,1,0)),0) faultTotal,
+                IFNULL(SUM(IF(ww.event_type = 1,1,0)),0) alarmTotal,
+                IFNULL(SUM(IF(ww.event_type = 2,1,0)),0) actionTotal,
+                IFNULL(SUM(IF(ww.event_type = 3,1,0)),0) fireAlarm1Total,
+                IFNULL(SUM(IF(ww.event_type = 4,1,0)),0) fireAlarm2Total,
+                IFNULL(SUM(IF(ww.event_type = 5,1,0)),0) offLineEventTotal,
+                <include refid="formatTime"></include>
+            FROM  v_vesa_event ww
+            INNER JOIN v_vesa_device we ON we.status = 1 AND ww.device_id = we.device_id
+            INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+            INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+            INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+            WHERE ww.status = 1 AND ww.project_id = #{projectId}  AND ww.create_time BETWEEN #{startTime} AND #{endTime}
+            GROUP BY startTime
+        ) w
+        RIGHT JOIN (
+            <include refid="formatTimeRow"></include>
+        ) dayList
+        ON <include refid="formatTimeOn"></include>
+        ORDER BY <include refid="formatTimeOrderBy"/>
+    </select>
+
+    <!--AND ww.create_time BETWEEN #{startTime} AND #{endTime}-->
+
+    <sql id="formatTimeCol">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(dayList.startTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(dayList.startTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(dayList.startTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(dayList.startTime,'%Y')
+        </if>
+    </sql>
+
+    <!--str_to_date(dayList.startTime,'%H:%i')-->
+    <sql id="formatTimeOrderBy">
+        <if test="groupType != null and groupType == 1">
+            dayList.startTime
+        </if>
+        <if test="groupType != null and groupType == 2">
+            str_to_date(dayList.startTime,'%Y-%c-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            str_to_date(dayList.startTime,'%Y-%c')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            str_to_date(dayList.startTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTimeOn">
+        <if test="groupType != null and groupType == 1">
+            w.startTime = DATE_FORMAT(dayList.startTime,'%H')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            w.startTime = DATE_FORMAT(dayList.startTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            w.startTime = DATE_FORMAT(dayList.startTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            w.startTime = DATE_FORMAT(dayList.startTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTime">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(ww.create_time,'%H') startTime
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(ww.create_time,'%Y-%m-%d') startTime
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(ww.create_time,'%Y-%m') startTime
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(ww.create_time,'%Y') startTime
+        </if>
+    </sql>
+
+    <sql id="formatTimeRow">
+        SELECT
+        <if test="groupType != null and groupType == 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${groupTimeType}),'%Y-%m-%d %H') startTime
+        </if>
+        <if test="groupType != null and groupType != 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${groupTimeType}),'%Y-%m-%d') startTime
+        </if>
+        FROM (
+            SELECT @date := DATE_ADD(#{startTime}, interval -1 ${groupTimeType})
+            FROM b_base_data LIMIT #{dateTimeCount}
+        ) days
+    </sql>
+
+    <!-- 查询极早期设备事件记录汇总，饼图-->
+    <!--    <select id="findVesaDeviceEventReportTotal" parameterType="VesaRecord" resultType="VesaDeviceReport">
+            SELECT COUNT(w.id) eventTotal,
+            SUM(IF(w.event_type = 1,1,0)) fireAlarm2Total, SUM(IF(w.event_type = 2,1,0)) fireAlarm1Total, SUM(IF(w.event_type = 3,1,0)) actionTotal,
+            SUM(IF(w.event_type = 4,1,0)) alarmTotal, SUM(IF(w.event_type = 5,1,0)) faultTotal, SUM(IF(w.event_type = 6,1,0)) offlineEventTotal
+            FROM  v_vesa_event w
+            WHERE w.status = 1 AND w.project_id = #{projectId}
+            AND w.create_time BETWEEN #{startTime} AND #{endTimeDesc}
+        </select>-->
+
+    <sql id="selRecordColumns">
+        w.id, w.project_id, w.device_id, w.sensor_no, w.status, w.create_time,d.qr_no, w.signal_intensity,
+        we.type vesa_type,
+        cp.building_id, cp.building_floor_id, cp.point_location, cp.qr_no point_qr_no, cp.point_name
+    </sql>
+
+    <sql id="findVesaRecordWhere">
+        WHERE  w.status = 1
+        <!--        <if test="deviceStatus != null and deviceStatus != 0">
+                    AND w.device_status = #{deviceStatus}
+                </if>-->
+        <if test="projectId != null and projectId != 0">
+            AND w.project_id = #{projectId}
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND w.sensor_no LIKE CONCAT('%',#{sensorNo},'%')
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        AND w.create_time BETWEEN #{startTime} AND #{endTime}
+    </sql>
+
+    <!-- 查询极早期设备记录列表　-->
+    <select id="findVesaDeviceRecordList" parameterType="VesaRecord" resultMap="vesaRecordResultMap">
+        SELECT <include refid="selRecordColumns"/>, dt.device_sys_name
+        FROM v_vesa_record w
+        INNER JOIN v_vesa_device we ON we.status = 1 AND w.device_id = we.device_id
+        INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+        <include refid="findVesaRecordWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询极早期设备记录　曲线图-->
+    <!--
+        <select id="findVesaDeviceRecordCurveChart" parameterType="VesaRecord" resultMap="vesaRecordResultMap">
+            SELECT w.id, w.vesa_type, <include refid="formatTimeCol"></include> create_time
+             FROM (
+                SELECT w.id, vesa_type,
+                MAX(IF(IF(w.present_value &gt; w.max_value,w.present_value - w.max_value,0) &gt; IF(w.present_value &lt; w.min_value,w.min_value - w.present_value,0),
+                IF(w.present_value &gt; w.max_value,w.present_value - w.max_value,0) + w.max_value,
+                IF(w.present_value &lt; w.min_value,w.min_value - w.present_value,0) + w.present_value)) present_value,
+                <include refid="formatTime"></include>,
+                MIN(w.signal_intensity) signal_intensity,
+                MIN(w.electric_quantity) electric_quantity
+                FROM w_water_record w
+                INNER JOIN w_water_device we ON w.water_id = we.id  AND we.status = 1
+                WHERE status = 1
+                <if test="deviceId != null and deviceId != 0">
+                    AND w.device_id = #{deviceId}
+                </if>
+                <if test="waterId != null and waterId != 0">
+                    AND w.water_id = #{waterId}
+                </if>
+                <if test="sensorNo != null and sensorNo != ''">
+                    AND w.sensor_no = #{sensorNo}
+                </if>
+                AND w.create_time BETWEEN #{startTime} AND #{endTimeDesc}
+                GROUP BY createTime
+            ) w RIGHT JOIN (
+            <include refid="formatTimeRow"></include>
+            ) dayList
+            ON <include refid="formatTimeOn"></include>
+        </select>
+    -->
+
+    <!-- 查询极早期设备汇总报表-->
+<!--    <select id="findVesaEventCurrentSummaryReport" parameterType="VesaRecord" resultType="VesaDeviceReport">
+        SELECT COUNT(w.id) eventTotal,
+        IFNULL(SUM(IF(w.event_type = 0,1,0)),0) faultTotal,
+        IFNULL(SUM(IF(w.event_type = 1,1,0)),0) alarmTotal,
+        IFNULL(SUM(IF(w.event_type = 2,1,0)),0) actionTotal,
+        IFNULL(SUM(IF(w.event_type = 3,1,0)),0) fireAlarm1Total,
+        IFNULL(SUM(IF(w.event_type = 4,1,0)),0) fireAlarm2Total,
+        IFNULL(SUM(IF(w.event_type = 5,1,0)),0) offlineEventTotal
+        FROM  v_vesa_event w
+        INNER JOIN v_vesa_device we ON /*w.vesa_id = we.id AND*/ we.status = 1 AND we.project_id = #{projectId} AND w.device_id = we.device_id
+        WHERE w.status = 1 AND w.project_id = #{projectId} AND <include refid="formatCreateDate"></include> = #{date}
+    </select>-->
+
+    <!-- 查询极早期设备汇总报表 -->
+    <select id="findVesaDeviceEventSummaryReport" parameterType="VesaRecord" resultType="VesaDeviceReport">
+        SELECT COUNT(w.id) eventTotal,
+            COUNT(DISTINCT we.device_id) deviceTotal,
+            IFNULL(SUM(IF(w.event_type = 0 AND w.recover_status = 0, 1, 0)), 0) faultTotal,
+            IFNULL(SUM(IF(w.event_type = 1 AND w.recover_status = 0, 1 ,0)), 0) alarmTotal,
+            IFNULL(SUM(IF(w.event_type = 2 AND w.recover_status = 0, 1, 0)), 0) actionTotal,
+            IFNULL(SUM(IF(w.event_type = 3 AND w.recover_status = 0, 1, 0)), 0) fireAlarm1Total,
+            IFNULL(SUM(IF(w.event_type = 4 AND w.recover_status = 0, 1, 0)), 0) fireAlarm2Total,
+            IFNULL(SUM(IF(w.event_type = 5, 1, 0)), 0) offlineEventTotal,
+            IFNULL(SUM(IF(w.event_type >= 0, 1, 0)), 0) failVesaTotal
+        FROM v_vesa_event w
+        INNER JOIN v_vesa_device we ON we.status = 1 AND we.project_id = #{projectId} AND w.device_id = we.device_id
+        INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+        WHERE w.status = 1 AND w.project_id = #{projectId}
+        <if test="startTime != null and endTime != null">
+            AND w.create_time BETWEEN #{startTime} AND #{endTime}
+        </if>
+    </select>
+
+    <!-- 查询极早期设备未恢复事件汇总表-->
+    <select id="findVesaDeviceUnrecoverEventSummary" parameterType="VesaRecord" resultType="VesaDeviceReport">
+        SELECT COUNT(w.id) eventTotal,
+            IFNULL(SUM(IF(w.event_type = 0,1,0)),0) faultTotal,
+            IFNULL(SUM(IF(w.event_type = 1,1,0)),0) alarmTotal,
+            IFNULL(SUM(IF(w.event_type = 2,1,0)),0) actionTotal,
+            IFNULL(SUM(IF(w.event_type = 3,1,0)),0) fireAlarm1Total,
+            IFNULL(SUM(IF(w.event_type = 4,1,0)),0) fireAlarm2Total,
+            IFNULL(SUM(IF(w.event_type = 5,1,0)),0) offlineEventTotal
+        FROM  v_vesa_event w
+        INNER JOIN v_vesa_device we ON we.status = 1 AND w.device_id = we.device_id
+        INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+        INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+        INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+        WHERE w.status = 1 AND w.project_id = #{projectId} AND w.sensor_no = #{sensorNo} AND w.recover_status = 0
+    </select>
+
+    <!-- 查询极早期故障事件的故障名和处理措施-->
+    <select id="findVesaFaultName" parameterType="VesaRecord" resultMap="vesaRecordResultMap">
+        SELECT fault_name, handle_measure
+        FROM v_vesa_fault_desc
+        WHERE fault_no = #{faultNo}
+    </select>
+
+    <!-- 查询极早期设备事件汇总曲线图 VesaDeviceReport vesaRecordResultMap-->
+    <select id="findVesaFaultNameCount" parameterType="VesaRecord" resultMap="vesaRecordResultMap">
+        SELECT t.faultName fault_name, t.handleMeasure handle_measure, COUNT(t.id) deviceNum
+        FROM(
+            SELECT ww.id, ww.handle_measure handleMeasure, ww.event_desc faultName, ww.loop_name loopName,
+                    ww.detector detector, ww.device_id deviceId
+            FROM  v_vesa_event ww
+            INNER JOIN v_vesa_device we ON we.status = 1 AND ww.device_id = we.device_id
+            INNER JOIN device_manage.d_device d ON we.device_id = d.id AND d.status = 1
+            INNER JOIN device_manage.d_device_type dt ON dt.id = we.device_type_id AND dt.status = 1
+            INNER JOIN device_manage.d_check_point cp ON cp.id = we.check_point_id AND cp.status = 1
+            WHERE ww.status = 1 AND ww.project_id = #{projectId} AND ww.create_time BETWEEN #{startTime} AND #{endTime}
+                   AND ww.event_type = 0 AND ww.event_desc IS NOT NULL
+            GROUP BY faultName, deviceId, loopName, detector
+        ) t
+        GROUP BY t.faultName
+        ORDER BY deviceNum
+        DESC LIMIT 5
+    </select>
+
+    <!-- 改版极早期火警主机未恢复事件总数统计接口 -->
+    <select id="findVesaEventNumSum" parameterType="VesaDevice" resultType="VesaDeviceReport">
+        SELECT IFNULL(SUM(e.event_type = 1),0) alarmTotal,
+            IFNULL(SUM(e.event_type = 2),0) actionTotal,
+            IFNULL(SUM(e.event_type = 0),0) faultTotal,
+            IFNULL(SUM(e.event_type = 3),0) fireAlarm1Total,
+            IFNULL(SUM(e.event_type = 4),0) fireAlarm2Total
+        FROM iot_manage.v_vesa_event e
+        INNER JOIN iot_manage.v_vesa_device d ON e.device_id = d.device_id AND d.status = 1
+        WHERE e.project_id = #{projectId} AND e.recover_status = 0
+        <if test="startTime != null">
+            AND e.create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND e.create_time &lt; #{endTime}
+        </if>
+    </select>
+
+    <select id="findInterAreaTypeEventCount" parameterType="VesaRecord" resultType="InterEntity">
+        SELECT
+            IFNULL(w.outerNum, 0) outerNum,
+            IFNULL(w.cleanAreaNum, 0) cleanAreaNum,
+            <include refid="formatTimeCol"></include> createTime
+        FROM(
+            SELECT IFNULL(SUM(IF(ww.area_type = 1,1,0)),0) outerNum,
+                IFNULL(SUM(IF(ww.area_type = 2,1,0)),0) cleanAreaNum,
+            <include refid="formatTime"></include>
+            FROM v_vesa_event ww
+            INNER JOIN v_vesa_device we ON we.status = 1 AND ww.device_id = we.device_id
+            WHERE ww.status = 1 AND ww.project_id = #{projectId}  AND ww.create_time BETWEEN #{startTime} AND #{endTime} AND ww.recover_status = 0
+            GROUP BY startTime
+        ) w
+        RIGHT JOIN (
+            <include refid="formatTimeRow"></include>
+        ) dayList
+        ON <include refid="formatTimeOn"></include>
+        ORDER BY <include refid="formatTimeOrderBy"/>
+    </select>
+
+    <!-- 项目主页 极早期 -->
+    <select id="findVesaDeviceProjectHomeData" parameterType="VesaRecord" resultType="VesaDeviceReport">
+        SELECT t.deviceTotal, COUNT(DISTINCT x.vesa_id) failVesaTotal
+        FROM (
+            SELECT vd.id, COUNT(DISTINCT vd.device_id) deviceTotal
+            FROM v_vesa_device vd
+
+            INNER JOIN device_manage.d_device d ON vd.device_id = d.id AND d.status = 1 AND vd.status = 1
+            INNER JOIN device_manage.d_device_type dt ON dt.id = vd.device_type_id AND dt.status = 1
+            INNER JOIN device_manage.d_check_point cp ON cp.id = vd.check_point_id AND cp.status = 1
+
+            WHERE vd.status = 1 AND vd.project_id = #{projectId}
+            GROUP BY vd.id
+        ) t
+        LEFT JOIN(
+            SELECT w.vesa_id, IFNULL(SUM(IF(w.event_type >= 0 AND w.recover_status = 0, 1, 0)), 0) failVesaTotal
+            FROM v_vesa_event w
+            WHERE w.status = 1 AND w.project_id = #{projectId} AND w.recover_status = 0
+            GROUP BY w.id
+        ) x ON x.vesa_id = t.id
+    </select>
+</mapper>

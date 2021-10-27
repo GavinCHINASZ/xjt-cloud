@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.project.AssessmentUserDao">
+
+    <resultMap id="assessmentUserResultMap" type="com.xjt.cloud.safety.core.entity.project.AssessmentUser">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="org_id" property="orgId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/>
+        <result column="assessment_user_type" property="assessmentUserType" jdbcType="INTEGER"/>
+        <result column="certificate_code" property="certificateCode" jdbcType="VARCHAR"/>
+        <result column="assessment_division" property="assessmentDivision" jdbcType="VARCHAR"/>
+    </resultMap>
+    
+    <sql id="assessmentUserSql">
+        au.id, au.check_project_id, au.org_id, au.user_id, au.project_id, au.assessment_user_type, au.certificate_code, au.duties
+    </sql>
+
+    <sql id="findAssessmentUserWhere">
+        WHERE au.status &lt;=98
+        <if test="id != null and id != 0">
+            AND au.id =#{id}
+        </if>
+        <if test="userId != null and userId != 0">
+            AND au.user_id =#{userId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND au.project_id =#{projectId}
+        </if>
+        <if test="checkProjectId != null and checkProjectId != 0">
+            AND au.check_project_id =#{checkProjectId}
+        </if>
+    </sql>
+
+    <!-- 查询 评估成员 数量 -->
+    <select id="findAssessmentUserCount" resultType="java.lang.Integer" parameterType="AssessmentUser">
+        SELECT COUNT(*)
+        FROM safety_manage.a_assessment_user au
+        <include refid="findAssessmentUserWhere"/>
+    </select>
+
+    <!-- 查询 评估成员 list -->
+    <select id="findAssessmentUserList" parameterType="AssessmentUser" resultMap="assessmentUserResultMap">
+        SELECT <include refid="assessmentUserSql"/>,
+            ou.user_name, ou.certificate_number assessment_division
+        FROM safety_manage.a_assessment_user au
+        LEFT JOIN check_manage.p_org_user ou ON au.user_id = ou.user_id AND au.project_id = ou.project_id
+        <include refid="findAssessmentUserWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 评估成员 数量 -->
+    <select id="findAssessmentMemberCount" resultType="java.lang.Integer" parameterType="AssessmentUser">
+        SELECT COUNT(DISTINCT user_id)
+        FROM safety_manage.a_assessment_user au
+        <include refid="findAssessmentUserWhere"/>
+    </select>
+
+    <!-- 查询 评估成员 list -->
+    <select id="findAssessmentMemberList" parameterType="AssessmentUser" resultMap="assessmentUserResultMap">
+        SELECT <include refid="assessmentUserSql"/>,
+        ou.user_name, ou.certificate_number assessment_division
+        FROM safety_manage.a_assessment_user au
+        LEFT JOIN check_manage.p_org_user ou ON au.user_id = ou.user_id AND au.project_id = ou.project_id
+        <include refid="findAssessmentUserWhere"/>
+        GROUP BY user_id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 保存 评估成员 -->
+    <insert id="saveAssessmentUser" parameterType="AssessmentUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO safety_manage.a_assessment_user(check_project_id, org_id, user_id, user_name, project_id, assessment_user_type, certificate_code, duties,
+            assessmentDivision)
+        VALUES (#{checkProjectId}, #{orgId}, #{userId}, #{userName}, #{projectId}, #{assessmentUserType}, #{certificateCode}, #{duties},
+            #{assessmentDivision});
+    </insert>
+
+    <!-- 保存 评估成员 -->
+    <insert id="saveAssessmentUserList" parameterType="AssessmentUser">
+        INSERT INTO safety_manage.a_assessment_user(check_project_id, org_id, user_id, user_name, project_id, assessment_user_type, certificate_code,
+            duties, assessment_division)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.checkProjectId}, #{item.orgId}, #{item.userId}, #{item.userName}, #{item.projectId}, #{item.assessmentUserType}, #{item.certificateCode},
+            #{item.duties}, #{item.assessmentDivision})
+        </foreach>
+    </insert>
+
+    <!-- 更新/删除 评估成员 -->
+    <update id="updateAssessmentUser" parameterType="AssessmentUser">
+        UPDATE safety_manage.a_assessment_user
+        <set>
+            <if test="assessmentUserType != null and assessmentUserType > 0">
+                assessment_user_type = #{assessmentUserType},
+            </if>
+            <if test="status != null and status > 0">
+                status = #{status},
+            </if>
+            <if test="duties != null and duties != ''">
+                duties = #{duties},
+            </if>
+            <if test="assessmentDivision != null and assessmentDivision != ''">
+                assessment_division = #{assessmentDivision}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id > 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="checkProjectId != null and checkProjectId > 0">
+            check_project_id = #{checkProjectId}
+        </if>
+    </update>
+
+    <delete id="delAssessmentUser" parameterType="AssessmentUser">
+        DELETE FROM a_assessment_user WHERE
+        check_project_id = #{checkProjectId}
+        <if test="id != null">
+            AND id = #{id}
+        </if>
+        <if test="assessmentUserType != null">
+            AND assessment_user_type = #{assessmentUserType}
+        </if>
+        <if test="userIds != null">
+            AND user_id IN
+            <foreach collection="userIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="orgIds != null">
+            AND org_id IN
+            <foreach collection="orgIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+</mapper>

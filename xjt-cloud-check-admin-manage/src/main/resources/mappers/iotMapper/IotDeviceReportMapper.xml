@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.iot.IotDeviceReportDao" >
+    <select id="findIotDeviceReportList" resultType="IotDeviceReport" parameterType="IotDeviceReport">
+        SELECT ifnull(projectId,'总数') project_id, IF(ISNULL(projectId),'总数',projectName) projectName,
+        waterGageTotalCount + waterLeachingTotalCount+smokeTotalCount+fireAlarmTotalCount+ vesaTotalCount+fireHydrantTotalCount+linkageTotalCount totalCount,
+        waterGageTotalCount, waterGageOnLineCount, waterGageOffLineCount, waterLeachingTotalCount, waterLeachingOnLineCount, waterLeachingOffLineCount,
+        smokeTotalCount, smokeOnLineCount, smokeOffLineCount, fireAlarmTotalCount, fireAlarmOnLineCount, fireAlarmOffLineCount, vesaTotalCount, vesaOnLineCount,
+        vesaOffLineCount, fireHydrantTotalCount, fireHydrantOnLineCount, fireHydrantOffLineCount, linkageTotalCount, linkageOnLineCount, linkageOffLineCount
+        FROM (
+            SELECT project_id  projectId, p.project_name projectName,
+            SUM(IF(type = 'waterGage',totalCount,0)) waterGageTotalCount, SUM(IF(type = 'waterGage',onLineCount,0)) waterGageOnLineCount,
+            SUM(IF(type = 'waterGage',offLineCount,0)) waterGageOffLineCount, SUM(IF(type = 'waterLeaching',totalCount,0)) waterLeachingTotalCount,
+            SUM(IF(type = 'waterLeaching',onLineCount,0))  waterLeachingOnLineCount, SUM(IF(type = 'waterLeaching',offLineCount,0)) waterLeachingOffLineCount,
+            SUM(IF(type = 'smoke',totalCount,0)) smokeTotalCount, SUM(IF(type = 'smoke',onLineCount,0)) smokeOnLineCount,
+            SUM(IF(type = 'smoke',offLineCount,0)) smokeOffLineCount, SUM(IF(type = 'fireAlarm',totalCount,0)) fireAlarmTotalCount,
+            SUM(IF(type = 'fireAlarm',onLineCount,0)) fireAlarmOnLineCount, SUM(IF(type = 'fireAlarm',offLineCount,0)) fireAlarmOffLineCount,
+            SUM(IF(type = 'vesa',totalCount,0)) vesaTotalCount, SUM(IF(type = 'vesa',onLineCount,0)) vesaOnLineCount,
+            SUM(IF(type = 'vesa',offLineCount,0)) vesaOffLineCount, SUM(IF(type = 'fireHydrant',totalCount,0)) fireHydrantTotalCount,
+            SUM(IF(type = 'fireHydrant',onLineCount,0)) fireHydrantOnLineCount, SUM(IF(type = 'fireHydrant',offLineCount,0)) fireHydrantOffLineCount,
+            SUM(IF(type = 'linkage',totalCount,0)) linkageTotalCount, SUM(IF(type = 'linkage',onLineCount,0)) linkageOnLineCount,
+            SUM(IF(type = 'linkage',offLineCount,0)) linkageOffLineCount
+            FROM (
+                SELECT 'waterGage' type, project_id , COUNT(*) totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.w_water_device WHERE status &lt;= 98 AND type IN (2,13,14) AND sensor_no IS NOT NULL AND sensor_no != '' GROUP BY project_id
+                UNION ALL
+                SELECT 'waterLeaching' type, project_id , COUNT(*) totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.w_water_device WHERE status &lt;= 98 AND type =3 GROUP BY project_id
+                UNION ALL
+                SELECT 'smoke' type, project_id , COUNT(*) totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.s_smoke_device WHERE deleted= false GROUP BY project_id
+                UNION ALL
+                SELECT 'fireAlarm' type, project_id , COUNT(*) totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.f_fire_alarm_device WHERE status &lt;= 98 GROUP BY project_id
+                UNION ALL
+                SELECT 'vesa' type, project_id , COUNT(*)  totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.v_vesa_device WHERE status &lt;= 98 GROUP BY project_id
+                UNION ALL
+                SELECT 'fireHydrant' type, project_id , COUNT(*)  totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.w_water_device WHERE status &lt;= 98 AND type =8 GROUP BY project_id
+                UNION ALL
+                SELECT 'linkage' type, project_id , COUNT(*) totalCount, SUM(IF(device_state = 1, 1, 0)) onLineCount, SUM(IF(device_state = 2, 1, 0)) offLineCount
+                FROM iot_manage.l_linkage_device
+                WHERE deleted= false
+                GROUP BY project_id
+            ) t
+            INNER JOIN project_manage.p_project p ON t.project_id = p.id AND p.deleted = false
+            WHERE 1 = 1
+            <if test="findProjectIds != null">
+                AND p.id IN
+                <foreach collection="findProjectIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY project_id  WITH ROLLUP
+        )t
+        ORDER BY
+        <if test="orderByProjectIds != null">
+            FIELD(projectId,
+            <foreach collection="orderByProjectIds" item="item" separator="," >
+                #{item}
+            </foreach>
+            ) DESC,
+        </if>
+        project_id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findIotDeviceReportListCount" resultType="java.lang.Integer" parameterType="IotDeviceReport">
+        SELECT COUNT(DISTINCT projectId)
+        FROM (
+            SELECT ifnull(project_id,'总数')  projectId, p.project_name projectName,
+            SUM(IF(type = 'waterGage',totalCount,0)) waterGageTotalCount, SUM(IF(type = 'waterGage',onLineCount,0)) waterGageOnLineCount,
+            SUM(IF(type = 'waterGage',offLineCount,0)) waterGageOffLineCount, SUM(IF(type = 'waterLeaching',totalCount,0)) waterLeachingTotalCount,
+            SUM(IF(type = 'waterLeaching',onLineCount,0))  waterLeachingOnLineCount, SUM(IF(type = 'waterLeaching',offLineCount,0)) waterLeachingOffLineCount,
+            SUM(IF(type = 'smoke',totalCount,0)) smokeTotalCount, SUM(IF(type = 'smoke',onLineCount,0)) smokeOnLineCount,
+            SUM(IF(type = 'smoke',offLineCount,0)) smokeOffLineCount, SUM(IF(type = 'fireAlarm',totalCount,0)) fireAlarmTotalCount,
+            SUM(IF(type = 'fireAlarm',onLineCount,0)) fireAlarmOnLineCount, SUM(IF(type = 'fireAlarm',offLineCount,0)) fireAlarmOffLineCount,
+            SUM(IF(type = 'vesa',totalCount,0)) vesaTotalCount, SUM(IF(type = 'vesa',onLineCount,0)) vesaOnLineCount,
+            SUM(IF(type = 'vesa',offLineCount,0)) vesaOffLineCount, SUM(IF(type = 'fireHydrant',totalCount,0)) fireHydrantTotalCount,
+            SUM(IF(type = 'fireHydrant',onLineCount,0)) fireHydrantOnLineCount, SUM(IF(type = 'fireHydrant',offLineCount,0)) fireHydrantOffLineCount,
+            SUM(IF(type = 'linkage',totalCount,0)) linkageTotalCount, SUM(IF(type = 'linkage',onLineCount,0)) linkageOnLineCount,
+            SUM(IF(type = 'linkage',offLineCount,0)) linkageOffLineCount
+            FROM (
+                SELECT 'waterGage' type, project_id , COUNT(*) totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.w_water_device WHERE status &lt;= 98 AND type IN (2,13,14) AND sensor_no IS NOT NULL AND sensor_no != '' GROUP BY project_id
+                UNION ALL
+                SELECT 'waterLeaching' type, project_id , COUNT(*) totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.w_water_device WHERE status &lt;= 98 AND type =3  GROUP BY project_id
+                UNION ALL
+                SELECT 'smoke' type, project_id , COUNT(*) totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.s_smoke_device WHERE deleted= false GROUP BY project_id
+                UNION ALL
+                SELECT 'fireAlarm' type, project_id , COUNT(*) totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.f_fire_alarm_device WHERE status &lt;= 98 GROUP BY project_id
+                UNION ALL
+                SELECT 'vesa' type, project_id , COUNT(*)  totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.v_vesa_device WHERE status &lt;= 98 GROUP BY project_id
+                UNION ALL
+                SELECT 'fireHydrant' type, project_id , COUNT(*)  totalCount, SUM(IF(device_status = 1, 1, 0)) onLineCount, SUM(IF(device_status = 2, 1, 0)) offLineCount
+                FROM iot_manage.w_water_device WHERE status &lt;= 98 AND type =8 GROUP BY project_id
+                UNION ALL
+                SELECT 'linkage' type, project_id , COUNT(*) totalCount, SUM(IF(device_state = 1, 1, 0)) onLineCount, SUM(IF(device_state = 2, 1, 0)) offLineCount
+                FROM iot_manage.l_linkage_device WHERE deleted= false GROUP BY project_id
+            ) t
+            INNER JOIN project_manage.p_project p ON t.project_id = p.id AND p.deleted = false
+            WHERE 1 = 1
+            <if test="findProjectIds != null">
+                AND p.id IN
+                <foreach collection="findProjectIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY project_id WITH ROLLUP
+        )t
+    </select>
+
+    <select id="findIotFireAlarmDevicePieData" resultType="IotDeviceReport">
+        SELECT
+            SUM(IF(fad.device_status = 1, 1, 0)) onLineCount,
+            SUM(IF(fad.device_status = 2, 1, 0)) offLineCount,
+            COUNT(fad.id) totalCount
+        FROM iot_manage.f_fire_alarm_device fad
+        INNER JOIN project_manage.p_project p
+        ON fad.project_id = p.id
+        WHERE
+        fad.project_id IN (114,280,297,301,358,292,69,257)
+        AND fad.`status` &lt;= 98
+    </select>
+</mapper>

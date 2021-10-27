@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.fire.FireAlarmRecordDao" >
+
+    <resultMap id="fireAlarmRecordResultMap" type="com.xjt.cloud.iot.core.entity.fire.FireAlarmRecord" >
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="position_code" property="positionCode" jdbcType="VARCHAR"/>
+        <result column="trans_device_id" property="transDeviceId" jdbcType="VARCHAR"/>
+        <result column="fire_alarm_no" property="fireAlarmNo" jdbcType="VARCHAR"/>
+        <result column="brand" property="brand" jdbcType="VARCHAR"/>
+        <result column="record_position" property="recordPosition" jdbcType="VARCHAR"/>
+        <result column="raw_data" property="rawData" jdbcType="VARCHAR"/>
+        <result column="event_type" property="eventType" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="device_address" property="deviceAddress" jdbcType="VARCHAR"/>
+        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+        <result column="fire_alarm_device_id" property="fireAlarmDeviceId" jdbcType="BIGINT"/>
+        <result column="happen_time" property="happenTime" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <insert id="saveFireAlarmRecord" parameterType="FireAlarmRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO f_fire_alarm_record
+            (project_id, device_id, trans_device_id, fire_alarm_no, position_code, brand, record_position, raw_data, event_type, create_time,
+            device_name, device_address, device_code, fire_alarm_device_id, happen_time)
+        VALUES (#{projectId}, #{deviceId}, #{transDeviceId}, #{fireAlarmNo}, #{positionCode}, #{brand}, #{recordPosition}, #{rawData}, #{eventType}, NOW(),
+            #{deviceName},  #{deviceAddress}, #{deviceCode}, #{fireAlarmDeviceId}, #{happenTime})
+    </insert>
+
+    <select id="findFireAlarmRecordList" parameterType="FireAlarmRecord" resultMap="fireAlarmRecordResultMap">
+        SELECT
+            far.id, far.project_id projectId, far.position_code positionCode, far.trans_device_id transDeviceId, far.fire_alarm_no fireAlarmNo,
+            far.brand, far.event_type eventType, far.trans_device_id transDeviceId
+        FROM f_fire_alarm_record far
+        <where>
+            <if test="projectId != null and projectId != 0">
+                AND far.project_id = #{projectId}
+            </if>
+            <if test="positionCode != null and positionCode != ''">
+                AND far.position_code = #{positioinCode}
+            </if>
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND far.trans_device_id = #{transDeviceId}
+            </if>
+            <if test="fireAlarmNo != null and fireAlarmNo != ''">
+                AND far.fire_alarm_no = #{fireAlarmNo}
+            </if>
+            <if test="brand != null and brand != ''">
+                AND far.brand = #{brand}
+            </if>
+            <if test="eventType != null and eventType != 0">
+                AND far.event_type = #{eventType}
+            </if>
+        </where>
+    </select>
+
+</mapper>

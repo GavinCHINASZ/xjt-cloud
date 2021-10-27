@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.report.DutyRecordDao" >
+
+    <resultMap id="dutyRecordResultMap" type="com.xjt.cloud.report.core.entity.report.DutyRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="isolate_count" property="isolateCount" jdbcType="INTEGER" />
+        <id column="isolate_description" property="isolateDescription" jdbcType="VARCHAR" />
+        <id column="no_response_count" property="noResponseCount" jdbcType="INTEGER" />
+        <id column="no_response_description" property="noResponseDescription" jdbcType="VARCHAR" />
+        <id column="dirty_count" property="dirtyCount" jdbcType="INTEGER" />
+        <id column="dirty_description" property="dirtyDescription" jdbcType="VARCHAR" />
+        <id column="error_response_count" property="errorResponseCount" jdbcType="INTEGER" />
+        <id column="error_response_description" property="errorResponseDescription" jdbcType="VARCHAR" />
+        <id column="other_count" property="otherCount" jdbcType="INTEGER" />
+        <id column="other_description" property="otherDescription" jdbcType="VARCHAR" />
+        <id column="fault_count" property="faultCount" jdbcType="INTEGER" />
+        <id column="fault_level" property="faultLevel" jdbcType="VARCHAR" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="fill_time" property="fillTime" jdbcType="VARCHAR" />
+        <id column="fill_org_user_name" property="fillOrgUserName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="selColumns">
+        dr.id,dr.isolate_count,dr.isolate_description,dr.no_response_count,dr.no_response_description,
+        dr.dirty_count,dr.dirty_description,dr.error_response_count,dr.error_response_description,
+        dr.other_count,dr.other_description,dr.fault_count,dr.fault_level,dr.project_id,
+        DATE_FORMAT(dr.last_modify_time,'%Y-%m-%d')  as fill_time ,dr.fill_org_user_name
+    </sql>
+
+    <sql id="findWhere">
+        where dr.project_id = #{projectId}
+        <if test="id != null">
+            AND dr.id = #{id}
+        </if>
+        <if test="startTime != null">
+            AND DATE_FORMAT( dr.create_time, '%Y-%m-%d' ) <![CDATA[ >= ]]> #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND DATE_FORMAT( dr.create_time, '%Y-%m-%d' ) <![CDATA[ <= ]]> #{endTime}
+        </if>
+        <if test="createTime">
+            AND DATE_FORMAT(dr.last_modify_time,'%Y-%m-%d') =  DATE_FORMAT(#{createTime},'%Y-%m-%d')
+        </if>
+    </sql>
+
+    <!--按条件查询数据-->
+    <select id="findByDutyRecordList" parameterType="DutyRecord" resultMap="dutyRecordResultMap">
+        SELECT <include refid="selColumns"/>  FROM report_manage.r_duty_record dr
+        <include refid="findWhere"/>
+        ORDER BY dr.create_time desc
+    </select>
+
+    <!--按条件查询数据-->
+    <select id="findByDutyRecord" parameterType="DutyRecord" resultMap="dutyRecordResultMap">
+        SELECT <include refid="selColumns"/>  FROM report_manage.r_duty_record dr
+        <include refid="findWhere"/>
+        ORDER BY dr.create_time desc limit 1
+    </select>
+
+
+    <select id="findByDataChart" parameterType="DutyRecord" resultMap="dutyRecordResultMap">
+        SELECT 	DATE_FORMAT( fill_time, '%d' ) AS fill_time ,
+        MAX( `fault_count` ) AS fault_count, isolate_count FROM
+        (
+        SELECT
+        DATE_FORMAT( dr.create_time, '%Y-%m-%d' ) AS fill_time,dr.fault_count, dr.isolate_count
+        FROM report_manage.r_duty_record dr <include refid="findWhere"/>
+        UNION ALL
+        SELECT
+        @cdate := date_add( @cdate, INTERVAL  +1 DAY ) AS `fill_time`,0  AS `fault_count`,0  AS `isolate_count`
+        FROM
+        (SELECT@cdate := date_add( #{startTime}, INTERVAL  -1 DAY ) FROM iot_manage.b_base_data LIMIT #{pageSize}) t1
+        ) temp
+        GROUP BY`fill_time`  ORDER BY fill_time
+    </select>
+
+    <insert id="save" parameterType="DutyRecord" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO report_manage.r_duty_record( `isolate_count`, `isolate_description`, `no_response_count`,
+        `no_response_description`, `dirty_count`, `dirty_description`, `other_count`,
+        `other_description`, `error_response_count`, `error_response_description`,
+        `fault_count`, `project_id`, `fault_level`, `fill_org_user_name`,
+        `create_user_id`,`create_user_name`, `create_time`)
+        VALUES (#{isolateCount}, #{isolateDescription}, #{noResponseCount},
+         #{noResponseDescription}, #{dirtyCount}, #{dirtyDescription}, #{otherCount},
+         #{otherDescription},#{errorResponseCount}, #{errorResponseDescription},
+        #{faultCount}, #{projectId}, #{faultLevel}, #{fillOrgUserName},
+        #{createUserId}, #{createUserName}, now());
+    </insert>
+
+    <!--查询记录图片-->
+    <select id="findByDutyRecordImageUrlList" parameterType="java.lang.Long" resultType="java.lang.String">
+       SELECT dri.image_url from report_manage.r_duty_record_image	dri WHERE dri.duty_record_id = #{dutyRecordId}
+    </select>
+
+
+    <!--删除记录-->
+    <delete id="deleteRecord" parameterType="DutyRecord">
+       DELETE  from report_manage.r_duty_record  WHERE id = #{id}
+    </delete>
+
+    <!--删除记录图片-->
+    <delete id="deleteImageUrl" parameterType="java.lang.Long">
+       DELETE  from report_manage.r_duty_record_image	 WHERE duty_record_id = #{dutyRecordId}
+    </delete>
+
+    <!--删除记录图片-->
+    <insert id="saveImageUrl" parameterType="DutyRecord" >
+        INSERT INTO report_manage.r_duty_record_image(`duty_record_id`, `image_url`) VALUES
+        <foreach collection="imageUrls" item="imageUrl" separator="," close=";">
+            (#{id}, #{imageUrl})
+        </foreach>
+    </insert>
+
+    <!--查询项目月记录数-->
+    <select id="findByProjectMonthRecordCount" parameterType="DutyRecord" resultType="DutyRecord">
+            SELECT count(dr.id) as recordCount,sum(dr.fault_count) as faultSumCount from r_duty_record dr
+            where dr.project_id = #{projectId}
+            and  DATE_FORMAT( dr.create_time, '%Y%m' ) = DATE_FORMAT( CURDATE( ) , '%Y%m' )
+
+    </select>
+</mapper>

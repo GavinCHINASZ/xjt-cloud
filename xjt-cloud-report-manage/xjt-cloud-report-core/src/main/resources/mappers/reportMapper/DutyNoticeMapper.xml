@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.report.DutyNoticeDao" >
+
+    <resultMap id="dutyNoticeResultMap" type="com.xjt.cloud.report.core.entity.report.DutyNotice" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="notice_time_1" property="noticeTime1" jdbcType="VARCHAR" />
+        <id column="notice_time_2" property="noticeTime2" jdbcType="VARCHAR" />
+        <id column="duty_status_1" property="dutyStatus1" jdbcType="INTEGER" />
+        <id column="duty_status_2" property="dutyStatus2" jdbcType="INTEGER" />
+        <id column="duty_type" property="dutyType" jdbcType="INTEGER" />
+        <id column="project_name" property="projectName" jdbcType="VARCHAR" />
+        <id column="title" property="title" jdbcType="VARCHAR"/>
+        <id column="auto_time" property="autoTime" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--查询值班提醒-->
+    <select id="findDutyNotice" parameterType="DutyNotice" resultMap="dutyNoticeResultMap">
+        SELECT dn.id,dn.project_id,dn.notice_time_1,dn.notice_time_2,dn.duty_status_1,dn.duty_status_2 ,title, auto_time,
+        dn.duty_type from r_duty_notice dn
+        where dn.project_id = #{projectId}
+    </select>
+
+    <!--删除值班提醒-->
+    <delete id="delDutyNotice" parameterType="DutyNotice">
+        DELETE FROM  r_duty_notice WHERE project_id = #{projectId}
+    </delete>
+
+    <!--保存值班提醒-->
+    <insert id="saveDutyNotice" parameterType="DutyNotice">
+        INSERT INTO `report_manage`.`r_duty_notice`( `project_id`, `create_user_name`, `create_time`, `create_user_id`,
+        `notice_time_1`, `notice_time_2`, `duty_status_1`, `duty_status_2`, `duty_type`, title, auto_time) VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            ( #{projectId}, #{createUserName},now(), #{createUserId},
+             #{item.noticeTime1}, #{item.noticeTime2}, #{item.dutyStatus1}, #{item.dutyStatus2}, #{item.dutyType}, #{item.title}, #{item.autoTime})
+        </foreach>
+    </insert>
+
+    <!--查询值班项目-->
+    <select id="findDutyNoticeProjects" parameterType="DutyNotice" resultMap="dutyNoticeResultMap">
+        SELECT  dn.project_id,dn.duty_type,p.project_name from r_duty_notice dn
+        inner join project_manage.p_project p on dn.project_id = p.id and p.station_id = 1 and line_id = 0
+        where  ((dn.notice_time_1 = #{time}  and dn.duty_status_1 = 1 )or ( dn.duty_status_2 = 1 and  dn.notice_time_2 = #{time})) GROUP BY dn.project_id;
+    </select>
+
+</mapper>

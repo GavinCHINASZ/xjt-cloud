@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.device.RiskProblemDao">
+    <resultMap id="riskProblemResultMap" type="com.xjt.cloud.safety.core.entity.device.RiskProblem" >
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="check_project_name" property="checkProjectName" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+
+        <result column="safety_type" property="safetyType" jdbcType="INTEGER"/>
+        <result column="safety_level" property="safetyLevel" jdbcType="INTEGER"/>
+        <result column="major_fire_potential" property="majorFirePotential" jdbcType="INTEGER"/>
+        <result column="inspection_basis" property="inspectionBasis" jdbcType="VARCHAR"/>
+        <result column="file_url" property="fileUrl" jdbcType="VARCHAR"/>
+        <result column="device_sys_id" property="deviceSysId" jdbcType="BIGINT"/>
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="device_type_name" property="deviceTypeName" jdbcType="VARCHAR"/>
+        <result column="device_check_item_id" property="deviceCheckItemId" jdbcType="BIGINT"/>
+        <result column="device_check_item_name" property="deviceCheckItemName" jdbcType="VARCHAR"/>
+        <result column="check_record_id" property="checkRecordId" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 保存高风险问题信息 -->
+    <insert id="saveRiskProblem" keyProperty="id" useGeneratedKeys="true" parameterType="RiskProblem">
+        INSERT INTO s_risk_problem (project_id, check_project_id, safety_type, safety_level, major_fire_potential, num, address,
+        problem, countermeasure, inspection_basis, aftermath, file_url, status, create_time, create_user_id, create_user_name,
+        device_sys_id,device_sys_name,device_type_id,device_type_name,device_check_item_id,device_check_item_name,check_record_id)
+        VALUES (#{projectId}, #{checkProjectId}, #{safetyType}, #{safetyLevel}, #{majorFirePotential}, #{num}, #{address},
+        #{problem}, #{countermeasure}, #{inspectionBasis}, #{aftermath}, #{fileUrl}, 1, NOW(), #{createUserId}, #{createUserName},
+        #{deviceSysId},#{deviceSysName},#{deviceTypeId},#{deviceTypeName},#{deviceCheckItemId},#{deviceCheckItemName},#{checkRecordId});
+    </insert>
+
+    <!-- 保存高风险问题信息 -->
+    <insert id="saveRiskProblemList" parameterType="RiskProblem">
+        INSERT INTO s_risk_problem (project_id, check_project_id, safety_type, safety_level, major_fire_potential, num, address,
+        problem, countermeasure, inspection_basis, aftermath, file_url, status, create_time, create_user_id, create_user_name,
+        device_sys_id,device_sys_name,device_type_id,device_type_name,device_check_item_id,device_check_item_name,check_record_id)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{riskProblem.projectId}, #{riskProblem.checkProjectId}, #{item.safetyType}, #{item.safetyLevel}, #{item.majorFirePotential},
+            #{item.num}, #{item.address}, #{item.problem}, #{item.countermeasure}, #{item.inspectionBasis}, #{item.aftermath}, #{item.fileUrl},
+             1, NOW(), #{riskProblem.createUserId}, #{riskProblem.createUserName}, #{riskProblem.deviceSysId},#{riskProblem.deviceSysName},
+             #{riskProblem.deviceTypeId},#{riskProblem.deviceTypeName},
+            #{riskProblem.deviceCheckItemId},#{riskProblem.deviceCheckItemName},#{riskProblem.checkRecordId})
+        </foreach>
+    </insert>
+
+    <!-- 修改高风险问题信息 -->
+    <update id="modifyRiskProblem" parameterType="RiskProblem">
+       UPDATE s_risk_problem
+       <set>
+            <if test="safetyType != null and safetyType != 0">
+                safety_type = #{safetyType},
+            </if>
+           <if test="safetyLevel != null and safetyLevel != 0">
+               safety_level = #{safetyLevel},
+           </if>
+           <if test="majorFirePotential != null and majorFirePotential != 0">
+               major_fire_potential = #{majorFirePotential},
+           </if>
+           <if test="num != null and num != 0">
+               num = #{num},
+           </if>
+           <if test="address != null">
+               address = #{address},
+           </if>
+           <if test="problem != null">
+               problem = #{problem},
+           </if>
+           <if test="countermeasure != null">
+               countermeasure = #{countermeasure},
+           </if>
+           <if test="inspectionBasis != null">
+               inspection_basis = #{inspectionBasis},
+           </if>
+           <if test="aftermath != null">
+               aftermath = #{aftermath},
+           </if>
+           <if test="fileUrl != null">
+               file_url = #{fileUrl},
+           </if>
+           <if test="status != null and status != 0">
+               status = #{status},
+           </if>
+           <if test="deviceSysId != null and deviceSysId != 0">
+               device_sys_id = #{deviceSysId},
+           </if>
+           <if test="deviceSysName != null">
+               device_sys_name = #{deviceSysName},
+           </if>
+           <if test="deviceTypeId != null and deviceTypeId != 0">
+               device_type_id = #{deviceTypeId},
+           </if>
+           <if test="deviceTypeName != null">
+               device_type_name = #{deviceTypeName},
+           </if>
+           <if test="deviceCheckItemId != null and deviceCheckItemId != 0">
+               device_check_item_id = #{deviceCheckItemId},
+           </if>
+           <if test="deviceCheckItemName != null">
+               device_check_item_name = #{deviceCheckItemName},
+           </if>
+       </set>
+       WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="ids != null">
+            id IN
+            <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="checkRecordId != null and id == null">
+            check_record_id = #{checkRecordId}
+        </if>
+    </update>
+
+    <sql id="selRiskProblemColumn">
+        rp.id,rp.project_id, rp.check_project_id, rp.safety_type, rp.safety_level, rp.major_fire_potential, rp.num,rp.address,
+        rp.problem,rp.countermeasure,rp.inspection_basis,rp.aftermath,rp.file_url,rp.status, rp.create_time,rp.create_user_id, rp.create_user_name,
+        rp.device_sys_id,rp.device_sys_name,rp.device_type_id,rp.device_type_name,rp.device_check_item_id,rp.device_check_item_name
+    </sql>
+    <sql id="findRiskProblemListWhere">
+        <where>
+            rp.status = 1
+            <if test="checkProjectId != null and checkProjectId != 0">
+                AND rp.check_project_id = #{checkProjectId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND rp.project_id = #{projectId}
+            </if>
+            <if test="problem != null and problem != ''">
+                AND rp.problem LIKE COMCAT('%',#{problem},'%')
+            </if>
+            <if test="countermeasure != null and countermeasure == 'true'">
+                AND rp.countermeasure IS NOT NULL AND rp.countermeasure != ''
+            </if>
+            <if test="id != null and id != 0">
+                AND rp.id = #{id}
+            </if>
+            <if test="safetyType != null and safetyType != 0">
+                AND rp.safety_type = #{safetyType}
+            </if>
+            <if test="checkRecordId != null and checkRecordId != 0">
+                AND rp.check_record_id = #{checkRecordId}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询高风险问题信息列表 -->
+    <select id="findRiskProblemList"  parameterType="RiskProblem" resultMap="riskProblemResultMap">
+        SELECT <include refid="selRiskProblemColumn"/>,cp.check_project_name
+         FROM s_risk_problem rp
+        INNER JOIN p_check_project cp ON cp.id = rp.check_project_id
+        <include refid="findRiskProblemListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询高风险问题信息列表总数 -->
+    <select id="findRiskProblemListCount" parameterType="RiskProblem" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM s_risk_problem rp
+        INNER JOIN p_check_project cp ON cp.id = rp.check_project_id
+        <include refid="findRiskProblemListWhere"/>
+    </select>
+</mapper>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.eye.FireEyeDeviceDao">
+
+    <resultMap id="fireEyeDeviceResultMap" type="com.xjt.cloud.iot.core.entity.eye.FireEyeDevice">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_type" property="deviceType" jdbcType="INTEGER"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <result column="channel_no" property="channelNo" jdbcType="INTEGER"/>
+        <result column="video_name" property="videoName" jdbcType="VARCHAR"/>
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="building_floor_name" property="buildingFloorName" jdbcType="VARCHAR"/>
+
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="heartbeat_time" property="heartbeatTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="fireEyeDeviceSql">
+        fed.id, fed.project_id, fed.check_point_id, fed.device_id, fed.sensor_no, fed.channel_no, fed.video_name, fed.heartbeat_time, fed.create_user_name,
+        fed.create_user_id, fed.create_time, fed.last_modify_time, fed.update_user_id, fed.update_user_name
+    </sql>
+
+    <sql id="findFireEyeDeviceWhere">
+        WHERE 1 = 1
+        <if test="sensorNo != null and sensorNo != ''">
+            AND fed.sensor_no = #{sensorNo}
+        </if>
+        <if test="channelNo != null">
+            AND fed.channel_no = #{channelNo}
+        </if>
+        <if test="videoName != null and videoName != ''">
+            AND fed.video_name = #{videoName}
+        </if>
+        <if test="deviceId != null and deviceId > 0">
+            AND fed.device_id = #{deviceId}
+        </if>
+        <if test="checkPointId != null and checkPointId > 0">
+            AND fed.check_point_id = #{checkPointId}
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND fed.project_id = #{projectId}
+        </if>
+        <if test="id != null and id > 0">
+            AND fed.id = #{id}
+        </if>
+    </sql>
+
+    <!-- 查询火眼设备 -->
+    <select id="findFireEyeDevice" parameterType="FireEyeDevice" resultMap="fireEyeDeviceResultMap">
+        SELECT <include refid="fireEyeDeviceSql"/>,
+            d.qr_no deviceQrNo, dt.device_sys_name deviceName, dt.device_type,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id
+        FROM e_fire_eye_device fed
+        LEFT JOIN device_manage.d_device d ON fed.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+
+        <include refid="findFireEyeDeviceWhere"/>
+        LIMIT 1;
+    </select>
+
+    <!-- 查询设备列表 -->
+    <select id="findFireEyeDeviceList" parameterType="FireEyeDevice" resultMap="fireEyeDeviceResultMap">
+        SELECT <include refid="fireEyeDeviceSql"/>,
+            d.qr_no deviceQrNo, dt.device_sys_name deviceName, dt.device_type,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id
+        FROM e_fire_eye_device fed
+        LEFT JOIN device_manage.d_device d ON fed.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+
+        <include refid="findFireEyeDeviceWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备列表数量 -->
+    <select id="findFireEyeDeviceListCount" parameterType="FireEyeDevice" resultMap="fireEyeDeviceResultMap">
+        SELECT COUNT(*)
+        FROM e_fire_eye_device fed
+        <include refid="findFireEyeDeviceWhere"/>
+    </select>
+
+    <!-- 删除 -->
+    <update id="delFireEyeDevice" parameterType="FireEyeDevice">
+        UPDATE e_fire_eye_device
+        SET deleted = 1
+        WHERE
+        <if test="id != null and id > 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id in
+            <foreach collection="ids" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+    </update>
+
+    <!--修改-->
+    <update id="updFireEyeDevice" parameterType="FireEyeDevice">
+        UPDATE e_fire_eye_device
+        <set>
+            <if test="projectId != null">
+                project_id = #{projectId},
+            </if>
+            <if test="deviceId != null">
+                device_id = #{deviceId},
+            </if>
+            <if test="checkPointId != null">
+                check_point_id = #{checkPointId},
+            </if>
+            <if test="sensorNo != null and id == null">
+                sensor_no = #{sensorNo},
+            </if>
+            <if test="videoName != null and videoName != ''">
+                video_name = #{videoName},
+            </if>
+            <if test="heartbeatTime != null">
+                heartbeat_time = #{heartbeatTime},
+            </if>
+            <if test="updateUserId != null and updateUserId != 0">
+                update_user_id = #{updateUserId},
+            </if>
+            <if test="updateUserName != null and updateUserName != ''">
+                update_user_name = #{updateUserName}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="sensorNo != null">
+            sensor_no = #{sensorNo}
+        </if>
+        <if test="channelNo != null">
+            AND channel_no = #{channelNo}
+        </if>
+    </update>
+
+    <!-- 新增 保存 -->
+    <insert id="saveFireEyeDevice" parameterType="FireEyeDevice" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO iot_manage.e_fire_eye_device(project_id, check_point_id, device_id, sensor_no, channel_no, video_name, heartbeat_time,
+            create_user_name, create_user_id, create_time, update_user_id, update_user_name) 
+        VALUES (#{projectId}, #{checkPointId}, #{deviceId}, #{sensorNo}, #{channelNo}, #{videoName}, #{heartbeatTime},
+            #{createUserName}, #{createUserId}, NOW(), #{updateUserId}, #{updateUserName});
+    </insert>
+
+</mapper>

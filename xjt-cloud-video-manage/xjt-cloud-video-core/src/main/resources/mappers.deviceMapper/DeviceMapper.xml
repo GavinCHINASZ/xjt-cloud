@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.device.DeviceDao" >
+    <resultMap id="deviceResultMap" type="com.xjt.cloud.device.core.entity.Device" >
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <id column="device_type_id" property="deviceTypeId" jdbcType="INTEGER" />
+        <id column="project_id" property="projectId" jdbcType="INTEGER" />
+        <id column="check_point_id" property="checkPointId" jdbcType="INTEGER" />
+        <id column="iot_id" property="iotId" jdbcType="INTEGER" />
+        <id column="iot_type" property="iotType" jdbcType="INTEGER" />
+        <id column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <id column="old_device_qr_no" property="oldDeviceQrNo" jdbcType="VARCHAR" />
+        <id column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <id column="num" property="num" jdbcType="INTEGER" />
+        <id column="brand" property="brand" jdbcType="VARCHAR" />
+        <id column="model" property="model" jdbcType="VARCHAR" />
+        <id column="spec" property="spec" jdbcType="VARCHAR" />
+        <id column="production_date" property="productionDate" jdbcType="DATE" />
+        <id column="expiry_date" property="expiryDate" jdbcType="DATE" />
+        <id column="status" property="status" jdbcType="INTEGER" />
+        <id column="create_time" property="createTime" jdbcType="DATE" />
+    </resultMap>
+
+    <!-- 根据巡更点查询设备列表-->
+    <select id="findDeviceListByCheckPointId" parameterType="java.lang.Long" resultType="Device">
+        SELECT
+            <include refid="deviceParamters"></include>
+        FROM device_manage.d_check_point cp
+        INNER JOIN device_manage.d_device d
+        ON cp.id = d.check_point_id
+        INNER JOIN project_manage.p_building b
+        ON cp.building_id = b.id
+        INNER JOIN project_manage.p_building_floor f
+        ON cp.building_floor_id = f.id
+        WHERE cp.id = #{checkPointId}
+    </select>
+    <!-- APP 根据设备id查询设备巡检项 -->
+    <select id="findDeviceItemByDeviceIdApp" parameterType="java.lang.Long" resultType="AppTaskCheckItem">
+        SELECT
+            dci.id deviceCheckItemId,dci.check_name chcekName
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_device_check_item dci
+        ON d.device_type_id = dci.device_type_id
+        WHERE d.id = #{deviceId}
+    </select>
+    <sql id="deviceParamters">
+        d.id,d.device_name deviceName,b.building_name buildingName,f.floor_name floorName,cp.id checkPointId,d.qr_no qrNo
+    </sql>
+</mapper>

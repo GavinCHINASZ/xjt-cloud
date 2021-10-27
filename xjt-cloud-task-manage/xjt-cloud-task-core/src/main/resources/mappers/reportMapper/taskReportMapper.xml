@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.report.TaskReportDao">
+    <resultMap id="taskReportResultMap" type="com.xjt.cloud.task.core.entity.report.TaskReport">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="device_fault_type" property="deviceFaultType" jdbcType="VARCHAR"/>
+        <result column="cause_analysis" property="causeAnalysis" jdbcType="VARCHAR"/>
+        <result column="repair_proposal" property="repairProposal" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="taskReportSql">
+        cir.id, cir.task_id, cir.task_name, cir.task_parent_id, cir.project_id, cir.org_name, cir.device_id, cir.device_name, cir.device_fault_type_id
+    </sql>
+
+    <sql id="findTaskReportSql">
+        <where>
+            1 = 1
+            <if test="id != null and id > 0">
+                AND cir.id = #{id}
+            </if>
+            <if test="projectId != null and projectId > 0">
+                AND cir.project_id = #{projectId}
+            </if>
+            <if test="checkResult != null">
+                AND cir.check_result = #{checkResult}
+            </if>
+            <if test="deviceName != null and deviceName  != ''">
+                AND cir.device_name LIKE CONCAT('%',#{deviceName},'%')
+            </if>
+            <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                AND cir.device_fault_type_id = #{deviceFaultTypeId}
+            </if>
+            <if test="deviceFaultType != null and deviceFaultType != ''">
+                AND dft.fault_type LIKE CONCAT('%',#{deviceFaultType},'%')
+            </if>
+            <if test="createTime != null and lastModifyTime != null">
+                AND cir.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 异常设备统计 柱形图 -->
+    <select id="deviceColumnar" parameterType="TaskReport" resultType="TaskReport">
+        SELECT t.device_name deviceName,
+            COUNT(DISTINCT t.device_id) totalCount,
+            SUM(if(t.deviceStatus = 1, 1, 0)) normalNum,
+            SUM(if(t.deviceStatus = 2, 1, 0)) faultNum
+        FROM(
+            SELECT cir.device_name,
+                d.id device_id,
+                d.device_status deviceStatus
+            FROM task_manage.t_check_item_record cir
+            LEFT JOIN device_manage.d_device d ON cir.device_id = d.id
+            <include refid="findTaskReportSql"/>
+            GROUP BY cir.device_id
+        )t
+        GROUP BY deviceName
+        ORDER BY totalCount DESC;
+    </select>
+
+    <!-- 异常设备统计 饼图 -->
+    <select id="devicePie" parameterType="TaskReport" resultType="TaskReport">
+        SELECT cir.device_name deviceName,
+            COUNT(cir.id) totalCount,
+            SUM(if(cir.check_result = 0, 1, 0)) normalNum,
+            SUM(if(cir.check_result = 1, 1, 0)) faultNum,
+            dft.fault_type deviceFaultType, dft.cause_analysis causeAnalysis, dft.repair_proposal repairProposal, dft.fault_color faultColor
+        FROM task_manage.t_check_item_record cir
+        LEFT JOIN device_manage.d_device_fault_type dft ON cir.device_fault_type_id = dft.id
+        <include refid="findTaskReportSql"/>
+        GROUP BY cir.device_name, cir.device_fault_type_id
+    </select>
+
+    <!-- 设备异常统计 设备类型列表 -->
+    <select id="findDeviceTypeList" parameterType="TaskReport" resultType="TaskReport">
+        select t.deviceName, x.totalCount, n.taskDeviceNum,
+            t.normalNum, t.faultNum, t.repairNum,
+            t.deviceFaultType, t.causeAnalysis, t.repairProposal, t.faultColor
+        FROM (
+            SELECT cir.device_name deviceName,
+                SUM(if(cir.check_result = 0, 1, 0)) normalNum,
+                SUM(if(cir.check_result = 1, 1, 0)) faultNum,
+                SUM(if(cir.check_result = 1 and cr.handle_status = 2, 1, 0)) repairNum,
+                dft.fault_type deviceFaultType, dft.cause_analysis causeAnalysis, dft.repair_proposal repairProposal, dft.fault_color faultColor
+            FROM task_manage.t_check_item_record cir
+            LEFT JOIN device_manage.d_device_fault_type dft ON cir.device_fault_type_id = dft.id
+            LEFT JOIN task_manage.t_check_record cr ON cr.id = cir.check_record_id
+            LEFT JOIN device_manage.d_device d ON cir.device_id = d.id
+            <include refid="findTaskReportSql"/>
+            GROUP BY cir.device_name, cir.device_fault_type_id
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) t
+        LEFT JOIN (
+            SELECT COUNT(DISTINCT d.id) totalCount, dt.device_sys_name deviceName
+            FROM device_manage.d_device d
+            LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+            WHERE d.status &lt;= 98 AND d.project_id = #{projectId}
+            GROUP BY d.device_type_id
+        ) x ON x.deviceName = t.deviceName
+        LEFT JOIN (
+            SELECT cir.device_name deviceName, COUNT(DISTINCT cir.device_id) taskDeviceNum
+            FROM task_manage.t_check_item_record cir
+            WHERE 1 = 1
+            <if test="id != null and id > 0">
+                AND cir.id = #{id}
+            </if>
+            <if test="projectId != null and projectId > 0">
+                AND cir.project_id = #{projectId}
+            </if>
+            <if test="deviceName != null and deviceName  != ''">
+                AND cir.device_name LIKE CONCAT('%',#{deviceName},'%')
+            </if>
+            <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                AND cir.device_fault_type_id = #{deviceFaultTypeId}
+            </if>
+            <if test="createTime != null and lastModifyTime != null">
+                AND cir.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY cir.device_name
+        ) n ON n.deviceName = t.deviceName
+    </select>
+
+    <!-- 设备异常统计 查询总数量 -->
+    <select id="findTaskReportTotalCount" parameterType="TaskReport" resultType="java.lang.Integer">
+        SELECT COUNT(t.id) totalCount
+        FROM(
+            SELECT cir.id
+            FROM task_manage.t_check_item_record cir
+            LEFT JOIN device_manage.d_device_fault_type dft ON cir.device_fault_type_id = dft.id
+            LEFT JOIN task_manage.t_check_record cr ON cr.id = cir.check_record_id
+            <include refid="findTaskReportSql"/>
+            GROUP BY cir.device_name, cir.device_fault_type_id
+        ) t
+    </select>
+
+</mapper>

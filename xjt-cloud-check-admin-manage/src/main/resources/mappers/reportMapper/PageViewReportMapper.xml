@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.report.PageViewReportDao">
+
+    <resultMap id="pageViewResultMap" type="com.xjt.cloud.admin.manage.entity.report.PageViewReport">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <id column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <id column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <id column="client_type" property="clientType" jdbcType="INTEGER"/>
+        <id column="num" property="num" jdbcType="INTEGER"/>
+        <id column="user_id" property="userId" jdbcType="BIGINT"/>
+        <id column="page_type" property="pageType" jdbcType="INTEGER"/>
+        <id column="page_type_name" property="pageTypeName" jdbcType="VARCHAR"/>
+        <id column="page_url" property="pageUrl" jdbcType="VARCHAR"/>
+        <id column="page_level" property="pageLevel" jdbcType="INTEGER"/>
+        <id column="num" property="totalCount" jdbcType="INTEGER"/>
+        <id column="create_date" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        pvr.id, pvr.project_id, pvr.client_type, pvr.user_id, pvr.page_type_name, pvr.page_type, pvr.page_url, pvr.page_level, pvr.num, pvr.create_date
+    </sql>
+
+    <sql id="findConditions">
+        WHERE 1 = 1
+        <if test="id != null and id > 0">
+            AND pvr.id = #{id}
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND pvr.project_id = #{projectId}
+        </if>
+        <if test="clientType != null and clientType > 0">
+            AND pvr.client_type = #{clientType}
+        </if>
+        <if test="pageType != null">
+            AND pvr.page_type = #{pageType}
+        </if>
+        <if test="pageTypeName != null and pageTypeName != ''">
+            AND pvr.page_type_name LIKE CONCAT('%', #{pageTypeName}, '%')
+        </if>
+        <if test="startTime != null and endTime != null">
+            AND pvr.create_date BETWEEN #{startTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="projectName != null and projectName != ''">
+            AND pp.project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+    </sql>
+
+    <!-- 查询 pV uV 统计 -->
+    <select id="findPageViewReportPvUvList" resultType="PvUvReport">
+        SELECT '今天' dateName, COUNT(id) pvTotalCount, COUNT(DISTINCT user_id) uvTotalCount,
+            IFNULL(SUM(IF(page_level = 1, 1, 0)), 0) oneLevelPvCount, COUNT(DISTINCT if(page_level = 1, user_id, null)) oneLevelUvCount,
+            IFNULL(SUM(IF(page_level = 2, 1, 0)), 0) twoLevelPvCount, COUNT(DISTINCT if(page_level = 2, user_id, null)) twoLevelUvCount,
+            IFNULL(SUM(IF(page_level is null, 1, 0)), 0) otherPvCount, COUNT(DISTINCT if(page_level is null, user_id, null)) otherUvCount
+        FROM log_manage.l_page_view
+        WHERE create_time >= CURDATE()
+
+        UNION ALL
+        SELECT '昨天' dateName, COUNT(id) pvTotalCount, COUNT(DISTINCT user_id) uvTotalCount,
+            IFNULL(SUM(IF(page_level = 1, 1, 0)), 0) oneLevelPvCount, COUNT(DISTINCT if(page_level = 1, user_id, null)) oneLevelUvCount,
+            IFNULL(SUM(IF(page_level = 2, 1, 0)), 0) twoLevelPvCount, COUNT(DISTINCT if(page_level = 2, user_id, null)) twoLevelUvCount,
+            IFNULL(SUM(IF(page_level is null, 1, 0)), 0) otherPvCount, COUNT(DISTINCT if(page_level is null, user_id, null)) otherUvCount
+        FROM log_manage.l_page_view
+        WHERE create_time LIKE CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY),'%')
+
+        UNION ALL
+        SELECT '七日' dateName, COUNT(id) pvTotalCount, COUNT(DISTINCT user_id) uvTotalCount,
+            IFNULL(SUM(IF(page_level = 1, 1, 0)), 0) oneLevelPvCount, COUNT(DISTINCT if(page_level = 1, user_id, null)) oneLevelUvCount,
+            IFNULL(SUM(IF(page_level = 2, 1, 0)), 0) twoLevelPvCount, COUNT(DISTINCT if(page_level = 2, user_id, null)) twoLevelUvCount,
+            IFNULL(SUM(IF(page_level is null, 1, 0)), 0) otherPvCount, COUNT(DISTINCT if(page_level is null, user_id, null)) otherUvCount
+        FROM log_manage.l_page_view
+        WHERE create_time BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) and CURDATE()
+
+        UNION ALL
+        SELECT '一月' dateName, COUNT(id) pvTotalCount, COUNT(DISTINCT user_id) uvTotalCount,
+            IFNULL(SUM(IF(page_level = 1, 1, 0)), 0) oneLevelPvCount, COUNT(DISTINCT if(page_level = 1, user_id, null)) oneLevelUvCount,
+            IFNULL(SUM(IF(page_level = 2, 1, 0)), 0) twoLevelPvCount, COUNT(DISTINCT if(page_level = 2, user_id, null)) twoLevelUvCount,
+            IFNULL(SUM(IF(page_level is null, 1, 0)), 0) otherPvCount, COUNT(DISTINCT if(page_level is null, user_id, null)) otherUvCount
+        FROM log_manage.l_page_view
+        WHERE create_time BETWEEN DATE_ADD(curdate(), interval - day(curdate()) + 1 day) AND CURDATE()
+
+        UNION ALL
+        SELECT '总计' dateName, COUNT(id) pvTotalCount, COUNT(DISTINCT user_id) uvTotalCount,
+            IFNULL(SUM(IF(page_level = 1, 1, 0)), 0) oneLevelPvCount, COUNT(DISTINCT if(page_level = 1, user_id, null)) oneLevelUvCount,
+            IFNULL(SUM(IF(page_level = 2, 1, 0)), 0) twoLevelPvCount, COUNT(DISTINCT if(page_level = 2, user_id, null)) twoLevelUvCount,
+            IFNULL(SUM(IF(page_level is null, 1, 0)), 0) otherPvCount, COUNT(DISTINCT if(page_level is null, user_id, null)) otherUvCount
+        FROM log_manage.l_page_view
+    </select>
+
+    <!-- 查询 -->
+    <select id="findPageViewReportCount" parameterType="PageViewReport" resultType="java.lang.Integer">
+        SELECT COUNT(t.totalCount)
+        FROM (
+            SELECT COUNT(pvr.id) totalCount
+            FROM log_manage.l_page_view_report pvr
+            LEFT JOIN project_manage.p_project pp ON pp.id = pvr.project_id
+            <include refid="findConditions"/>
+            GROUP BY pvr.page_type
+        ) t
+    </select>
+
+    <!-- 查询 柱状图 -->
+    <select id="findPageViewColumnarList" parameterType="PageViewReport" resultType="PageViewReport">
+        SELECT pvr.page_type_name pageTypeName, COUNT(pvr.num) pageTypeNum
+        FROM log_manage.l_page_view_report pvr
+        LEFT JOIN project_manage.p_project pp ON pp.id = pvr.project_id
+        <include refid="findConditions"/>
+        GROUP BY pvr.page_type
+        ORDER BY pageTypeNum DESC
+    </select>
+
+    <!-- 查询 柱状图 -->
+    <select id="findPageViewReportList" parameterType="PageViewReport" resultMap="pageViewResultMap">
+        SELECT <include refid="selColumns"/>,
+            case pvr.page_type when 21 then '月度工单统计'
+            when 16 then '值班记录'
+            when 10 then '水压监测'
+            when 4 then '火警主机'
+            when 11 then '水浸监测'
+            when 20 then '极早期预警'
+            when 8 then '智能烟感'
+            when 28 then '声光报警'
+            when 9 then '智能消火栓'
+            else '' end pageTypeName,
+            COUNT(DISTINCT pvr.user_id) uvTotalCount,
+            pp.project_name
+        FROM log_manage.l_page_view_report pvr
+        LEFT JOIN project_manage.p_project pp ON pp.id = pvr.project_id
+        <include refid="findConditions"/>
+        GROUP BY pvr.page_type
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 pv 饼图 -->
+    <select id="findPageViewCountPie" parameterType="PageViewReport" resultType="PageViewReport">
+        SELECT COUNT(pvr.id) totalCount,
+            SUM(if(pvr.client_type = 1, 1, 0)) androidCount,
+            SUM(if(pvr.client_type = 2, 1, 0)) iosCount,
+            SUM(if(pvr.client_type = 3, 1, 0)) pcCount
+        FROM log_manage.l_page_view_report pvr
+        LEFT JOIN project_manage.p_project pp ON pp.id = pvr.project_id
+        <include refid="findConditions"/>
+    </select>
+
+    <!-- 查询 uv饼图 -->
+    <select id="findUvPageViewCountPie" parameterType="PageViewReport" resultType="PageViewReport">
+        SELECT COUNT(DISTINCT pvr.user_id) totalCount,
+            COUNT(DISTINCT if(pvr.client_type = 1, pvr.user_id, null)) androidCount,
+            COUNT(DISTINCT if(pvr.client_type = 2, pvr.user_id, null)) iosCount,
+            COUNT(DISTINCT if(pvr.client_type = 3, pvr.user_id, null)) pcCount
+        FROM log_manage.l_page_view_report pvr
+        LEFT JOIN project_manage.p_project pp ON pp.id = pvr.project_id
+        <include refid="findConditions"/>
+    </select>
+
+    <!-- 查询 pv拆线图 24H -->
+    <select id="findPvColumnarList" resultType="PageViewReport">
+        SELECT IFNULL(SUM(t2.page_type), 0) pvTotalCount,
+            IFNULL(SUM(t2.user_id), 0) uvTotalCount,
+            DATE_FORMAT(t1.HOUR, '%H:%i') AS timeStr
+        FROM (
+            SELECT DATE_FORMAT( DATE_SUB( DATE_FORMAT( NOW(),'%Y-%m-%d'),INTERVAL ( -(@i:=@i+1) ) HOUR ) ,'%Y-%m-%d %H') AS HOUR
+            FROM (
+                SELECT a
+                FROM (
+                    SELECT '1' AS a UNION SELECT '2' UNION SELECT '3' UNION SELECT '4'
+                ) AS a
+                JOIN (
+                    SELECT  '1' UNION SELECT '2' UNION SELECT '3' UNION SELECT '4' UNION SELECT '5' UNION SELECT '6'
+                ) AS b ON 1
+            ) AS b  ,(SELECT @i:=-1)  AS i
+        ) t1
+        LEFT JOIN (
+            SELECT DATE_FORMAT(create_time, '%Y-%m-%d %H' ) HOUR,
+                COUNT(page_type) page_type,
+                COUNT(DISTINCT user_id) user_id
+            FROM log_manage.l_page_view
+            WHERE create_time >= CURDATE()
+            GROUP BY HOUR
+        ) t2 ON t1.HOUR = t2.HOUR
+        GROUP BY t1.HOUR
+        ORDER BY t1.HOUR
+    </select>
+
+    <!-- 查询 pv拆线图 月 -->
+    <select id="findMonthPvColumnarList" resultType="PageViewReport">
+        SELECT IFNULL(SUM(e.page_type), 0) pvTotalCount,
+            IFNULL(SUM(e.userCount), 0) uvTotalCount,
+            e.format_day timeStr
+        FROM (
+            SELECT t.format_day, x.userCount, x.page_type
+	        FROM (
+                SELECT 0 userCount, 0 page_type,
+                    DATE_ADD(#{startTimeStr}, INTERVAL ( @i := @i + 1 )- 1 DAY ) format_day
+                FROM information_schema.columns, (SELECT @i := 0 ) d
+                WHERE DATE_ADD(#{startTimeStr}, INTERVAL @i DAY ) BETWEEN #{startTimeStr} AND #{endTimeStr}
+            )t
+            left join(
+                SELECT COUNT(DISTINCT pv.user_id) userCount, pv.page_type,
+                    DATE_FORMAT(pv.create_time, '%Y-%m-%d') format_day
+                FROM log_manage.l_page_view pv
+                WHERE pv.create_time BETWEEN #{startTime} AND #{endTimeDesc}
+                GROUP BY format_day
+            ) x ON t.format_day = x.format_day
+	        GROUP BY t.format_day
+        ) e
+        GROUP BY timeStr
+        ORDER BY timeStr
+    </select>
+
+    <!-- 查询 pv拆线图 年 -->
+    <select id="findYearPvColumnarList" resultType="PageViewReport">
+        SELECT CONVERT (t2.year_month_str, CHAR) timeStr,
+            IFNULL(SUM(i.page_type), 0) pvTotalCount,
+            COUNT(DISTINCT i.user_id) uvTotalCount
+        FROM(
+            SELECT @rownum :=@rownum + 1 AS num,
+                date_format(DATE_SUB(now(), INTERVAL @rownum MONTH), '%Y/%m') AS year_month_str
+            FROM(
+                SELECT @rownum := - 1
+            ) AS r_init, (
+                SELECT IFNULL(COUNT(DISTINCT pv.user_id), 0) AS userCount,
+                    DATE_FORMAT(pv.create_time, '%Y-%m') AS times
+                FROM log_manage.l_page_view pv
+                WHERE pv.create_time BETWEEN #{startTime} AND #{endTimeDesc}
+                GROUP BY times
+            ) AS c_init
+        ) t2
+        LEFT JOIN log_manage.l_page_view AS i ON (
+            CONCAT(
+                DATE_FORMAT(i.create_time, '%Y'), '/',
+                DATE_FORMAT(i.create_time, '%m')
+            ) = t2.year_month_str
+        )
+        GROUP BY t2.year_month_str
+    </select>
+
+</mapper>

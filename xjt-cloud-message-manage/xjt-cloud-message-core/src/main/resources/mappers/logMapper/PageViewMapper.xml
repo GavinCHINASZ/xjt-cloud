@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.message.core.dao.pv.PageViewDao">
+
+    <resultMap id="pageViewResultMap" type="com.xjt.cloud.message.core.entity.PageView">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <id column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <id column="client_type" property="clientType" jdbcType="INTEGER"/>
+        <id column="user_id" property="userId" jdbcType="BIGINT"/>
+        <id column="org_user_id" property="orgUserId" jdbcType="BIGINT"/>
+
+        <id column="page_type" property="pageType" jdbcType="INTEGER"/>
+        <id column="page_url" property="pageUrl" jdbcType="VARCHAR"/>
+        <id column="page_level" property="pageLevel" jdbcType="INTEGER"/>
+        <id column="source_page" property="sourcePage" jdbcType="INTEGER"/>
+        <id column="source_address" property="sourceAddress" jdbcType="VARCHAR"/>
+        <id column="remote_addr" property="remoteAddr" jdbcType="VARCHAR"/>
+        <id column="referer_address" property="refererAddress" jdbcType="VARCHAR"/>
+        <id column="user_agent" property="userAgent" jdbcType="VARCHAR"/>
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        pv.id, pv.project_id, pv.client_type, pv.user_id, pv.org_user_id, pv.page_type, pv.page_url, pv.page_level, pv.source_page, pv.source_address,
+        pv.remote_addr, pv.referer_address, pv.user_agent, pv.create_time
+    </sql>
+
+    <sql id="findConditions">
+        <if test="id != null and id > 0">
+            AND pv.id = #{id}
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND pv.project_id = #{projectId}
+        </if>
+        <if test="sourcePage != null and sourcePage > 0">
+            AND pv.source_page = #{sourcePage}
+        </if>
+    </sql>
+
+    <!-- 保存PV -->
+    <insert id="savePageView" parameterType="PageView">
+        INSERT INTO log_manage.l_page_view(project_id, client_type, user_id, org_user_id, page_type, page_url, page_level,
+            source_page, source_address, remote_addr, referer_address, user_agent, create_time)
+        VALUES (#{projectId}, #{clientType}, #{userId}, #{orgUserId}, #{pageType}, #{pageUrl}, #{pageLevel},
+            #{sourcePage}, #{sourceAddress}, #{remoteAddr}, #{refererAddress}, #{userAgent}, NOW());
+    </insert>
+
+    <!-- 查询PV list -->
+    <select id="findPageViewList" parameterType="PageView" resultMap="pageViewResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM log_manage.l_page_view pv
+        <include refid="findConditions"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+</mapper>

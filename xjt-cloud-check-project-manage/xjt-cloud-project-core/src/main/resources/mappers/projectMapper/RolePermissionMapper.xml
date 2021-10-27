@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.RolePermissionDao">
+
+
+    <!--查询角色权限-->
+    <select id="findByRolePermission" resultType="java.lang.Integer" parameterType="java.lang.Long">
+        SELECT count(rp.id) from p_role_permission rp
+        INNER JOIN p_permission p on rp.permission_id = p.id
+        where rp.role_id =#{roleId} and rp.permission_id = #{permissionId};
+    </select>
+
+    <!--删除角色权限-->
+    <delete id="deleteProjectRolePermission" parameterType="java.lang.Long">
+        DELETE FROM `p_role_permission` WHERE role_id = #{roleId}
+    </delete>
+
+
+    <!--添加角色-->
+    <insert id="saveList" parameterType="Permission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO p_role_permission(`role_id`, `permission_id`,`source_id`) VALUES
+        <foreach collection="list" item="projectRolePermission"  separator=",">
+            ( #{projectRolePermission.roleId}, #{projectRolePermission.permissionId},#{projectRolePermission.sourceId})
+        </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.project.ProjectDao">
+
+    <resultMap id="projectResultMap" type="com.xjt.cloud.safety.core.entity.project.Project">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <result column="project_status" property="projectStatus" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="fire_safety_owner" property="fireSafetyOwner" jdbcType="VARCHAR"/>
+        <result column="fire_safety_owner_phone" property="fireSafetyOwnerPhone" jdbcType="VARCHAR"/>
+        <result column="fire_safety_manager" property="fireSafetyManager" jdbcType="VARCHAR"/>
+        <result column="fire_safety_manager_phone" property="fireSafetyManagerPhone" jdbcType="VARCHAR"/>
+        <result column="isOwner" property="isOwner" jdbcType="BOOLEAN"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="owner_id" property="ownerId" jdbcType="BIGINT"/>
+        <result column="is_nfc_check" property="isNfcCheck" jdbcType="BIGINT"/>
+        <result column="contact_user_name" property="contactUserName" jdbcType="VARCHAR"/>
+        <result column="contact_phone" property="contactPhone" jdbcType="VARCHAR"/>
+        <result column="fax" property="fax" jdbcType="VARCHAR"/>
+        <result column="postcode" property="postcode" jdbcType="VARCHAR"/>
+        <result column="projectNumber" property="projectNumber" jdbcType="VARCHAR"/>
+        <result column="check_project_serial_number" property="checkProjectSerialNumber" jdbcType="VARCHAR"/>
+        <result column="security_level" property="securityLevel" jdbcType="VARCHAR"/>
+        <result column="maintenance_level" property="maintenanceLevel" jdbcType="VARCHAR"/>
+        <result column="user_code" property="userCode" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        p.id,p.project_name, p.description, p.create_user_id, p.create_time, project_status, p.address, p.company_name, p.security_level, p.maintenance_level,
+        p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone,
+        if((p.owner_id = ou.user_id),true,false) as isOwner,
+        p.image_url, p.is_nfc_check, p.postcode, p.fax,p.contact_phone, p.contact_user_name, p.user_code
+    </sql>
+
+    <sql id="selectColumns">
+        p.id,p.project_name, p.description, p.create_user_id, p.create_time, p.project_status, p.address, p.company_name, p.security_level, p.maintenance_level,
+        p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone, p.image_url, p.is_nfc_check, p.postcode,p.fax,
+        p.contact_phone, p.contact_user_name, p.user_code
+    </sql>
+
+    <sql id="findProjectWhere">
+        <if test="projectName != null">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+    </sql>
+
+    <sql id="findByCloudIdAndProjectListWhere">
+        <if test="startTime!=null">
+            AND p.create_time <![CDATA[ >= ]]> #{startTime,jdbcType=DATETIME}
+        </if>
+        <if test="endTime!=null">
+            and p.create_time   <![CDATA[ <= ]]>  #{endTime,jdbcType=DATETIME}
+        </if>
+        AND p.deleted = false
+    </sql>
+
+    <!--查询项目-->
+    <select id="get" parameterType="java.lang.Long" resultMap="projectResultMap">
+        SELECT  p.id, p.project_name, p.description, p.create_user_id, p.create_time, project_status, p.address, p.company_name, p.owner_id,
+            p.fire_safety_owner, p.fire_safety_owner_phone, p.fire_safety_manager, p.fire_safety_manager_phone, p.image_url, p.contact_phone, p.fax,
+            p.postcode,LPAD(p.id,4, 0) as projectNumber,
+            u.phone,p.check_project_serial_number,p.contact_user_name,p.security_level,p.maintenance_level, p.user_code
+        FROM check_manage.p_project p
+        left join check_manage.s_user u on u.id = p.create_user_id
+        WHERE p.id =#{id} AND  p.deleted = false
+    </select>
+
+    <!--获取平台下项目列表-->
+    <select id="findByProjectList" parameterType="Project" resultMap="projectResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM check_manage.p_project p
+        INNER JOIN check_manage.p_org_user ou ON ou.project_id = p.id
+        WHERE ou.user_id =#{ownerId} AND p.deleted = false
+        <if test="projectStatus !=null and projectStatus!=0">
+            AND p.project_status = #{projectStatus}
+        </if>
+        GROUP BY p.id
+        ORDER BY isOwner,p.create_time asc
+    </select>
+
+    <!--按名称查询-->
+    <select id="findByProjectName" parameterType="Project" resultMap="projectResultMap">
+        SELECT
+        <include refid="selectColumns"/>
+        FROM check_manage.p_project p
+        WHERE p.project_name = #{projectName} AND p.deleted = false AND p.project_status != 1
+        <if test="id != null and id != 0">
+            AND p.id != id
+        </if>
+        limit 1
+    </select>
+
+    <!--获取平台下项目列表-->
+    <select id="findByProjectAllList" parameterType="Project" resultMap="projectResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM p_project p
+    </select>
+
+    <!-- 获取平台项目总记录数-->
+    <select id="findByProjectListCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM check_manage.p_project p
+        WHERE 1=1
+        <include refid="findProjectWhere"/>
+    </select>
+
+    <!--平台下项目列表按时间查询-->
+    <select id="findByCloudIdAndProjectList" parameterType="java.util.Map" resultMap="projectResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM check_manage.p_project p
+        WHERE 1 = 1
+        <include refid="findByCloudIdAndProjectListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 平台下项目列表按时间查询总记录数-->
+    <select id="findByCloudIdAndProjectListCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM p_project p
+        WHERE 1 = 1
+        <include refid="findByCloudIdAndProjectListWhere"/>
+    </select>
+
+    <!--删除项目信息，假删-->
+    <update id="deleteProject" parameterType="Project">
+        UPDATE check_manage.`p_project`
+        SET
+        `deleted` = true,
+        `update_user_id` = #{updateUserId},
+        `update_user_name` = #{updateUserName}
+        WHERE `id` = #{id}
+    </update>
+
+
+    <!--保存项目信息-->
+    <insert id="save" parameterType="Project" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO check_manage.`p_project`(`project_name`,`project_status`,`address`,`company_name`, `description`, `create_user_id`,
+        `owner_id`, `create_time`, `create_user_name`, `deleted`, `image_url`, `fire_safety_owner`, `fire_safety_owner_phone`,
+         `fire_safety_manager`, `fire_safety_manager_phone`,`is_nfc_check`,`postcode`,`fax`,`contact_phone`,`contact_user_name`,
+         `security_level`,`maintenance_level`)
+        VALUES (#{projectName},
+        0,
+        #{address},
+        #{companyName},
+        #{description},
+        #{createUserId},
+        #{createUserId},
+        NOW(),
+        #{createUserName},
+         0,
+        #{imageUrl},
+        #{fireSafetyOwner},
+        #{fireSafetyOwnerPhone},
+        #{fireSafetyManager},
+        #{fireSafetyManagerPhone},
+        #{isNfcCheck},
+        #{postcode},
+        #{fax},
+        #{contactPhone},
+        #{contactUserName},
+        #{securityLevel},
+        #{maintenanceLevel}
+        )
+    </insert>
+
+    <!--修改项目信息-->
+    <update id="updateProject" parameterType="Project">
+        UPDATE check_manage.`p_project`
+        SET
+        <if test="projectName != null">
+            `project_name` = #{projectName},
+        </if>
+        <if test="description != null">
+            `description` = #{description},
+        </if>
+        <if test="address != null">
+            `address` = #{address},
+        </if>
+        <if test="companyName != null">
+            `company_name` = #{companyName},
+        </if>
+        <if test="projectStatus != null">
+            `project_status` = #{projectStatus},
+        </if>
+        <if test="imageUrl != null">
+            `image_url` = #{imageUrl},
+        </if>
+        <if test="fireSafetyOwner != null">
+            `fire_safety_owner` = #{fireSafetyOwner},
+        </if>
+        <if test="fireSafetyOwnerPhone != null">
+            `fire_safety_owner_phone` = #{fireSafetyOwnerPhone},
+        </if>
+        <if test="fireSafetyManager != null">
+            `fire_safety_manager` = #{fireSafetyManager},
+        </if>
+        <if test="fireSafetyManagerPhone != null">
+            `fire_safety_manager_phone` = #{fireSafetyManagerPhone},
+        </if>
+        <if test="postcode != null">
+            `postcode` = #{postcode},
+        </if>
+        <if test="fax != null">
+            `fax` = #{fax},
+        </if>
+        <if test="contactPhone != null">
+            `contact_phone` = #{contactPhone},
+        </if>
+        <if test="checkProjectSerialNumber">
+            check_project_serial_number = #{checkProjectSerialNumber},
+        </if>
+        <if test="contactUserName != null">
+            `contact_user_name` = #{contactUserName},
+        </if>
+        <if test="securityLevel != null">
+            `security_level` = #{securityLevel},
+        </if>
+        <if test="maintenanceLevel != null">
+            `maintenance_level` = #{maintenanceLevel},
+        </if>
+        `update_user_id` = #{updateUserId,jdbcType=BIGINT},
+        `update_user_name` = #{updateUserName,jdbcType=VARCHAR}
+        WHERE `id` = #{id}
+    </update>
+
+    <update id="projectTransfer" parameterType="Project">
+        UPDATE check_manage.`p_project`
+        SET
+        <if test="ownerId != null and ownerId != 0 ">
+            `owner_id` = #{ownerId}
+        </if>
+        WHERE `id` = #{id}
+    </update>
+
+    <update id="projectReview" parameterType="Project">
+        UPDATE check_manage.`p_project`
+        SET
+        <if test="projectStatus != null and projectStatus != 0 ">
+            `project_status` = #{projectStatus}
+        </if>
+        WHERE `id` = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.device.core.dao.device.QrNoDao" >
+    <resultMap id="qrNoResultMap" type="com.xjt.cloud.device.core.entity.QrNo" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="type" property="type" jdbcType="INTEGER" />
+    </resultMap>
+
+    <!-- 查询最大的二维码号 -->
+    <select id="findMaxQrNo" parameterType="QrNo" resultMap="qrNoResultMap">
+        SELECT id, MAX(qr_no) qr_no
+        FROM d_qr_no
+        WHERE type=#{type}
+        <if test="oldStatus != null and oldStatus > 0">
+            AND old_status = #{oldStatus}
+        </if>
+    </select>
+
+    <!-- 以二维码查询二维码信息 -->
+    <select id="findQrNo" parameterType="java.lang.String" resultMap="qrNoResultMap">
+        SELECT id,qr_no, project_id, type
+        FROM d_qr_no
+        WHERE qr_no=#{qrNo} LIMIT 1
+    </select>
+
+    <!-- 批量添加二维码信息 -->
+    <insert id="saveQrNoList" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_qr_no (qr_no, project_id, type)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.qrNo}, #{item.projectId}, #{item.type})
+        </foreach>
+    </insert>
+
+    <!-- 批量增加空设备 -->
+    <insert id="saveDeviceList" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_device (qr_no, project_id,create_user_id,create_user_name)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.qrNo}, #{item.projectId},#{item.createUserId},#{item.createUserName})
+        </foreach>
+    </insert>
+
+    <!-- 批量增加空巡检点 -->
+    <insert id="saveCheckPointList" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_check_point (qr_no, project_id,create_user_id,create_user_name)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.qrNo}, #{item.projectId},#{item.createUserId},#{item.createUserName})
+        </foreach>
+    </insert>
+
+    <!--以二维码组装的sql文，查询二维码列表,判断二维码是否存在 -->
+    <select id="findQrNoListBySql" parameterType="java.lang.String" resultMap="qrNoResultMap">
+        SELECT *
+        FROM (
+            SELECT s.qrNo qr_no, s.projectId project_id, qn.qr_no qrNo, qn.project_id projectId
+            FROM ( ${_parameter}) s
+            LEFT JOIN d_qr_no qn ON s.qrNo = qn.qr_no AND s.projectId = qn.project_id
+        ) t
+        WHERE qrNo IS NULL OR  projectId IS NULL
+    </select>
+
+    <sql id="findQrNoWhere">
+        WHERE 1=1
+        <if test="pointName != null and pointName != ''">
+            AND cp.point_name LIKE CONCAT('%',#{pointName}, '%')
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND cp.qr_no = #{qrNo}
+        </if>
+        <if test="pointLocation != null and pointLocation != ''">
+            AND cp.point_location LIKE CONCAT('%',#{pointLocation}, '%')
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND cp.project_id = #{projectId}
+        </if>
+    </sql>
+
+    <!--查询二维码在所有巡检点或设备 -->
+    <select id="findQrNoList" parameterType="QrNo" resultMap="qrNoResultMap">
+        SELECT qn.id, qn.qr_no, cp.point_name, cp.point_location,qn.type
+        FROM d_qr_no qn
+        LEFT JOIN d_check_point cp ON cp.qr_no = qn.qr_no AND qn.type = 1
+        LEFT JOIN d_device d ON d.qr_no = qn.qr_no AND qn.type = 2
+        <include refid="findQrNoWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询二维码在所有巡检点或设备 -->
+    <select id="findDownloadQrNoList" parameterType="QrNo" resultMap="qrNoResultMap">
+        SELECT qn.qr_no,CONCAT(#{qrNoUrl},qn.qr_no) content
+        FROM d_qr_no qn
+        LEFT JOIN d_check_point cp ON cp.qr_no = qn.qr_no AND qn.type = 1
+        LEFT JOIN d_device d ON d.qr_no = qn.qr_no AND qn.type = 2
+        WHERE 1=1
+        <if test="qrNo.pointName != null and qrNo.pointName != ''">
+            AND cp.point_name LIKE CONCAT('%',#{qrNo.pointName}, '%')
+        </if>
+        <if test="qrNo.qrNo != null and qrNo.qrNo != ''">
+            AND qn.qr_no = #{qrNo.qrNo}
+        </if>
+        <if test="qrNo.pointLocation != null and qrNo.pointLocation != ''">
+            AND cp.point_location LIKE CONCAT('%',#{qrNo.pointLocation}, '%')
+        </if>
+        <if test="qrNo.projectId != null and qrNo.projectId != 0">
+            AND qn.project_id = #{qrNo.projectId}
+        </if>
+        <if test="qrNo.qrNos != null">
+            AND qn.qr_no IN
+            <foreach collection="qrNo.qrNos" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!--查询二维码在所有巡检点或设备总数 -->
+    <select id="findQrNoListCount" parameterType="QrNo" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM d_qr_no qn
+        LEFT JOIN d_check_point cp ON cp.qr_no = qn.qr_no AND qn.type = 1
+        LEFT JOIN d_device d ON d.qr_no = qn.qr_no AND qn.type = 2
+        <include refid="findQrNoWhere"/>
+    </select>
+
+    <!-- /////////////////////////////////////////// 二维码模版 //////////////////////////////////////////////////////// -->
+    <resultMap id="qrNoConfigResultMap" type="com.xjt.cloud.device.core.entity.QrNoConfig" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="logo_url" property="logoUrl" jdbcType="VARCHAR" />
+        <result column="back_img_url" property="backImgUrl" jdbcType="VARCHAR" />
+        <result column="logo_width" property="logoWidth" jdbcType="INTEGER" />
+        <result column="logo_height" property="logoHeight" jdbcType="INTEGER" />
+        <result column="color_int" property="colorInt" jdbcType="INTEGER" />
+        <result column="color_back_int" property="colorBackInt" jdbcType="INTEGER" />
+        <result column="logo_clip_radius" property="logoClipRadius" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="DATE" />
+        <result column="font_back_color" property="fontBackColor" jdbcType="VARCHAR" />
+        <result column="font_color" property="fontColor" jdbcType="VARCHAR" />
+        <result column="model_name" property="modelName" jdbcType="VARCHAR" />
+        <result column="qr_no_back_img_url" property="qrNoBackImgUrl" jdbcType="VARCHAR" />
+
+        <result column="model_type" property="modelType" jdbcType="INTEGER" />
+        <result column="model_index" property="modelIndex" jdbcType="INTEGER" />
+        <result column="title_size" property="titleSize" jdbcType="INTEGER" />
+        <result column="title_padding_top" property="titlePaddingTop" jdbcType="INTEGER" />
+        <result column="qr_no_bg_width" property="qrNoBgWidth" jdbcType="INTEGER" />
+        <result column="qr_no_padding_top" property="qrNoPaddingTop" jdbcType="INTEGER" />
+        <result column="qr_no_size" property="qrNoSize" jdbcType="INTEGER" />
+        <result column="bottom_height" property="bottomHeight" jdbcType="INTEGER" />
+        <result column="font_size" property="fontSize" jdbcType="INTEGER" />
+        <result column="phone_size" property="phoneSize" jdbcType="INTEGER" />
+        <result column="phone_padding_top" property="phonePaddingTop" jdbcType="INTEGER" />
+        <result column="company_size" property="companySize" jdbcType="INTEGER" />
+        <result column="company_padding_top" property="companyPaddingTop" jdbcType="INTEGER" />
+        <result column="address_size" property="addressSize" jdbcType="INTEGER" />
+        <result column="address_padding_top" property="addressPaddingTop" jdbcType="INTEGER" />
+
+        <result column="title_color" property="titleColor" jdbcType="VARCHAR" />
+        <result column="bottom_background_color" property="bottomBackgroundColor" jdbcType="VARCHAR" />
+        <result column="phone_color" property="phoneColor" jdbcType="VARCHAR" />
+        <result column="company_name" property="companyName" jdbcType="VARCHAR" />
+        <result column="company_color" property="companyColor" jdbcType="VARCHAR" />
+        <result column="address_color" property="addressColor" jdbcType="VARCHAR" />
+
+    </resultMap>
+
+    <!-- 查询二维码模版列表 -->
+    <select id="findQrNoConfigList" parameterType="QrNoConfig" resultMap="qrNoConfigResultMap">
+        SELECT *
+        FROM d_qr_no_config
+        WHERE status = 1 AND model_type &lt;= 4
+        <if test = "specification == null">
+            AND specification = 56
+        </if>
+        <if test = "!specification == null">
+            AND specification = #{specification}
+        </if>
+
+        UNION ALL
+        SELECT *
+        FROM d_qr_no_config
+        WHERE  model_type = 5 AND project_id = #{projectId}  AND specification = #{specification}
+        ORDER BY model_type,model_index
+    </select>
+
+    <!-- 查询二维码模版 -->
+    <select id="findQrNoConfigById" parameterType="QrNoConfig" resultMap="qrNoConfigResultMap">
+        SELECT *
+        FROM d_qr_no_config
+        WHERE id = #{id}
+    </select>
+
+    <!--添加二维码模版  -->
+    <insert id="saveQrNoConfig" parameterType="QrNoConfig" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO d_qr_no_config (back_img_url, logo_url, width, height, logo_width, logo_height, margin, color_int, color_back_int, logo_clip_radius,
+        status, create_time, project_id, model_type, font_back_color, font_color, model_name, qr_no_back_img_url, percentum, specification,
+        model_index, title, title_size, title_color, title_padding_top, qr_no_bg_width, qr_no_padding_top, qr_no_size, bottom_background_color,
+        bottom_height, font_size, phone, phone_size, phone_color, phone_padding_top, company_name, company_size, company_color, company_padding_top,
+        address, address_size, address_color, address_padding_top)
+        VALUES
+        (#{backImgUrl},#{logoUrl},#{width},#{height},#{logoWidth},#{logoHeight},#{margin},#{colorInt},#{colorBackInt},#{logoClipRadius},
+        1,NOW(),#{projectId},#{modelType},#{fontBackColor},#{fontColor},#{modelName},#{qrNoBackImgUrl},#{percentum},#{specification},
+        #{modelIndex},#{title},#{titleSize},#{titleColor},#{titlePaddingTop},#{qrNoBgWidth},#{qrNoPaddingTop},#{qrNoSize},#{bottomBackgroundColor},
+        #{bottomHeight},#{fontSize},#{phone},#{phoneSize},#{phoneColor},#{phonePaddingTop},#{companyName},#{companySize},#{companyColor},#{companyPaddingTop},
+        #{address},#{addressSize},#{addressColor},#{addressPaddingTop});
+    </insert>
+
+    <!--修改二维码模版  -->
+    <update id="modifyQrNoConfig" parameterType="QrNoConfig">
+        UPDATE d_qr_no_config
+        <set>
+            <if test="backImgUrl != null and backImgUrl != ''">
+                <if test="backImgUrl != 'notImg'">
+                    back_img_url = #{backImgUrl} ,
+                </if>
+                <if test="backImgUrl == 'notImg'">
+                    back_img_url = '' ,
+                </if>
+            </if>
+            <if test="logoUrl != null and logoUrl != ''">
+                <if test="logoUrl != 'notImg'">
+                    logo_url = #{logoUrl} ,
+                </if>
+                <if test="logoUrl == 'notImg'">
+                    logo_url = '' ,
+                </if>
+            </if>
+
+            <if test="width != null">
+                width = #{width} ,
+            </if>
+            <if test="height != null">
+                height = #{height} ,
+            </if>
+            <if test="logoWidth != null">
+                logo_width = #{logoWidth} ,
+            </if>
+            <if test="logoHeight != null">
+                logo_height = #{logoHeight} ,
+            </if>
+            <if test="margin != null">
+                margin = #{margin} ,
+            </if>
+            <if test="colorInt != null">
+                color_int = #{colorInt} ,
+            </if>
+            <if test="colorBackInt != null">
+                color_back_int = #{colorBackInt} ,
+            </if>
+            <if test="logoClipRadius != null">
+                logo_clip_radius = #{logoClipRadius} ,
+            </if>
+            <if test="status != null">
+                status = #{status} ,
+            </if>
+            <if test="modelType != null">
+                default_type = #{modelType} ,
+            </if>
+            <if test="fontBackColor != null">
+                font_back_color = #{fontBackColor} ,
+            </if>
+            <if test="fontColor != null">
+                font_color = #{fontColor} ,
+            </if>
+            <if test="modelName != null">
+                model_name = #{modelName} ,
+            </if>
+            <if test="qrNoBackImgUrl != null and backImgUrl != ''">
+                <if test="qrNoBackImgUrl != 'notImg'">
+                    qr_no_back_img_url = #{qrNoBackImgUrl} ,
+                </if>
+                <if test="qrNoBackImgUrl == 'notImg'">
+                    qr_no_back_img_url = '' ,
+                </if>
+            </if>
+            <if test="percentum != null">
+                percentum = #{percentum} ,
+            </if>
+            <if test="specification != null">
+                specification = #{specification} ,
+            </if>
+            <if test="modelIndex != null">
+                model_index = #{modelIndex} ,
+            </if>
+            <if test="title != null">
+                 <if test="title == 'null'">
+                     title = '' ,
+                 </if>
+                <if test="title != 'null' and title != ''">
+                    title = #{title} ,
+                </if>
+            </if>
+            <if test="titleSize != null">
+                title_size = #{titleSize} ,
+            </if>
+            <if test="titleColor != null">
+                title_color = #{titleColor} ,
+            </if>
+            <if test="titlePaddingTop != null">
+                title_padding_top = #{titlePaddingTop} ,
+            </if>
+            <if test="qrNoBgWidth != null">
+                qr_no_bg_width = #{qrNoBgWidth} ,
+            </if>
+            <if test="qrNoPaddingTop != null">
+                qr_no_padding_top = #{qrNoPaddingTop} ,
+            </if>
+            <if test="qrNoSize != null">
+                qr_no_size = #{qrNoSize} ,
+            </if>
+            <if test="bottomBackgroundColor != null">
+                bottom_background_color = #{bottomBackgroundColor} ,
+            </if>
+            <if test="bottomHeight != null">
+                bottom_height = #{bottomHeight} ,
+            </if>
+            <if test="fontSize != null">
+                font_size = #{fontSize} ,
+            </if>
+            <if test="phone != null">
+                <if test="phone == 'null'">
+                    phone = '' ,
+                </if>
+                <if test="phone != 'null' and phone != ''">
+                    phone = #{phone} ,
+                </if>
+            </if>
+            <if test="phoneSize != null">
+                phone_size = #{phoneSize} ,
+            </if>
+            <if test="phoneColor != null">
+                phone_color = #{phoneColor} ,
+            </if>
+            <if test="phonePaddingTop != null">
+                phone_padding_top = #{phonePaddingTop} ,
+            </if>
+            <if test="companyName != null">
+                <if test="companyName == 'null'">
+                    company_name = '' ,
+                </if>
+                <if test="companyName != 'null' and companyName != ''">
+                    company_name = #{companyName} ,
+                </if>
+            </if>
+            <if test="companyColor != null">
+                company_color = #{companyColor} ,
+            </if>
+            <if test="companyPaddingTop != null">
+                company_padding_top = #{companyPaddingTop} ,
+            </if>
+            <if test="address != null">
+                <if test="address == 'null'">
+                    address = '' ,
+                </if>
+                <if test="address != 'null' and address != ''">
+                    address = #{address} ,
+                </if>
+            </if>
+            <if test="addressSize != null">
+                address_size = #{addressSize} ,
+            </if>
+            <if test="addressColor != null">
+                address_color = #{addressColor} ,
+            </if>
+            <if test="addressPaddingTop != null">
+                address_padding_top = #{addressPaddingTop} ,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

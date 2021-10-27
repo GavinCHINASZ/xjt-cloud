@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.device.DeviceSystemDao" >
+
+    <resultMap id="deviceTypeResultMap" type="com.xjt.cloud.safety.core.entity.device.DeviceSystem" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="parent_id" property="parentId" jdbcType="BIGINT" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="use_method" property="useMethod" jdbcType="VARCHAR" />
+        <result column="description" property="description" jdbcType="VARCHAR" />
+        <result column="pressure_monitor" property="pressureMonitor" jdbcType="INTEGER" />
+        <result column="sys_pressure" property="sysPressure" jdbcType="INTEGER" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="pin_yin_initials" property="pinYinInitials" jdbcType="VARCHAR" />
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR" />
+        <result column="min_value" property="minValue" jdbcType="INTEGER" />
+        <result column="max_value" property="maxValue" jdbcType="INTEGER" />
+        <result column="min_value2" property="minValue2" jdbcType="INTEGER" />
+        <result column="max_value2" property="maxValue2" jdbcType="INTEGER" />
+        <result column="item_type" property="itemType" jdbcType="INTEGER" />
+        <result column="limit_config" property="limitConfig" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findDeviceTypeWhere">
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="type != null and type != 0">
+            AND dt.type = #{type}
+        </if>
+        <if test="parentId != null">
+            AND dt.parent_id = #{parentId}
+        </if>
+        <if test="deviceType != null">
+            AND dt.device_type = #{deviceType}
+        </if>
+        <if test="deviceType == null">
+            AND dt.device_type = 2
+        </if>
+        <if test="deviceTypes != null">
+            AND dt.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pinYinInitials != null and pinYinInitials != ''">
+            AND dt.pin_yin_initials LIKE CONCAT(#{pinYinInitials},'%')
+        </if>
+        <if test="itemType != null">
+            AND dci.type = #{itemType}
+        </if>
+    </sql>
+    <sql id="selColumns">
+        dt.id, dt.parent_id, dt.device_sys_name, dt.use_method, dt.description, dt.pressure_monitor, dt.sys_pressure,
+        dt.create_time, dt.status,dt.pin_yin_initials,dt.img_url,dt.device_type,dt.limit_config
+    </sql>
+    <!--根据设备名称查询设备系统-->
+    <select id="findDeviceSystemByDeviceName" parameterType="Device" resultType="Device">
+        SELECT
+	        ds.id deviceTypeId,dds.id deviceId,ds.device_sys_name deviceSysName
+        FROM d_device_system ds
+        INNER JOIN d_device_system dds
+        ON ds.id = dds.parent_id
+        WHERE dds.device_sys_name = #{deviceName} LIMIT 1
+    </select>
+
+    <!-- 查询未删除设备系统信息 （parent_id ＝ 0为系统信息）-->
+    <select id="findParentDeviceType" parameterType="DeviceSystem" resultMap="deviceTypeResultMap">
+        SELECT <include refid="selColumns"/> FROM d_device_type dt  WHERE dt.id = #{id} LIMIT 1
+    </select>
+
+    <!--添加设备系统信息-->
+    <insert id="saveParentDeviceType" parameterType="DeviceSystem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_device_type (device_sys_name, status,type, img_url) VALUES (#{deviceSysName}, 1, #{type}, #{imgUrl});
+    </insert>
+
+    <!-- 查询未删除设备类型信息 （parent_id ！＝ 0为类型信息）总记录数-->
+    <select id="findDeviceTypeListCount" parameterType="DeviceSystem" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT dt.id) FROM d_device_type dt
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id
+        WHERE  dt.status &lt;= 98
+        <include refid="findDeviceTypeWhere"/>
+    </select>
+    <!-- 查询未删除设备类型信息 （parent_id ！＝ 0为类型信息）-->
+    <select id="findDeviceTypeList" parameterType="DeviceSystem" resultMap="deviceTypeResultMap">
+        SELECT <include refid="selColumns"/>,
+        MAX(IF(dci.type=2,dci.min_value,0)) min_value,
+        MAX(IF(dci.type=2,dci.max_value,0)) max_value,
+        MAX(IF(dci.type=3,dci.min_value,0)) min_value2,
+        MAX(IF(dci.type=3,dci.max_value,0)) max_value2,dci.type item_type,MAX(dci.unit) unit FROM d_device_type dt
+        LEFT JOIN d_device_check_item dci ON dci.device_type_id = dt.id AND dci.type = 1
+        WHERE  dt.status &lt;= 98
+        <include refid="findDeviceTypeWhere"/>
+        GROUP by dt.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备类型信息列表,以巡检点信息为条件-->
+    <select id="findDeviceTypeListByCheckPoint" parameterType="DeviceSystem" resultMap="deviceTypeResultMap">
+        SELECT <include refid="selColumns"/>,dci.type item_type,MAX(dci.unit) unit,
+        MAX(IF(dci.type=2,dci.min_value,0)) min_value,
+        MAX(IF(dci.type=2,dci.max_value,0)) max_value,
+        MAX(IF(dci.type=3,dci.min_value,0)) min_value2,
+        MAX(IF(dci.type=3,dci.max_value,0)) max_value2
+        FROM d_device_type dt
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id  AND dci.status &lt;= 98
+        INNER JOIN d_device d ON d.device_type_id = dt.id AND d.status &lt;= 98
+        INNER JOIN d_check_point cp ON d.check_point_id = cp.id AND cp.status &lt;= 98
+        WHERE dt.status &lt;= 98
+        <if test="iotId != null and iotId == 0">
+            AND d.iot_id = 0
+        </if>
+        <if test="iotId != null and iotId == 1">
+            AND d.iot_id >= 1
+        </if>
+        <if test="buildingId != null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND d.project_id = #{projectId}
+        </if>
+        <if test="checkPointId != null and checkPointId != 0">
+            AND cp.id = #{checkPointId}
+        </if>
+        AND dt.device_type >= 2
+        <if test="deviceTypes != null">
+            AND dt.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP by dt.id
+    </select>
+
+    <!-- 查询未删除设备类型信息 （parent_id
+    .0！＝ 0为类型信息）-->
+    <select id="findDeviceSysTree" parameterType="DeviceSystem" resultMap="deviceTypeResultMap">
+        SELECT dt.id, dt.parent_id, dt.device_sys_name,dt.type, dt.img_url FROM d_device_type dt
+        WHERE  dt.status &lt;= 98
+        <include refid="findDeviceTypeWhere"/>
+    </select>
+
+    <!-- 查询未删除设备类型信息列表，以拼音排序-->
+    <select id="findDeviceTypeOrderPinYin" parameterType="DeviceSystem" resultMap="deviceTypeResultMap">
+        SELECT dt.id, dt.parent_id, dt.device_sys_name,dt.type, dt.img_url,dt.pin_yin_initials FROM d_device_type dt
+        WHERE  dt.status &lt;= 98 AND dt.type = 9
+        <include refid="findDeviceTypeWhere"/>
+        ORDER BY pin_yin_initials
+    </select>
+
+    <!-- 查询未删除设备类型信息 （parent_id ！＝ 0为类型信息）-->
+    <select id="findDeviceType" parameterType="DeviceSystem" resultMap="deviceTypeResultMap">
+        SELECT <include refid="selColumns"/> FROM d_device_type dt  WHERE dt.id = #{id} LIMIT 1
+    </select>
+
+    <!--添加设备类型信息-->
+    <insert id="saveDeviceType" parameterType="DeviceSystem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_device_type (parent_id, device_sys_name, use_method, description, pressure_monitor, sys_pressure, status,type,pin_yin_initials, img_url)
+        VALUES (#{parentId}, #{deviceSysName}, #{useMethod}, #{description}, #{pressureMonitor}, #{sysPressure}, 1, #{type}, #{pinYinInitials}, #{imgUrl});
+    </insert>
+
+    <!--修改设备类型信息-->
+    <update id="modifyDeviceType" parameterType="DeviceSystem">
+        UPDATE d_device_type
+        <set>
+            <if test="parentId != null">
+                parent_id = #{parentId} ,
+            </if>
+            <if test="deviceSysName != null and deviceSysName != ''">
+                device_sys_name = #{deviceSysName} ,
+            </if>
+            <if test="useMethod != null and useMethod != ''">
+                use_method = #{useMethod} ,
+            </if>
+            <if test="description != null and description != ''">
+                description = #{description} ,
+            </if>
+            <if test="pressureMonitor != null and pressureMonitor != 0">
+                pressure_monitor = #{pressureMonitor} ,
+            </if>
+            <if test="sysPressure != null and sysPressure != 0">
+                sys_pressure = #{sysPressure} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="pinYinInitials != null and pinYinInitials != ''">
+                pin_yin_initials = #{pinYinInitials},
+            </if>
+            <if test="imgUrl != null and imgUrl != ''">
+                imgUrl = #{imgUrl},
+            </if>
+        </set>
+        <where>
+            <if test="id != null and id != 0">
+                AND id = #{id}
+            </if>
+            <if test="parentId != null and parentId != 0">
+                AND parent_id = #{parentId}
+            </if>
+        </where>
+    </update>
+
+    <!-- 查询设备系统名称是否存在，只相未删除-->
+    <select id="checkDeviceTypeNameUnique" parameterType="DeviceSystem" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM d_device_type  WHERE device_sys_name = #{deviceSysName} AND status &lt;= 98
+    </select>
+
+    <!-- 查询设备系统名称是否存-->
+    <select id="findDeviceSysList" parameterType="java.lang.String" resultMap="deviceTypeResultMap">
+        SELECT dt.id, dt.parent_id, t.device_sys_name, dt.use_method, dt.description, dt.pressure_monitor, dt.sys_pressure,
+        dt.create_time, dt.status, dt.pin_yin_initials, dt.img_url, dt.device_type FROM d_device_type dt
+        RIGHT JOIN ( ${_parameter}) t ON t.device_sys_name = dt.device_sys_name
+        AND dt.status &lt;= 98 AND dt.type = 9
+    </select>
+
+</mapper>

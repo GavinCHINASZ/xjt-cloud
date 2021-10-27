@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.project.InviteConnectionDao">
+
+    <resultMap id="inviteConnectionMap" type="com.xjt.cloud.safety.core.entity.project.InviteConnection">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="random_code" property="randomCode" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+
+    </resultMap>
+
+
+    <insert id="save" parameterType="InviteConnection" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+            INSERT INTO `p_invite`( `project_id`, `random_code`,
+             `create_time`, `create_user_id`, `create_user_name`)
+            VALUES (#{projectId}, #{randomCode}, NOW(), #{createUserId}, #{createUserName});
+
+    </insert>
+
+
+
+
+    <select id="findByProjectNotExpiredInviteConnection" parameterType="InviteConnection" resultMap="inviteConnectionMap">
+        SELECT i.id,i.project_id,i.random_code,i.create_time,i.create_user_name
+        FROM  p_invite i WHERE 1 = 1
+        <if test="projectId != null">
+            and i.`project_id` = #{projectId}
+        </if>
+        <if test=" randomCode!= null">
+            and i.`random_code` = #{randomCode}
+        </if>
+        AND i.create_time > DATE_SUB(NOW(), INTERVAL 30 MINUTE) order By i.create_time desc limit 1
+
+
+    </select>
+</mapper>

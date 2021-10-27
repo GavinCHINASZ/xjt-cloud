@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.project.BuildingFloorDao">
+
+
+    <!--查询项目建筑物楼层列表  AND cp.project_id = #{projectId}-->
+    <select id="findFloorListByTaskDevice" parameterType="TaskDevice" resultType="TaskFloor">
+        SELECT f.id,f.floor_name buildingName,COUNT(cp.id) totalCount
+        FROM project_manage.p_building_floor f
+        LEFT JOIN device_manage.d_check_point cp
+        ON cp.building_floor_id = f.id AND cp.status &lt; 99
+        <where>
+            f.deleted = 0
+            <if test="buildingId != null and buildingId != 0">
+                AND f.building_id = #{buildingId}
+            </if>
+            <if test="floorName != null and floorName !=''">
+                AND f.floor_name LIKE CONCAT('%',#{floorName},'%')
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+        </where>
+        GROUP BY f.id
+    </select>
+
+    <select id="findFloorListSelOrNotSel" parameterType="TaskDevice" resultType="TaskFloor">
+        SELECT f.id,f.buildingName,SUM(totalCount) totalCount,min(sel) sel,min(notSel) notSel
+        FROM (
+            SELECT
+                f.id,f.floor_name buildingName,COUNT(cp.id) totalCount,if(cp.id = t.id,-1,0) sel,if(isnull(t.id),-2,0) notSel
+            FROM project_manage.p_building_floor f
+            LEFT JOIN device_manage.d_check_point cp
+            ON cp.building_floor_id = f.id AND cp.status &lt; 99
+            left join (
+                select cp.id  from device_manage.d_check_point cp
+                where cp.status &lt;= 98
+                AND cp.id IN
+                    <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
+                        #{item}
+                    </foreach>
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id  = #{projectId}
+                </if>
+             ) t on cp.id = t.id
+            <where>
+                f.deleted = 0
+                <if test="buildingId != null and buildingId != 0">
+                    AND f.building_id = #{buildingId}
+                </if>
+                <if test="floorName != null and floorName !=''">
+                    AND f.floor_name LIKE CONCAT('%',#{floorName},'%')
+                </if>
+                <if test="qrNo != null and qrNo != ''">
+                    AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+                </if>
+                <if test="pointName != null and pointName != ''">
+                    AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+                </if>
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id  = #{projectId}
+                </if>
+            </where>
+            GROUP BY f.id,sel,notSel
+        )f
+        GROUP BY f.id
+    </select>
+
+</mapper>

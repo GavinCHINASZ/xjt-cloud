@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.sys.core.dao.sys.VersionDao" >
+    <resultMap id="versionResultMap" type="com.xjt.cloud.sys.core.entity.Version">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="version" property="version" jdbcType="VARCHAR" />
+        <result column="version_num" property="versionNum" jdbcType="VARCHAR" />
+        <result column="version_size" property="versionSize" jdbcType="VARCHAR" />
+        <result column="version_title" property="versionTitle" jdbcType="VARCHAR" />
+        <result column="update_content" property="updateContent" jdbcType="VARCHAR" />
+        <result column="type" property="type" jdbcType="INTEGER" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="update_type" property="updateType" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="source_type" property="sourceType" jdbcType="VARCHAR" />
+        <result column="url" property="url" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="selColumns">
+        id, version, version_num, version_size, version_title, update_content, type, status, create_time, source_type, url,update_type
+    </sql>
+    
+    <sql id="findVersionWhere">
+        WHERE 1=1
+        <if test="version != null and version != ''">
+            AND version LIKE CONCAT('%', #{version}, '%')
+        </if>
+        <if test="versionTitle != null and versionTitle != ''">
+            AND version_title LIKE CONCAT('%', #{versionTitle}, '%')
+        </if>
+        <if test="type != null and type != 0">
+            AND type = #{type}
+        </if>
+        <if test="sourceType != null and sourceType != 0">
+            AND source_type = #{sourceType}
+        </if>
+        <if test="status != null and status != 0">
+            AND status = #{status}
+        </if>
+    </sql>
+
+    <!--查询版本列表 -->
+    <select id="findVersionList" parameterType="Version" resultMap="versionResultMap">
+        SELECT <include refid="selColumns"/> FROM s_version
+        <include refid="findVersionWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询版本列表总数量 -->
+    <select id="findVersionListTotalCount" parameterType="Version" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM s_version
+        <include refid="findVersionWhere"/>
+    </select>
+
+    <!--查询版本信息 -->
+    <select id="findVersion" parameterType="Version" resultMap="versionResultMap">
+        SELECT <include refid="selColumns"/> FROM s_version
+        <include refid="findVersionWhere"/> LIMIT 1
+    </select>
+
+    <!--新增版本信息 -->
+    <insert id="saveVersion" parameterType="Version" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO s_version (version, version_num, version_size, version_title, update_content, type, source_type, url)
+        VALUES
+        (#{version}, #{versionNum}, #{versionSize}, #{versionTitle}, #{updateContent}, #{type}, #{sourceType}, #{url});
+    </insert>
+
+    <!--修改版本信息 -->
+    <update id="modifyVersion" parameterType="Version">
+        UPDATE s_version
+        <set>
+            <if test="version != null and version != ''">
+                version = #{version},
+            </if>
+            <if test="versionNum != null and versionNum != ''">
+                version_num = #{versionNum},
+            </if>
+            <if test="versionSize != null and versionSize != ''">
+                version_size = #{versionSize},
+            </if>
+            <if test="versionTitle != null and versionTitle != ''">
+                version_title = #{versionTitle},
+            </if>
+            <if test="updateContent != null and updateContent != ''">
+                update_content = #{updateContent},
+            </if>
+            <if test="type != null and type != 0">
+                type = #{type},
+            </if>
+            <if test="sourceType != null and sourceType != 0">
+                source_type = #{sourceType},
+            </if>
+            <if test="url != null and url != ''">
+                url = #{url},
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

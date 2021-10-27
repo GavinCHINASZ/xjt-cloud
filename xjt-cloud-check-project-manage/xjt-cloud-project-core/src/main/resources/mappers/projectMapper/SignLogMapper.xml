@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.SignLogDao">
+
+    <resultMap id="signLogResultMap" type="com.xjt.cloud.project.core.entity.project.SignLog">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="location" property="location" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="selColumns">
+            psl.id, psl.user_id, psl.user_name, psl.project_id, psl.check_project_id, psl.company_name, psl.create_time, psl.location
+    </sql>
+    <!--保存检测项目信息-->
+    <insert id="saveSignLog" parameterType="SignLog" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO p_sign_log (user_id, user_name, project_id, check_project_id,company_name, location, create_time)
+        VALUES (#{userId}, #{userName}, #{projectId}, #{checkProjectId}, #{companyName}, #{location}, NOW());
+    </insert>
+
+    <select id="findSignLogByProjectId" parameterType="SignLog" resultMap="signLogResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM p_sign_log psl
+        RIGHT JOIN p_check_user pcu
+        ON psl.user_id = pcu.user_id
+        WHERE 1 = 1
+        <if test="projectId != null and projectId != 0">
+            AND psl.project_id = #{projectId}
+        </if>
+        <if test="checkProjectId != null and checkProjectId != 0">
+            AND psl.check_project_id = #{checkProjectId}
+        </if>
+        GROUP BY id,user_id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findSignLogCountByProjectId" parameterType="SignLog" resultType="java.lang.Long">
+        SELECT
+            COUNT(psl.id)
+        FROM p_sign_log psl
+        RIGHT JOIN p_check_user pcu
+        ON psl.user_id = pcu.user_id
+        WHERE 1 = 1
+        <if test="projectId != null and projectId != 0">
+            AND psl.project_id = #{projectId}
+        </if>
+        <if test="checkProjectId != null and checkProjectId != 0">
+            AND psl.check_project_id = #{checkProjectId}
+        </if>
+    </select>
+
+    <select id="findCheckUserSignLog" parameterType="SignLog" resultType="SignLog">
+        SELECT
+            psl.id, psl.user_id userId, ou.user_name userName, psl.project_id projectId, psl.location,
+            psl.check_project_id checkProjectId, psl.company_name companyName, psl.create_time createTime
+        FROM p_sign_log psl
+        RIGHT JOIN p_check_user pcu
+        ON pcu.user_id = psl.user_id AND  psl.check_project_id = pcu.check_project_id
+        LEFT JOIN p_org_user ou ON pcu.user_id = ou.user_id
+        RIGHT JOIN
+        (
+            SELECT
+                psl.user_id,MAX(psl.create_time) create_time
+            FROM p_sign_log psl
+            WHERE psl.check_project_id = #{checkProjectId}
+            GROUP BY psl.user_id
+        ) pt ON pt.create_time = psl.create_time
+        WHERE pcu.check_project_id = #{checkProjectId}
+    </select>
+</mapper>

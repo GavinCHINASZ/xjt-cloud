@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.report.ReportSystemDao" >
+    <resultMap id="reportSystemResultMap" type="com.xjt.cloud.admin.manage.entity.report.ReportSystem" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="report_name" property="reportName" jdbcType="VARCHAR" />
+        <result column="report_no" property="reportNo" jdbcType="VARCHAR" />
+        <result column="type" property="type" jdbcType="INTEGER" />
+        <result column="item_name" property="itemName" jdbcType="VARCHAR" />
+        <result column="sort_no" property="sortNo" jdbcType="INTEGER" />
+        <result column="parent_id" property="parentId" jdbcType="BIGINT" />
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="deleted" property="deleted" jdbcType="BOOLEAN" />
+    </resultMap>
+
+    <sql id="selColumns">
+        rs.id, rs.create_time, rs.report_name, rs.report_no, rs.type, rs.item_name, rs.sort_no, rs.parent_id, rs.deleted
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="id != null and id != 0">
+            AND rs.id = #{id}
+        </if>
+        <if test="deleted != null">
+            AND rs.deleted = #{deleted}
+        </if>
+        <if test="reportName != null and reportName != ''">
+            AND rs.report_name LIKE CONCAT('%', #{reportName}, '%')
+        </if>
+        <if test="reportNo != null and reportNo != ''">
+            AND rs.report_no LIKE CONCAT('%', #{reportNo}, '%')
+        </if>
+        <if test="itemName != null and itemName != ''">
+            AND rs.item_name LIKE CONCAT('%', #{itemName}, '%')
+        </if>
+        <if test="type != null">
+            AND rs.type = #{type}
+        </if>
+    </sql>
+
+    <!-- 查询列表 -->
+    <select id="findReportSystemList" parameterType="ReportSystem" resultMap="reportSystemResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM report_manage.r_report_system rs
+        <include refid="findWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询数量 -->
+    <select id="findTotalCount" parameterType="ReportSystem" resultType="java.lang.Integer">
+        SELECT COUNT(rs.id) totalCount
+        FROM report_manage.r_report_system rs
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 修改 报表系统 -->
+    <update id="modifyReportSystem" parameterType="ReportSystem">
+        UPDATE report_manage.r_report_system
+        <set>
+            <if test="deleted != null">
+                deleted = #{deleted},
+            </if>
+            <if test="reportName != null and reportName != ''">
+                report_name = #{reportName},
+            </if>
+            <if test="reportNo != null and reportNo != ''">
+                report_no = #{reportNo},
+            </if>
+            <if test="itemName != null and itemName != ''">
+                item_name = #{itemName}
+            </if>
+        </set>
+        <where>
+            <if test="id != null and id != 0">
+                AND id = #{id}
+            </if>
+        </where>
+    </update>
+
+    <!-- 新增/保存 报表系统项 -->
+    <insert id="saveReportSystem" parameterType="ReportSystem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO report_manage.r_report_system (create_time, report_name, report_no, type, item_name, sort_no, parent_id, deleted)
+        VALUES (NOW(), #{reportName}, #{reportNo}, #{type}, #{itemName}, #{sortNo}, #{parentId}, #{deleted});
+    </insert>
+
+</mapper>

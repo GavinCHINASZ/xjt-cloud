@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="xjt-cloud-cas-client" />
+        <module name="xjt-cloud-report-core" />
+        <module name="xjt-cloud-data-source" />
+        <module name="xjt-cloud-faultRepair-web" />
+        <module name="xjt-cloud-other-api" />
+        <module name="xjt-cloud-task-core" />
+        <module name="xjt-cloud-cas-server" />
+        <module name="xjt-cloud-message-core" />
+        <module name="xjt-cloud-faultRepair-api" />
+        <module name="xjt-cloud-faultRepair-core" />
+        <module name="xjt-cloud-report-api" />
+        <module name="xjt-cloud-log-manage" />
+        <module name="xjt-cloud-sys-api" />
+        <module name="xjt-cloud-iot-web" />
+        <module name="xjt-cloud-project-api" />
+        <module name="xjt-cloud-sys-web" />
+        <module name="xjt-cloud-iot-netty" />
+        <module name="xjt-cloud-device-web" />
+        <module name="xjt-cloud-device-api" />
+        <module name="xjt-cloud-project-core" />
+        <module name="xjt-cloud-onenet" />
+        <module name="xjt-cloud-iot-api" />
+        <module name="xjt-cloud-device-core" />
+        <module name="xjt-cloud-task-web" />
+        <module name="xjt-cloud-message-api" />
+        <module name="xjt-cloud-project-web" />
+        <module name="xjt-cloud-other-core" />
+        <module name="xjt-cloud-netty-manage" />
+        <module name="xjt-cloud-quartz" />
+        <module name="xjt-cloud-client-core" />
+        <module name="xjt-cloud-sys-core" />
+        <module name="xjt-cloud-ftp" />
+        <module name="xjt-cloud-client-web" />
+        <module name="xjt-cloud-report-web" />
+        <module name="xjt-cloud-admin-manage" />
+        <module name="xjt-cloud-task-api" />
+        <module name="xjt-cloud-commons" />
+        <module name="xjt-cloud-client-api" />
+        <module name="xjt-cloud-other" />
+        <module name="xjt-cloud-message-commons" />
+        <module name="xjt-cloud-iot-core" />
+        <module name="xjt-cloud-message-web" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="xjt-cloud" target="1.5" />
+      <module name="xjt-cloud-admin-manage" target="1.8" />
+      <module name="xjt-cloud-base" target="1.8" />
+      <module name="xjt-cloud-cas-client" target="1.8" />
+      <module name="xjt-cloud-cas-server" target="1.8" />
+      <module name="xjt-cloud-client-api" target="1.7" />
+      <module name="xjt-cloud-client-core" target="1.7" />
+      <module name="xjt-cloud-client-manage" target="1.7" />
+      <module name="xjt-cloud-client-web" target="1.7" />
+      <module name="xjt-cloud-commons" target="1.8" />
+      <module name="xjt-cloud-data-source" target="1.8" />
+      <module name="xjt-cloud-device-api" target="1.7" />
+      <module name="xjt-cloud-device-core" target="1.7" />
+      <module name="xjt-cloud-device-manage" target="1.7" />
+      <module name="xjt-cloud-device-web" target="1.7" />
+      <module name="xjt-cloud-faultRepair-api" target="1.8" />
+      <module name="xjt-cloud-faultRepair-core" target="1.8" />
+      <module name="xjt-cloud-faultRepair-manage" target="1.8" />
+      <module name="xjt-cloud-faultRepair-web" target="1.8" />
+      <module name="xjt-cloud-ftp" target="1.8" />
+      <module name="xjt-cloud-iot-api" target="1.8" />
+      <module name="xjt-cloud-iot-core" target="1.8" />
+      <module name="xjt-cloud-iot-manage" target="1.8" />
+      <module name="xjt-cloud-iot-netty" target="1.8" />
+      <module name="xjt-cloud-iot-web" target="1.8" />
+      <module name="xjt-cloud-log-manage" target="1.8" />
+      <module name="xjt-cloud-message-api" target="1.8" />
+      <module name="xjt-cloud-message-commons" target="1.8" />
+      <module name="xjt-cloud-message-core" target="1.8" />
+      <module name="xjt-cloud-message-manage" target="1.8" />
+      <module name="xjt-cloud-message-web" target="1.8" />
+      <module name="xjt-cloud-netty-manage" target="1.8" />
+      <module name="xjt-cloud-onenet" target="1.8" />
+      <module name="xjt-cloud-other" target="1.8" />
+      <module name="xjt-cloud-other-api" target="1.8" />
+      <module name="xjt-cloud-other-core" target="1.8" />
+      <module name="xjt-cloud-other-manage" target="1.8" />
+      <module name="xjt-cloud-project-api" target="1.8" />
+      <module name="xjt-cloud-project-core" target="1.8" />
+      <module name="xjt-cloud-project-manage" target="1.8" />
+      <module name="xjt-cloud-project-web" target="1.8" />
+      <module name="xjt-cloud-quartz" target="1.8" />
+      <module name="xjt-cloud-report-api" target="1.8" />
+      <module name="xjt-cloud-report-core" target="1.8" />
+      <module name="xjt-cloud-report-manage" target="1.8" />
+      <module name="xjt-cloud-report-web" target="1.8" />
+      <module name="xjt-cloud-sys-api" target="1.8" />
+      <module name="xjt-cloud-sys-core" target="1.8" />
+      <module name="xjt-cloud-sys-manage" target="1.8" />
+      <module name="xjt-cloud-sys-web" target="1.8" />
+      <module name="xjt-cloud-task-api" target="1.7" />
+      <module name="xjt-cloud-task-core" target="1.8" />
+      <module name="xjt-cloud-task-manage" target="1.8" />
+      <module name="xjt-cloud-task-web" target="1.7" />
+      <module name="xjt-cloud-utils" target="1.5" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="xjt-cloud-admin-manage" options="-parameters" />
+      <module name="xjt-cloud-cas-client" options="-parameters" />
+      <module name="xjt-cloud-cas-server" options="-parameters" />
+      <module name="xjt-cloud-client-api" options="-parameters" />
+      <module name="xjt-cloud-client-core" options="-parameters" />
+      <module name="xjt-cloud-client-web" options="-parameters" />
+      <module name="xjt-cloud-commons" options="-parameters" />
+      <module name="xjt-cloud-data-source" options="-parameters" />
+      <module name="xjt-cloud-device-api" options="-parameters" />
+      <module name="xjt-cloud-device-core" options="-parameters" />
+      <module name="xjt-cloud-device-web" options="-parameters" />
+      <module name="xjt-cloud-faultRepair-api" options="-parameters" />
+      <module name="xjt-cloud-faultRepair-core" options="-parameters" />
+      <module name="xjt-cloud-faultRepair-web" options="-parameters" />
+      <module name="xjt-cloud-ftp" options="-parameters" />
+      <module name="xjt-cloud-iot-api" options="-parameters" />
+      <module name="xjt-cloud-iot-core" options="-parameters" />
+      <module name="xjt-cloud-iot-netty" options="-parameters" />
+      <module name="xjt-cloud-iot-web" options="-parameters" />
+      <module name="xjt-cloud-log-manage" options="-parameters" />
+      <module name="xjt-cloud-message-api" options="-parameters" />
+      <module name="xjt-cloud-message-commons" options="-parameters" />
+      <module name="xjt-cloud-message-core" options="-parameters" />
+      <module name="xjt-cloud-message-web" options="-parameters" />
+      <module name="xjt-cloud-netty-manage" options="-parameters" />
+      <module name="xjt-cloud-onenet" options="-parameters" />
+      <module name="xjt-cloud-other" options="-parameters" />
+      <module name="xjt-cloud-other-api" options="-parameters" />
+      <module name="xjt-cloud-other-core" options="-parameters" />
+      <module name="xjt-cloud-project-api" options="-parameters" />
+      <module name="xjt-cloud-project-core" options="-parameters" />
+      <module name="xjt-cloud-project-web" options="-parameters" />
+      <module name="xjt-cloud-quartz" options="-parameters" />
+      <module name="xjt-cloud-report-api" options="-parameters" />
+      <module name="xjt-cloud-report-core" options="-parameters" />
+      <module name="xjt-cloud-report-web" options="-parameters" />
+      <module name="xjt-cloud-sys-api" options="-parameters" />
+      <module name="xjt-cloud-sys-core" options="-parameters" />
+      <module name="xjt-cloud-sys-web" options="-parameters" />
+      <module name="xjt-cloud-task-api" options="-parameters" />
+      <module name="xjt-cloud-task-core" options="-parameters" />
+      <module name="xjt-cloud-task-web" options="-parameters" />
+    </option>
+  </component>
+</project>

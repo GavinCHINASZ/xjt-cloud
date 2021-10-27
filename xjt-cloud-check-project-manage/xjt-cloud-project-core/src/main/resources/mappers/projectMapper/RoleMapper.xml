@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.RoleDao">
+
+
+    <resultMap id="projectRoleResultMap" type="com.xjt.cloud.project.core.entity.project.Role">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
+        <result column="source_id" property="sourceId" jdbcType="BIGINT"/>
+        <result column="is_admin" property="isAdmin" jdbcType="INTEGER"/>
+        <result column="is_ordinary" property="isOrdinary" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!--添加角色-->
+    <insert id="addProjectRole" parameterType="Role" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO `p_role` (`role_name`, `source_type`, `source_id`, `is_admin`,`create_user_id`, `is_ordinary` ,`create_user_name`,`role_type`)
+        VALUES ( #{roleName},
+                 #{sourceType},
+                 #{sourceId},
+                 #{isAdmin},
+                 #{createUserId},
+                 #{isOrdinary},
+                 #{createUserName},
+                 #{roleType}
+         )
+    </insert>
+
+
+    <!--删除角色-->
+    <delete id="deleteProjectRole" parameterType="java.util.List">
+        DELETE FROM `p_role` WHERE id IN
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!--更新角色信息-->
+    <update id="updateProjectRole" parameterType="Role">
+       UPDATE `p_role` SET
+       `role_name` = #{roleName},`update_user_id` = #{updateUserId}, `update_user_name` = #{updateUserName}
+       WHERE `id` = #{id}
+    </update>
+
+
+    <select id="findByProjectRoleList" resultMap="projectRoleResultMap" parameterType="Role">
+        SELECT o.id , o.role_name, super_admin superAdmin FROM p_role o WHERE o.source_type = 2 AND o.status=1 ORDER BY o.id
+        <!--SELECT o.id ,o.role_name ,o.source_id,o.is_admin,o.is_ordinary,o.role_type from p_role o where o.source_id =#{sourceId} and o.source_type = 2
+        <if test="roleName != null">
+            and o.role_name = #{roleName}
+        </if>
+        order  by o.is_admin,is_ordinary asc-->
+    </select>
+
+    <select id="findByProjectRole" resultMap="projectRoleResultMap" parameterType="Role">
+        SELECT o.id ,o.role_name ,o.source_id ,o.is_admin,o.is_ordinary,o.role_type from p_role o where o.source_type = 2
+        <if test="sourceId != null and sourceId != 0">
+            and o.source_id =#{sourceId}
+        </if>
+        <if test="isOrdinary != null and isOrdinary != 0">
+            and o.is_ordinary = #{isOrdinary}
+        </if>
+        <if test="roleName != null">
+            and o.role_name = #{roleName}
+        </if>
+        <if test="id != null">
+            and o.id = #{id}
+        </if>
+        limit 1
+    </select>
+
+
+    <select id="findByProjectRoleId" resultMap="projectRoleResultMap" parameterType="Role">
+        SELECT o.id ,o.role_name ,o.source_id,o.is_admin,o.is_ordinary,o.role_type from p_role o where o.id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <!-- ##########################成员管理 #####################-->
+    <!--查询角色是否存在 -->
+    <select id="findRoleByNames" parameterType="java.lang.String" resultMap="projectRoleResultMap">
+        SELECT id, role_name ,is_admin,is_ordinary FROM p_role r
+        WHERE source_type = 2 AND source_id = #{projectId} AND role_name IN (${sql})
+    </select>
+
+    <!--查询拥有项目指定角色的用户列表-->
+    <select id="findProjectRoleUserList" resultType="OrgUser" parameterType="Role" >
+         SELECT
+        ou.id as id ,ou.user_id as userId,ou.user_name as userName
+        FROM
+        p_org_user ou
+        inner join p_org_user_role our ON ou.user_id = our.user_id and our.project_id = #{projectId}
+        inner join p_role r on r.id = our.role_id
+        inner join p_role_permission rp on r.id = rp.role_id and rp.status = 1
+        inner join p_permission p ON p.id = rp.permission_id and p.status = 1
+        WHERE
+        ou.project_id = #{projectId}
+         <if test="permissionNames != null">
+                AND  sign IN
+            <foreach collection="permissionNames" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+         </if>
+         GROUP BY ou.user_id;
+    </select>
+
+</mapper>

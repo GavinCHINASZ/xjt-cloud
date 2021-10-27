@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.sys.core.dao.sys.WeChatDao" >
+    <resultMap id="BaseResultMap" type="com.xjt.cloud.sys.core.entity.WeChatUser">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="login_name" jdbcType="VARCHAR" property="loginName" />
+        <result column="user_id" jdbcType="BIGINT" property="userId" />
+        <result column="expires_in" jdbcType="INTEGER" property="expiresIn" />
+        <result column="refresh_token" jdbcType="VARCHAR" property="refreshToken" />
+        <result column="unionid" jdbcType="VARCHAR" property="unionid" />
+        <result column="access_token" jdbcType="VARCHAR" property="accessToken" />
+        <result column="openid" jdbcType="VARCHAR" property="openid" />
+    </resultMap>
+    <select id="findWeChatUserByOpenid" resultMap="BaseResultMap">
+        SELECT id,login_name, user_id FROM s_wechat_user WHERE openid = #{openid}
+    </select>
+    <insert id="saveWeChatUser" parameterType="WeChatUser" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO s_wechat_user (access_token, expires_in, openid, refresh_token, unionid) VALUES
+        (#{accessToken}, #{expiresIn}, #{openid}, #{refreshToken}, #{unionid});
+    </insert>
+    <update id="updateWeChatUser" parameterType="WeChatUser">
+        UPDATE s_wechat_user
+        <set>
+            <if test="loginName != null and loginName != ''">
+                login_name = #{loginName},
+            </if>
+            <if test="userId != null and userId != 0">
+                user_id = #{userId},
+            </if>
+            <if test="expiresIn != null and expiresIn != 0">
+                expires_in = #{expiresIn},
+            </if>
+            <if test="refreshToken != null and refreshToken != ''">
+                refresh_token = #{refreshToken},
+            </if>
+            <if test="unionid != null and unionid != ''">
+                unionid = #{unionid},
+            </if>
+            <if test="accessToken != null and accessToken != ''">
+                access_token = #{accessToken},
+            </if>
+        </set>
+        WHERE openid = #{openid}
+    </update>
+</mapper>

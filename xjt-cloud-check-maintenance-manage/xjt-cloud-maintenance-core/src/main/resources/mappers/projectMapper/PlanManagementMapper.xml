@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.maintenance.core.dao.project.PlanManagementDao">
+
+    <resultMap id="planManagementResultMap" type="com.xjt.cloud.maintenance.core.entity.project.PlanManagement">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="customer_name" property="customerName" jdbcType="VARCHAR"/>
+        <result column="customer_id" property="customerId" jdbcType="BIGINT"/>
+        <result column="plan_year" property="planYear" jdbcType="VARCHAR"/>
+        <result column="plan_name" property="planName" jdbcType="VARCHAR"/>
+        <result column="plan_type" property="planType" jdbcType="VARCHAR"/>
+        <result column="plan_state" property="planState" jdbcType="INTEGER"/>
+        <result column="project_person" property="projectPerson" jdbcType="VARCHAR"/>
+        <result column="start_date" property="startDate" jdbcType="TIMESTAMP"/>
+        <result column="end_date" property="endDate" jdbcType="TIMESTAMP"/>
+        <result column="maintenance_person" property="maintenancePerson" jdbcType="VARCHAR"/>
+        <result column="maintenance_content" property="maintenanceContent" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="update_user_id" property="updateUserId" jdbcType="BIGINT" />
+        <result column="update_user_name" property="updateUserName" jdbcType="VARCHAR" />
+
+        <result column="maintenance_info" property="maintenanceInfo" jdbcType="VARCHAR" />
+        <result column="check_info" property="checkInfo" jdbcType="VARCHAR" />
+        <result column="maintain_info" property="maintainInfo" jdbcType="VARCHAR" />
+        <result column="check_date" property="checkDate" jdbcType="TIMESTAMP" />
+        <result column="test_date" property="testDate" jdbcType="TIMESTAMP" />
+        <result column="complete_date" property="completeDate" jdbcType="TIMESTAMP" />
+        <result column="report_file_url" property="reportFileUrl" jdbcType="VARCHAR" />
+        <result column="tem_report_file_url" property="temReportFileUrl" jdbcType="VARCHAR" />
+        <result column="check_label_file_url" property="checkLabelFileUrl" jdbcType="VARCHAR" />
+        <result column="report_code" property="reportCode" jdbcType="VARCHAR" />
+        <result column="number" property="number" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="sqlColumns">
+        pm.id, pm.project_id, pm.deleted, pm.customer_name, pm.customer_id, pm.plan_year, pm.plan_name, pm.plan_type, pm.plan_state, pm.project_person,
+        pm.start_date, pm.end_date, pm.maintenance_person,pm.maintenance_info,pm.check_info,pm.maintain_info,pm.check_date,pm.test_date,
+        pm.create_time, pm.last_modify_time, pm.create_user_id, pm.update_user_id, pm.report_file_url, pm.tem_report_file_url,
+        pm.check_label_file_url, pm.report_code, pm.complete_date, pm.number
+    </sql>
+
+    <sql id="findPlanManagementSql">
+        <where>
+            1 = 1
+            <if test="id != null and id > 0">
+                AND pm.id = #{id}
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND pm.id IN
+                <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="limitSign != null and limitSign != ''">
+                <if test="limitSign == 'plan_data_limit'">
+                    AND ou.user_id = #{createUserId} AND pdt1.plan_data_type = 2
+                </if>
+            </if>
+            <if test="projectId != null and projectId > 0">
+                AND pm.project_id = #{projectId}
+            </if>
+
+            <if test="customerName != null and customerName != ''">
+                AND pm.customer_name LIKE CONCAT('%',#{customerName},'%')
+            </if>
+            <if test="customerId != null and customerId > 0">
+                AND pm.customer_id = #{customerId}
+            </if>
+            <if test="planYear != null and planYear != ''">
+                AND pm.plan_year LIKE CONCAT('%',#{planYear},'%')
+            </if>
+            <if test="planName != null and planName != ''">
+                AND pm.plan_name LIKE CONCAT('%',#{planName},'%')
+            </if>
+            <if test="planType != null and planType != ''">
+                AND pm.plan_type LIKE CONCAT('%',#{planType},'%')
+            </if>
+            <if test="planState != null and planState > 0">
+                AND pm.plan_state = #{planState}
+            </if>
+            <if test="projectPerson != null and projectPerson != ''">
+                AND pm.project_person LIKE CONCAT('%',#{projectPerson},'%')
+            </if>
+
+            <if test="maintenancePerson != null and maintenancePerson != ''">
+                AND pm.maintenance_person LIKE CONCAT('%',#{maintenancePerson},'%')
+            </if>
+
+            <if test="maintenanceContentIdArr != null and maintenanceContentIdArr.length > 0">
+                AND pdt.device_type_id IN
+                <foreach collection="maintenanceContentIdArr" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="number != null and number != ''">
+                AND pm.number = #{number}
+            </if>
+            <if test="createTime != null and lastModifyTime != null">
+                AND pm.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            <if test="startDate != null and endDate != null">
+                AND pm.start_date >= #{startDate} AND pm.end_date &lt;= #{endDate}
+            </if>
+        </where>
+    </sql>
+
+    <sql id="findPlanManagementPageSql">
+        <where>
+            1 = 1
+            <if test="id != null and id > 0">
+                AND pm.id = #{id}
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND pm.id IN
+                <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="limitSign != null and limitSign != ''">
+                <if test="limitSign == 'plan_data_limit'">
+                    AND ou.user_id = #{createUserId}
+                </if>
+            </if>
+            <if test="projectId != null and projectId > 0">
+                AND pm.project_id = #{projectId}
+            </if>
+
+            <if test="customerName != null and customerName != ''">
+                AND pm.customer_name LIKE CONCAT('%',#{customerName},'%')
+            </if>
+            <if test="customerId != null and customerId > 0">
+                AND pm.customer_id = #{customerId}
+            </if>
+            <if test="planYear != null and planYear != ''">
+                AND pm.plan_year LIKE CONCAT('%',#{planYear},'%')
+            </if>
+            <if test="planName != null and planName != ''">
+                AND pm.plan_name LIKE CONCAT('%',#{planName},'%')
+            </if>
+            <if test="planType != null and planType != ''">
+                AND pm.plan_type LIKE CONCAT('%',#{planType},'%')
+            </if>
+            <if test="planState != null and planState > 0">
+                AND pm.plan_state = #{planState}
+            </if>
+            <if test="projectPerson != null and projectPerson != ''">
+                AND pm.project_person LIKE CONCAT('%',#{projectPerson},'%')
+            </if>
+
+            <if test="maintenancePerson != null and maintenancePerson != ''">
+                AND pm.maintenance_person LIKE CONCAT('%',#{maintenancePerson},'%')
+            </if>
+
+            <if test="maintenanceContentIdArr != null and maintenanceContentIdArr.length > 0">
+                AND pdt.device_type_id IN
+                <foreach collection="maintenanceContentIdArr" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="number != null and number != ''">
+                AND pm.number = #{number}
+            </if>
+        </where>
+    </sql>
+    <!-- 保存 计划管理 -->
+    <insert id="savePlanManagement" parameterType="PlanManagement" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO maintenance_manage.p_plan_management(
+            project_id, deleted, customer_name, customer_id, plan_year, plan_name, plan_type, plan_state, project_person,
+            start_date, end_date, maintenance_person, create_time, create_user_id, update_user_id, report_file_url, tem_report_file_url)
+        VALUES (
+            #{projectId}, 0, #{customerName}, #{customerId}, #{planYear}, #{planName}, #{planType}, #{planState}, #{projectPerson},
+            #{startDate}, #{endDate}, #{maintenancePerson}, NOW(), #{createUserId}, #{updateUserId}, #{reportFileUrl}, #{temReportFileUrl});
+    </insert>
+
+    <!-- 保存 计划管理list -->
+    <insert id="savePlanManagementList" parameterType="PlanManagement" useGeneratedKeys="true" keyColumn="id">
+        INSERT INTO maintenance_manage.p_plan_management(
+            project_id, deleted, customer_name, customer_id, plan_year,
+            plan_name,
+            plan_type, plan_state, project_person, start_date, end_date,
+            maintenance_person, create_time, create_user_id, update_user_id,report_file_url,tem_report_file_url)
+        VALUES
+        <foreach collection="planNameList" item="planName" separator=",">
+            (#{planManagement.projectId}, 0, #{planManagement.customerName}, #{planManagement.customerId}, #{planManagement.planYear},
+            #{planName},
+            #{planManagement.planType}, #{planManagement.planState}, #{planManagement.projectPerson}, #{planManagement.startDate}, #{planManagement.endDate},
+            #{planManagement.maintenancePerson}, NOW(), #{planManagement.createUserId}, #{planManagement.updateUserId}, #{planManagement.reportFileUrl},
+            #{planManagement.temReportFileUrl})
+        </foreach>
+    </insert>
+
+    <!-- 保存 计划管理list -->
+    <insert id="savePlanManagementLists" parameterType="PlanManagement" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO maintenance_manage.p_plan_management(
+        project_id, deleted, customer_name, customer_id, plan_year,
+        plan_name,
+        plan_type, plan_state, project_person, start_date, end_date,
+        maintenance_person, create_time, create_user_id, update_user_id,report_file_url,tem_report_file_url)
+        VALUES
+        <foreach collection="list" item="planManagement" separator=",">
+            (#{planManagement.projectId}, 0, #{planManagement.customerName}, #{planManagement.customerId}, #{planManagement.planYear},
+            #{planManagement.planName},
+            #{planManagement.planType}, #{planManagement.planState}, #{planManagement.projectPerson}, #{planManagement.startDate}, #{planManagement.endDate},
+            #{planManagement.maintenancePerson}, NOW(), #{planManagement.createUserId}, #{planManagement.updateUserId}, #{planManagement.reportFileUrl},
+            #{planManagement.temReportFileUrl})
+        </foreach>
+    </insert>
+
+    <!-- 查询 计划管理首页 数量 -->
+    <select id="findPlanManagementPageCount" parameterType="PlanManagement" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT pm.customer_id)
+        FROM maintenance_manage.p_plan_management pm
+        <if test="limitSign != null and limitSign == 'project_data_limit'">
+            INNER JOIN p_check_project cpp ON cpp.id = pm.customer_id
+            <if test="createUserId != null and createUserId > 0">
+                AND cpp.create_user_id = #{createUserId}
+            </if>
+        </if>
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt ON pm.id = pdt.plan_management_id
+        LEFT JOIN maintenance_manage.d_device_type dt ON dt.id = pdt.device_type_id  AND pdt.plan_data_type = 3
+        <if test="limitSign != null and limitSign != ''">
+            <if test="limitSign == 'plan_data_limit'">
+                LEFT JOIN check_manage.p_org_user ou ON ou.project_id = #{projectId} AND pdt.device_type_id = ou.id AND pdt.plan_data_type = 2
+            </if>
+        </if>
+        <include refid="findPlanManagementPageSql"/>
+    </select>
+
+    <!-- 查询 计划管理首页 列表 -->
+    <select id="findPlanManagementPage" parameterType="PlanManagement" resultType="PlanManagementReport">
+        SELECT pm.customer_id customerId, pm.customer_name customerName,
+        COUNT(DISTINCT pm.id) planCount,
+        COUNT(DISTINCT IF(pm.start_date &lt; #{startDate} AND pm.plan_state &lt; 3, pm.id, NULL)) notStartedCount,
+        COUNT(DISTINCT IF(pm.start_date >= #{startDate} AND pm.end_date &lt;= #{endDate} AND pm.plan_state &lt; 3, pm.id, NULL))implementCount,
+        COUNT(DISTINCT IF(pm.plan_state = 3, pm.id, NULL) ) stayReportCount,
+        COUNT(DISTINCT IF(pm.plan_state = 4, pm.id, NULL))  completeCount,
+        COUNT(DISTINCT IF(pm.plan_state = 5, pm.id, NULL))  sealCount
+        FROM maintenance_manage.p_plan_management pm
+        <if test="limitSign != null and limitSign == 'project_data_limit'">
+            INNER JOIN p_check_project cpp ON cpp.id = pm.customer_id
+            <if test="createUserId != null and createUserId > 0">
+                AND cpp.create_user_id = #{createUserId}
+            </if>
+        </if>
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt ON pm.id = pdt.plan_management_id
+        LEFT JOIN maintenance_manage.d_device_type dt ON dt.id = pdt.device_type_id  AND pdt.plan_data_type = 3
+        <if test="limitSign != null and limitSign != ''">
+            <if test="limitSign == 'plan_data_limit'">
+                LEFT JOIN check_manage.p_org_user ou ON ou.project_id = #{projectId} AND pdt.device_type_id = ou.id AND pdt.plan_data_type = 2
+            </if>
+        </if>
+        <include refid="findPlanManagementPageSql"/>
+        GROUP BY pm.customer_id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 计划管理 数量 -->
+    <select id="findPlanManagementCount" parameterType="PlanManagement" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM maintenance_manage.p_plan_management pm
+        <if test="limitSign != null and limitSign == 'project_data_limit'">
+            INNER JOIN p_check_project cpp ON cpp.id = pm.customer_id
+            <if test="createUserId != null and createUserId > 0">
+                AND cpp.create_user_id = #{createUserId}
+            </if>
+        </if>
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt ON pm.id = pdt.plan_management_id
+        LEFT JOIN maintenance_manage.d_device_type dt ON dt.id = pdt.device_type_id  AND pdt.plan_data_type = 3
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt1 ON pm.id = pdt1.plan_management_id AND pdt1.plan_data_type &lt;= 2
+        LEFT JOIN check_manage.p_org_user ou ON ou.id = pdt1.device_type_id
+        <include refid="findPlanManagementSql"/>
+    </select>
+
+    <!-- 查询 计划管理 list -->
+    <select id="findPlanManagementList" parameterType="PlanManagement" resultMap="planManagementResultMap">
+        SELECT <include refid="sqlColumns"/>,
+            GROUP_CONCAT(DISTINCT dt.device_sys_name) maintenance_content,
+            GROUP_CONCAT(DISTINCT dt.id) maintenanceContentId,
+            GROUP_CONCAT(DISTINCT if(pdt1.plan_data_type = 1,pdt1.device_type_id,null)) projectPersonIdStr,
+            GROUP_CONCAT(DISTINCT if(pdt1.plan_data_type = 2,pdt1.device_type_id,null)) maintenancePersonIdStr,
+            GROUP_CONCAT(DISTINCT if(pdt1.plan_data_type = 1,u.phone,null)) projectPersonPhoneStr
+        FROM maintenance_manage.p_plan_management pm
+        <if test="limitSign != null and limitSign == 'project_data_limit'">
+            INNER JOIN p_check_project cpp ON cpp.id = pm.customer_id
+            <if test="createUserId != null and createUserId > 0">
+                AND cpp.create_user_id = #{createUserId}
+            </if>
+        </if>
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt ON pm.id = pdt.plan_management_id AND pdt.plan_data_type = 3
+        LEFT JOIN maintenance_manage.d_device_type dt ON dt.id = pdt.device_type_id
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt1 ON pm.id = pdt1.plan_management_id AND pdt1.plan_data_type &lt;= 2
+        LEFT JOIN check_manage.p_org_user ou ON ou.id = pdt1.device_type_id
+        LEFT JOIN check_manage.s_user u ON ou.user_id = u.id AND u.deleted = false
+
+        <include refid="findPlanManagementSql"/>
+        GROUP BY pm.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 计划管理 已生成报告的数量 -->
+    <select id="findPlanManagementReportCount" parameterType="PlanManagement" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM maintenance_manage.p_plan_management pm
+        <if test="limitSign != null and limitSign != ''">
+            <if test="limitSign == 'project_data_limit'">
+                INNER JOIN p_check_project cpp ON cpp.id = pm.customer_id
+                <if test="createUserId != null and createUserId > 0">
+                    AND cpp.create_user_id = #{createUserId}
+                </if>
+            </if>
+            <if test="limitSign == 'plan_data_limit'">
+                INNER JOIN maintenance_manage.p_plan_device_type pdt1 ON pm.id = pdt1.plan_management_id AND pdt1.plan_data_type = 2
+                INNER JOIN check_manage.p_org_user ou ON ou.id = pdt1.device_type_id
+            </if>
+        </if>
+        <include refid="findPlanManagementSql"/>
+        AND pm.report_file_url IS NOT NULL
+    </select>
+
+    <!-- 查询 维保报告 -->
+    <select id="findPlanManagementReportList" parameterType="PlanManagement" resultMap="planManagementResultMap">
+        SELECT <include refid="sqlColumns"/>
+        FROM maintenance_manage.p_plan_management pm
+        <if test="limitSign != null and limitSign != ''">
+            <if test="limitSign == 'project_data_limit'">
+                INNER JOIN p_check_project cpp ON cpp.id = pm.customer_id
+                <if test="createUserId != null and createUserId > 0">
+                    AND cpp.create_user_id = #{createUserId}
+                </if>
+            </if>
+            <if test="limitSign == 'plan_data_limit'">
+                INNER JOIN maintenance_manage.p_plan_device_type pdt1 ON pm.id = pdt1.plan_management_id AND pdt1.plan_data_type = 2
+                INNER JOIN check_manage.p_org_user ou ON ou.id = pdt1.device_type_id
+            </if>
+        </if>
+        <include refid="findPlanManagementSql"/>
+        AND pm.report_file_url IS NOT NULL
+        GROUP BY pm.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 计划管理 -->
+    <select id="findPlanManagement" parameterType="PlanManagement" resultMap="planManagementResultMap">
+        SELECT <include refid="sqlColumns"/>,
+            GROUP_CONCAT(dt.device_sys_name) maintenance_content,
+            GROUP_CONCAT(DISTINCT dt.id) maintenanceContentId,
+            GROUP_CONCAT(DISTINCT pdt1.device_type_id) projectPersonIdStr,
+            GROUP_CONCAT(DISTINCT pdt2.device_type_id) maintenancePersonIdStr,
+            GROUP_CONCAT(DISTINCT u.phone) projectPersonPhoneStr
+        FROM maintenance_manage.p_plan_management pm
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt ON pm.id = pdt.plan_management_id AND pdt.plan_data_type = 3
+        LEFT JOIN maintenance_manage.d_device_type dt ON dt.id = pdt.device_type_id
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt1 ON pm.id = pdt1.plan_management_id AND pdt1.plan_data_type = 1
+        LEFT JOIN check_manage.p_org_user ou ON ou.id = pdt1.device_type_id
+        LEFT JOIN check_manage.s_user u ON ou.user_id = u.id AND u.deleted = false
+        LEFT JOIN maintenance_manage.p_plan_device_type pdt2 ON pm.id = pdt2.plan_management_id AND pdt2.plan_data_type = 2
+        <where>
+            1 = 1
+            <if test="id != null">
+                AND pm.id = #{id}
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND pm.id IN
+                <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="projectId != null">
+                AND pm.project_id = #{projectId}
+            </if>
+            <if test="customerId != null and customerId > 0">
+                AND pm.customer_id = #{customerId}
+            </if>
+
+            <if test="planName != null and planName != ''">
+                AND pm.plan_name LIKE CONCAT('%',#{planName},'%')
+            </if>
+        </where>
+        GROUP BY pm.id
+        LIMIT 1;
+    </select>
+
+    <!-- 删除 计划管理 -->
+    <delete id="delPlanManagement" parameterType="PlanManagement" >
+         DELETE FROM maintenance_manage.p_plan_management
+         WHERE id IN
+        <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 更新 计划管理 -->
+    <update id="updatePlanManagement" parameterType="PlanManagement" >
+        UPDATE maintenance_manage.p_plan_management
+        <set>
+            <if test="customerName != null and customerName != ''">
+                customer_name = #{customerName},
+            </if>
+            <if test="customerId != null and customerId > 0">
+                customer_id = #{customerId},
+            </if>
+            <if test="planYear != null and planYear != ''">
+                plan_year = #{planYear},
+            </if>
+            <if test="planName != null and planName != ''">
+                plan_name = #{planName},
+            </if>
+            <if test="planType != null and planType != ''">
+                plan_type = #{planType},
+            </if>
+            <if test="planState != null and planState > 0">
+                plan_state = #{planState},
+            </if>
+            <if test="projectPerson != null and projectPerson != ''">
+                project_person = #{projectPerson},
+            </if>
+
+            <if test="maintenancePerson != null and maintenancePerson != ''">
+                maintenance_person = #{maintenancePerson},
+            </if>
+            <if test="createUserId != null and createUserId != 0">
+                create_user_id = #{createUserId},
+            </if>
+            <if test="updateUserId != null and updateUserId != 0">
+                update_user_id = #{updateUserId},
+            </if>
+            <if test="maintenanceInfo != null and maintenanceInfo != ''">
+                maintenance_info = #{maintenanceInfo},
+            </if>
+            <if test="checkInfo != null and checkInfo != ''">
+                check_info = #{checkInfo},
+            </if>
+            <if test="maintainInfo != null and maintainInfo != ''">
+                maintain_info = #{maintainInfo},
+            </if>
+            <if test="checkDate != null">
+                check_date = #{checkDate},
+            </if>
+            <if test="testDate != null">
+                test_date = #{testDate},
+            </if>
+            <if test="reportFileUrl != null and reportFileUrl != ''">
+                report_file_url = #{reportFileUrl},
+            </if>
+            <if test="temReportFileUrl != null and temReportFileUrl != ''">
+                tem_report_file_url = #{temReportFileUrl},
+            </if>
+            <if test="checkLabelFileUrl != null and checkLabelFileUrl != ''">
+                check_label_file_url = #{checkLabelFileUrl},
+            </if>
+            <if test="completeDate != null">
+                complete_date = #{completeDate},
+            </if>
+            <if test="reportCode != null and reportCode != ''">
+                report_code = #{reportCode},
+            </if>
+            <if test="number != null and number != ''">
+                number = #{number}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 保存 计划管理与设备系统关联 -->
+    <insert id="savePlanDeviceSystem" parameterType="PlanManagement">
+        INSERT INTO maintenance_manage.p_plan_device_type (plan_management_id, device_type_id, plan_data_type)
+        VALUES
+        <if test="projectPersonId != null and projectPersonId.length > 0 and planDataType == 1">
+            <foreach item="ids" collection="ids" index="index" separator=",">
+                <foreach item="item" collection="projectPersonId" index="index" separator=",">
+                    (#{ids}, #{item}, #{planDataType})
+                </foreach>
+            </foreach>
+        </if>
+
+        <if test="maintenancePersonId != null and maintenancePersonId.length > 0 and planDataType == 2">
+            <foreach item="ids" collection="ids" index="index" separator=",">
+                <foreach item="item" collection="maintenancePersonId" index="index" separator=",">
+                    (#{ids}, #{item}, #{planDataType})
+                </foreach>
+            </foreach>
+        </if>
+
+        <if test="maintenanceContentIdArr != null and maintenanceContentIdArr.length > 0 and planDataType == 3">
+            <foreach item="ids" collection="ids" index="index" separator=",">
+                <foreach item="item" collection="maintenanceContentIdArr" index="index" separator=",">
+                    (#{ids}, #{item}, #{planDataType})
+                </foreach>
+            </foreach>
+        </if>
+    </insert>
+
+    <!-- 删除 计划管理设备系统关联 -->
+    <delete id="delPlanDeviceSystem" parameterType="PlanManagement" >
+        DELETE FROM maintenance_manage.p_plan_device_type
+        WHERE
+        <if test="id != null and id > 0">
+            plan_management_id = #{id}
+        </if>
+
+        <if test="ids != null and ids.length > 0">
+            plan_management_id IN
+            <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+
+        <if test="planDataType != null and planDataType > 0">
+            AND plan_data_type = #{planDataType}
+        </if>
+    </delete>
+
+    <!-- 查询 计划管理首页 列表 -->
+    <select id="findPlanDeviceSysReportList" parameterType="PlanManagement" resultType="PlanManagementReport">
+        SELECT ds.id deviceSysId,ds.device_sys_name deviceSysName,dt.id deviceTypeId, dt.device_sys_name deviceTypeName,
+            dci.id checkItemId,dci.check_name checkName,
+        COUNT(DISTINCT dci.id) totalCheckNum,
+        COUNT(DISTINCT cr.device_check_item_id) checkNum
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            ,cr.id checkRecordId,cr.treatment_measures treatmentMeasures,cr.check_img_urls checkImgUrls,
+            cr.cause_failure causeFailure,cr.check_result checkResult
+        </if>
+        FROM p_plan_device_type pdt
+        <if test="limitSign != null and limitSign != ''">
+            INNER JOIN maintenance_manage.p_plan_management pm ON pm.id = pdt.plan_management_id
+            <if test="limitSign == 'project_data_limit'">
+                INNER JOIN p_check_project cpp ON cpp.id = pm.customer_id AND cpp.create_user_id = #{createUserId}
+            </if>
+            <if test="limitSign == 'plan_data_limit'">
+                INNER JOIN maintenance_manage.p_plan_device_type pdt1 ON pm.id = pdt1.plan_management_id AND pdt1.plan_data_type = 2
+                LEFT JOIN check_manage.p_org_user ou ON ou.id = pdt1.device_type_id AND ou.user_id = #{createUserId}
+            </if>
+        </if>
+        INNER JOIN d_device_type ds ON pdt.device_type_id = ds.id AND pdt.plan_data_type = 3
+        INNER JOIN d_device_type dt ON dt.parent_id = ds.id AND ds.type = 1 AND dt.type = 9 AND ds.status = 1 AND dt.status = 1
+        INNER JOIN d_device_check_item dci ON dci.device_type_id = dt.id AND dci.status = 1
+        LEFT JOIN t_check_record cr ON dci.id = cr.device_check_item_id AND cr.status = 1
+        AND cr.device_sys_id = ds.id AND cr.device_type_id = dt.id AND cr.plan_id = pdt.plan_management_id
+        WHERE pdt.plan_management_id = #{id}
+        <if test="deviceSysId != null and deviceSysId != 0">
+            AND ds.id = #{deviceSysId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND dt.id = #{deviceTypeId}
+        </if>
+        <if test="!findCount">
+            GROUP BY
+            <if test="deviceSysId == null and deviceTypeId == null">
+                ds.id
+            </if>
+            <if test="deviceSysId != null and deviceSysId != 0">
+                dt.id
+            </if>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                dci.id
+            </if>
+        </if>
+    </select>
+
+    <!-- 查询 计划管理首页 列表 -->
+    <select id="findPlanDeviceSysCheckReportList" parameterType="PlanManagement" resultType="PlanManagementReport">
+        SELECT ds.device_sys_name deviceSysName, bf.floor_name floorName,
+            cr.address, cr.check_result checkResult, cr.create_user_name createUserName, cr.check_type checkType, cr.create_time createTime
+        FROM p_plan_device_type pdt
+        INNER JOIN d_device_type ds ON pdt.device_type_id = ds.id AND ds.device_type = 3
+        INNER JOIN d_device_type dt ON dt.parent_id = ds.id AND ds.type = 1 AND dt.type = 9 AND ds.status = 1 AND dt.status = 1
+        LEFT JOIN t_check_record cr ON cr.status = 1 AND cr.check_result &lt;= 2 AND cr.device_sys_id = ds.id AND cr.device_type_id = dt.id
+        AND cr.plan_id = pdt.plan_management_id
+        LEFT JOIN p_building_floor bf ON bf.id = cr.floor_id
+        WHERE pdt.plan_management_id = #{id}
+        GROUP BY ds.id
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findCheckRecordList" parameterType="PlanManagement" resultType="PlanManagementReport">
+        SELECT cr.address, cr.check_result checkResult, cr.create_user_name createUserName, cr.check_type checkType, cr.create_time createTime,
+            cr.floor_id buildingFloorId, cr.device_sys_id deviceSysId, cr.device_type_id deviceTypeId, cr.check_date checkDate
+        FROM t_check_record cr
+        INNER JOIN maintenance_manage.d_device_type dt ON dt.id = cr.device_type_id
+        INNER JOIN p_check_project cpp ON cpp.id = cr.check_project_id
+        LEFT JOIN t_check_point cp ON cp.id = cr.check_point_id AND cr.status &lt;= 98
+        LEFT JOIN p_plan_management ppm on ppm.customer_id = cr.check_project_id
+        WHERE cr.status &lt;= 98 AND ppm.id = #{id} AND cr.check_type >= 2
+        AND (cr.create_time BETWEEN ppm.start_date AND DATE_FORMAT(DATE_ADD(ppm.end_date, INTERVAL 1 DAY),'%Y-%m-%d'))
+    </select>
+
+    <!-- 查询 计划管理 list -->
+    <select id="findPlanManagementListByPlanName" parameterType="PlanManagement" resultMap="planManagementResultMap">
+        SELECT <include refid="sqlColumns"/>
+        FROM maintenance_manage.p_plan_management pm
+        WHERE pm.project_id = #{planManagement.projectId} and pm.customer_id = #{planManagement.customerId}
+        AND pm.plan_name in
+        <foreach collection="planNameList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

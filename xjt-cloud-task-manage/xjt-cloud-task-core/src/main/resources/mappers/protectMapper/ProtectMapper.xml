@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.protect.ProtectDao">
+
+    <resultMap id="protectResultMap" type="com.xjt.cloud.task.core.entity.protect.Protect">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        
+        <result column="protect_name" property="protectName" jdbcType="VARCHAR"/>
+        <result column="construction_director" property="constructionDirector" jdbcType="VARCHAR"/>
+        <result column="construction_director_id" property="constructionDirectorId" jdbcType="BIGINT"/>
+        <result column="protect_grade_id" property="protectGradeId" jdbcType="BIGINT"/>
+        <result column="protect_grade" property="protectGrade" jdbcType="VARCHAR"/>
+        <result column="protect_duration" property="protectDuration" jdbcType="INTEGER"/>
+        <result column="operatorIdStr" property="operatorIdStr" jdbcType="VARCHAR"/>
+        <result column="task_state" property="taskState" jdbcType="INTEGER"/>
+        <result column="protect_state" property="protectState" jdbcType="INTEGER"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+
+        <result column="protect_create_time" property="protectCreateTime" jdbcType="TIMESTAMP"/>
+        <result column="protect_end_time" property="protectEndTime" jdbcType="TIMESTAMP"/>
+        <result column="protect_close_time" property="protectCloseTime" jdbcType="TIMESTAMP"/>
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="protectSql">
+        tp.id, tp.project_id, tp.protect_name, tp.construction_director, tp.construction_director_id, tp.protect_grade_id, tp.protect_grade, tp.protect_duration,
+        tp.submitter, tp.task_state, tp.protect_state, tp.deleted,
+        tp.protect_create_time, tp.protect_end_time, tp.protect_close_time,
+        tp.create_time, tp.last_modify_time, tp.phone
+    </sql>
+
+    <sql id="findProtectSql">
+        <where>
+            1 = 1
+            <if test="id != null and id > 0">
+                AND tp.id = #{id}
+            </if>
+            <if test="projectId != null and projectId > 0">
+                AND tp.project_id = #{projectId}
+            </if>
+
+            <if test="protectName != null and protectName != ''">
+                AND (tp.protect_name LIKE CONCAT('%',#{protectName},'%') or tp.construction_director LIKE CONCAT('%',#{protectName},'%'))
+            </if>
+
+            <if test="taskState != null">
+                AND tp.task_state = #{taskState}
+            </if>
+            <if test="taskStates != null and taskStates.length > 0">
+                AND tp.task_state IN
+                <foreach collection="taskStates" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="protectState != null and protectState > 0">
+                AND tp.protect_state = #{protectState}
+            </if>
+            <if test="protectStates != null and protectStates.length > 0">
+                AND tp.protect_state IN
+                <foreach collection="protectStates" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="constructionDirector != null and constructionDirector != ''">
+                AND tp.construction_director LIKE CONCAT('%',#{constructionDirector},'%')
+            </if>
+            <if test="constructionDirectorId != null and constructionDirectorId > 0">
+                AND tp.construction_director_id = #{constructionDirectorId}
+            </if>
+            <if test="deleted != null">
+                AND tp.deleted = #{deleted}
+            </if>
+            <if test="phone != null and phone != ''">
+                AND tp.phone = #{phone}
+            </if>
+            <if test="createTime != null and lastModifyTime != null">
+                AND tp.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询 班前防护 -->
+    <select id="findProtect" parameterType="Protect" resultMap="protectResultMap">
+        SELECT <include refid="protectSql"/>,
+            MAX(fae.recover_status) recoverStatus, GROUP_CONCAT(DISTINCT fae.id) fireAlarmEventId,
+            GROUP_CONCAT(DISTINCT pu.user_id) operatorIdStr,
+            GROUP_CONCAT(DISTINCT pou.user_name) operators
+        FROM task_manage.t_protect tp
+        LEFT JOIN task_manage.t_protect_fire_event pfe ON pfe.protect_id = tp.id
+        LEFT JOIN iot_manage.f_fire_alarm_event fae ON pfe.fire_event_id = fae.id
+
+        LEFT JOIN project_manage.p_org_user ppou ON tp.construction_director_id = ppou.user_id AND tp.project_id = ppou.project_id
+        LEFT JOIN task_manage.t_protect_user pu ON tp.id = pu.protect_id
+        LEFT JOIN project_manage.p_org_user pou ON pu.user_id = pou.user_id AND pou.project_id = tp.project_id
+        <include refid="findProtectSql"/>
+        GROUP BY tp.id
+        LIMIT 1;
+    </select>
+
+
+    <!-- 查询 班前防护 -->
+    <select id="findProtectById" parameterType="java.lang.Long" resultMap="protectResultMap">
+        SELECT <include refid="protectSql"/>,
+            MAX(fae.recover_status) recoverStatus, GROUP_CONCAT(DISTINCT fae.id) fireAlarmEventId,
+            GROUP_CONCAT(DISTINCT pu.user_id) operatorIdStr,
+            GROUP_CONCAT(DISTINCT pou.user_name) operators
+        FROM task_manage.t_protect tp
+        LEFT JOIN task_manage.t_protect_fire_event pfe ON pfe.protect_id = tp.id
+        LEFT JOIN iot_manage.f_fire_alarm_event fae ON pfe.fire_event_id = fae.id
+
+        LEFT JOIN project_manage.p_org_user ppou ON tp.construction_director_id = ppou.user_id AND tp.project_id = ppou.project_id
+        LEFT JOIN task_manage.t_protect_user pu ON tp.id = pu.protect_id
+        LEFT JOIN project_manage.p_org_user pou ON pu.user_id = pou.user_id AND pou.project_id = tp.project_id
+        WHERE tp.id = #{id}
+        GROUP BY tp.id
+        LIMIT 1;
+    </select>
+
+    <!-- 查询 班前防护 数量 -->
+    <select id="findProtectListTotalCount" parameterType="Protect" resultType="java.lang.Integer">
+        SELECT COUNT(tp.id)
+        FROM task_manage.t_protect tp
+        <include refid="findProtectSql"/>
+    </select>
+
+    <!-- 查询 班前防护 -->
+    <select id="findProtectList" parameterType="Protect" resultMap="protectResultMap">
+        SELECT <include refid="protectSql"/>,
+            MIN(fae.recover_status) recoverStatus, GROUP_CONCAT(DISTINCT fae.id) fireAlarmEventId,
+            GROUP_CONCAT(DISTINCT pu.user_id) operatorIdStr,
+            GROUP_CONCAT(DISTINCT pou.user_name) operators
+        FROM task_manage.t_protect tp
+        LEFT JOIN task_manage.t_protect_fire_event pfe ON pfe.protect_id = tp.id
+        LEFT JOIN iot_manage.f_fire_alarm_event fae ON pfe.fire_event_id = fae.id
+
+        LEFT JOIN project_manage.p_org_user ppou ON tp.construction_director_id = ppou.user_id AND tp.project_id = ppou.project_id
+        LEFT JOIN task_manage.t_protect_user pu ON tp.id = pu.protect_id
+        LEFT JOIN project_manage.p_org_user pou ON pu.user_id = pou.user_id AND pou.project_id = #{projectId}
+        <include refid="findProtectSql"/>
+        GROUP BY tp.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 添加 班前防护 -->
+    <insert id="saveProtect" parameterType="Protect" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO task_manage.t_protect(project_id, protect_name, construction_director, construction_director_id, protect_grade_id, protect_grade,
+            protect_duration, operators, submitter, task_state, protect_state, create_time, phone)
+        VALUES (#{projectId}, #{protectName}, #{constructionDirector}, #{constructionDirectorId}, #{protectGradeId}, #{protectGrade},
+            #{protectDuration}, #{operators}, #{submitter},#{taskState}, #{protectState}, NOW(), #{phone});
+    </insert>
+
+    <!-- 修改 班前防护 -->
+    <update id="updateProtect" parameterType="Protect">
+        UPDATE task_manage.t_protect
+        <set>
+            <if test="protectName != null and protectName != ''">
+                protect_name = #{protectName},
+            </if>
+            <if test="constructionDirector != null and constructionDirector != ''">
+                construction_director = #{constructionDirector},
+            </if>
+            <if test="constructionDirectorId != null and constructionDirectorId > 0">
+                construction_director_id = #{constructionDirectorId},
+            </if>
+            <if test="protectGradeId != null and protectGradeId > 0">
+                protect_grade_id = #{protectGradeId},
+            </if>
+            <if test="protectGrade != null and protectGrade != ''">
+                protect_grade = #{protectGrade},
+            </if>
+            <if test="protectDuration != null and protectDuration > 0">
+                protect_duration = #{protectDuration},
+            </if>
+            <if test="operators != null and operators != ''">
+                operators = #{operators},
+            </if>
+            <if test="submitter != null and submitter != ''">
+                submitter = #{submitter},
+            </if>
+            <if test="taskState != null">
+                task_state = #{taskState},
+            </if>
+            <if test="protectState != null and protectState > 0">
+                protect_state = #{protectState},
+            </if>
+
+            <if test="protectCreateTime != null">
+                protect_create_time = #{protectCreateTime},
+            </if>
+            <if test="protectEndTime != null">
+                protect_end_time = #{protectEndTime},
+            </if>
+            <if test="protectCloseTime != null">
+                protect_close_time = #{protectCloseTime},
+            </if>
+
+            <if test="deleted != null">
+                deleted = #{deleted},
+            </if>
+            <if test="phone != null and phone != ''">
+                phone = #{phone}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 关闭 班前防护 -->
+    <update id="closeProtect" parameterType="Protect">
+        UPDATE task_manage.t_protect
+        <set>
+            <if test="constructionDirector != null and constructionDirector != ''">
+                construction_director = #{constructionDirector},
+            </if>
+            <if test="constructionDirectorId != null and constructionDirectorId > 0">
+                construction_director_id = #{constructionDirectorId},
+            </if>
+            <if test="protectGrade != null and protectGrade != ''">
+                protect_grade = #{protectGrade},
+            </if>
+            <if test="protectDuration != null and protectDuration > 0">
+                protect_duration = #{protectDuration},
+            </if>
+            <if test="operators != null and operators != ''">
+                operators = #{operators},
+            </if>
+            <if test="submitter != null and submitter != ''">
+                submitter = #{submitter},
+            </if>
+            <if test="taskState != null">
+                task_state = #{taskState},
+            </if>
+            <if test="protectState != null and protectState > 0">
+                protect_state = #{protectState},
+            </if>
+
+            <if test="protectCreateTime != null">
+                protect_create_time = #{protectCreateTime},
+            </if>
+            <if test="protectEndTime != null">
+                protect_end_time = #{protectEndTime},
+            </if>
+            <if test="protectCloseTime != null">
+                protect_close_time = #{protectCloseTime}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="projectId != null and projectId != 0">
+            project_id = #{projectId}
+        </if>
+        <if test="protectGradeId != null and protectGradeId != 0">
+            AND protect_grade_id = #{protectGradeId}
+        </if>
+
+        <if test="protectCloseTime != null">
+            AND protect_close_time is null
+        </if>
+        AND task_state != 1
+    </update>
+
+    <!-- 批量保存 图片 -->
+    <insert id="saveProtectImageList" parameterType="Protect">
+        INSERT INTO t_protect_image(protect_id, image_url, create_time)
+        VALUES
+        <foreach item="item" collection="imageUrls" index="index" separator="," >
+            (#{id}, #{item}, #{createTime})
+        </foreach>
+    </insert>
+
+    <!-- 删除 作业图片 -->
+    <delete id="deletedProtectImageList" parameterType="Protect">
+        DELETE FROM t_protect_image
+        WHERE 1 = 1
+        <if test="id != null and id > 0">
+            AND protect_id = #{id}
+        </if>
+        <if test="imageUrls != null and imageUrls.length > 0">
+            AND image_url IN
+            <foreach collection="imageUrls" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+
+    <!-- 查询 图片 -->
+    <select id="findProtectImageUrls" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT image_url
+        FROM task_manage.t_protect_image
+        WHERE protect_id = #{id}
+        AND create_time = (
+            SELECT MAX(create_time)
+            FROM task_manage.t_protect_image
+            WHERE protect_id = #{id}
+        )
+    </select>
+
+    <!-- 查询 用户是否在项目的作业中 -->
+    <select id="findIsProtectPerson" parameterType="Protect" resultType="java.lang.Integer">
+        SELECT SUM(x.id) totalCount
+        FROM (
+            SELECT COUNT(tp.id) id
+            FROM task_manage.t_protect tp
+            WHERE tp.project_id = #{projectId} AND tp.deleted = 0 AND tp.construction_director_id = #{constructionDirectorId}
+
+            UNION ALL
+            SELECT COUNT(tpu.id) id
+            FROM task_manage.t_protect_user tpu
+            INNER JOIN task_manage.t_protect tp ON tp.id = tpu.protect_id
+            WHERE tp.project_id = #{projectId} AND tp.deleted = 0 AND tpu.user_id = #{constructionDirectorId}
+        ) x
+    </select>
+
+
+    <!-- 批量保存 作业与火警事件关联 -->
+    <insert id="saveProtectFireEvent" parameterType="Protect">
+        INSERT INTO t_protect_fire_event(protect_id, fire_event_id)
+        VALUES
+        <foreach item="item" collection="fireAlarmEventIds" index="index" separator="," >
+            (#{id}, #{item})
+        </foreach>
+    </insert>
+
+    <!-- 删除 作业与火警事件关联 -->
+    <delete id="deletedProtectFireEvent" parameterType="Protect">
+        DELETE FROM t_protect_fire_event
+        WHERE protect_id = #{id}
+    </delete>
+
+    <!-- 查询 班前防护 数量 -->
+    <select id="findUserNameString" parameterType="Protect" resultType="java.lang.String">
+        SELECT DISTINCT GROUP_CONCAT(ou.user_name) userNameString
+        FROM project_manage.p_org_user ou
+        WHERE ou.project_id = #{projectId}
+        AND ou.user_id IN
+        <foreach item="item" collection="userIdList" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 查询 班前防护 最新事件 最新的数据 -->
+    <select id="findFireAlarmEventList" parameterType="Protect" resultType="FireAlarmEvent">
+        SELECT x.id, x.alarm_position alarmPosition, x.create_time createTime, x.last_modify_time lastModifyTime,
+			 x.recover_status recoverStatus
+        FROM iot_manage.f_fire_alarm_event x
+        WHERE x.id IN (
+            SELECT MAX(f.id)
+            FROM iot_manage.f_fire_alarm_event f
+            INNER JOIN task_manage.t_protect_grade pg ON pg.grade_name = f.alarm_position
+            WHERE f.event_type = 7 AND f.project_id = #{projectId}
+            <if test="sign != null">
+                AND pg.sign = #{sign}
+            </if>
+            GROUP BY f.alarm_position
+        )
+    </select>
+
+    <!-- 查询 成员 所在的作业是否完成 -->
+    <select id="findUserProtectState" parameterType="Protect" resultType="java.lang.Integer">
+        SELECT SUM(x.id) totalCount
+        FROM (
+            SELECT COUNT(tp.id) id
+            FROM task_manage.t_protect tp
+            WHERE tp.project_id = #{projectId} AND tp.deleted = 0 AND tp.construction_director_id = #{constructionDirectorId}
+            AND tp.protect_state != 3
+
+            UNION ALL
+            SELECT COUNT(tpu.id) id
+            FROM task_manage.t_protect_user tpu
+            INNER JOIN task_manage.t_protect tp ON tp.id = tpu.protect_id
+            WHERE tp.project_id = #{projectId} AND tp.deleted = 0 AND tpu.user_id = #{constructionDirectorId}
+            AND tp.protect_state != 3
+        ) x
+    </select>
+
+    <!-- 根据 作业查询sign -->
+    <select id="findSign" parameterType="Protect" resultType="java.lang.Integer">
+        SELECT pg.sign
+        FROM task_manage.t_protect tp
+        LEFT JOIN task_manage.t_protect_grade pg ON tp.protect_grade_id = pg.parent_id
+        <include refid="findProtectSql"/>
+        LIMIT 1;
+    </select>
+
+
+
+    <!-- 综合监测 start -->
+    <!--  根据 作业ID 删除综合监测 -->
+    <delete id="deletedIntegratedMonitoringByProtectId" parameterType="java.lang.Long">
+        DELETE FROM task_manage.t_Integrated_monitoring
+        WHERE protect_id = #{protectId}
+    </delete>
+
+    <!-- 批量保存 综合监测 -->
+    <insert id="saveIntegratedMonitoring" parameterType="IntegratedMonitoring">
+        INSERT INTO task_manage.t_Integrated_monitoring(
+            protect_id, monitoring_name, monitoring_code, monitoring_value, monitoring_status, monitoring_memo,
+            create_time)
+        VALUES
+        <foreach item="item" collection="integratedMonitoringList" index="index" separator="," >
+            (#{protectId}, #{item.monitoringName}, #{item.monitoringCode}, #{item.monitoringValue}, #{item.monitoringStatus}, #{item.monitoringMemo},
+            NOW())
+        </foreach>
+    </insert>
+
+    <!-- 查询 作业的综合监测 -->
+    <select id="findIntegratedMonitoringList" parameterType="IntegratedMonitoring" resultType="IntegratedMonitoring">
+        SELECT id,  protect_id protectId, monitoring_name monitoringName, monitoring_code monitoringCode, monitoring_value monitoringValue,
+            monitoring_status monitoringStatus, monitoring_memo monitoringMemo, create_time createTime
+        FROM task_manage.t_Integrated_monitoring
+        WHERE protect_id = #{protectId}
+        ORDER BY createTime
+    </select>
+    <!-- 综合监测 end -->
+</mapper>

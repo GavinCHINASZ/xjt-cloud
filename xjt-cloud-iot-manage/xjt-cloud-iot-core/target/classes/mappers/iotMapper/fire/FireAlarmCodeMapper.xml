@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.fire.FireAlarmCodeDao" >
+
+    <resultMap id="fireAlarmCodeResultMap" type="com.xjt.cloud.iot.core.entity.fire.FireAlarmCode" >
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="user_code" property="userCode" jdbcType="VARCHAR"/>
+        <result column="controller_number" property="controllerNumber" jdbcType="VARCHAR"/>
+        <result column="controller_loop" property="controllerLoop" jdbcType="VARCHAR" />
+        <result column="device_address" property="deviceAddress" jdbcType="VARCHAR"/>
+        <result column="raw_code" property="rawCode" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 根据条件查询火警主机编码表 -->
+    <select id="findFireAlarmCode" parameterType="FireAlarmCode" resultMap="fireAlarmCodeResultMap">
+        SELECT
+            fac.device_name,fac.device_address
+        FROM iot_manage.f_fire_alarm_code fac
+        <where>
+            <if test="projectId != null and projectId != 0">
+                AND fac.project_id = #{projectId}
+            </if>
+            <if test="userCode != null and userCode != ''">
+                AND fac.user_code  = #{userCode}
+            </if>
+            <if test="controllerNumber != null and controllerNumber != ''">
+                AND fac.controller_number = #{controllerNumber}
+            </if>
+            <if test="controllerLoop != null and controllerLoop != ''">
+                AND fac.controller_loop = #{controllerLoop}
+            </if>
+            <if test="rawCode != null and rawCode != ''">
+                AND fac.raw_code = #{rawCode}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+</mapper>

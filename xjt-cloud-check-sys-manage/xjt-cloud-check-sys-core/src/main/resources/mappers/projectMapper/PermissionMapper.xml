@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.sys.core.dao.project.PermissionDao" >
+    <!--查询用户权限信息列表 -->
+    <select id="getUserPermissionList" parameterType="java.lang.Long" resultType="Permission">
+        SELECT pp.url url, IF(pp.per_type = 2 AND rp.source_type &lt;= 2 AND pp.project_type = #{projectType}, CONCAT(our.project_id),0) projectId
+        FROM p_permission_path pp
+        INNER JOIN p_role_permission rp ON rp.permission_id = pp.permission_id AND rp.status = 1
+        INNER JOIN p_permission p ON pp.permission_id = p.id AND p.status = 1
+        INNER JOIN p_org_user_role our ON our.role_id = rp.role_id
+        INNER JOIN p_project pr on pr.id = our.project_id
+        WHERE our.user_id = #{userId} AND pp.permission_type = 3 AND (pp.project_type = #{projectType} OR pp.project_type = 4) AND pr.deleted = false
+        GROUP BY projectId,url ORDER BY projectId
+    </select>
+
+    <!--查询用户权限信息列表 -->
+    <select id="getUserPermissionListCV5" parameterType="java.lang.Long" resultType="Permission">
+        SELECT pp.url url, IF(pp.per_type = 2 AND rp.source_type &lt;= 2, CONCAT(rp.source_id),0) projectId
+        FROM p_permission_path pp
+        INNER JOIN p_role_permission rp ON rp.permission_id = pp.permission_id AND rp.status = 1
+        INNER JOIN p_permission p ON pp.permission_id = p.id AND p.status = 1
+        INNER JOIN p_org_user_role our ON our.role_id = rp.role_id
+        WHERE our.user_id = #{userId} AND pp.permission_type = 3 AND pp.project_type = #{projectType}
+        GROUP BY projectId,url ORDER BY projectId
+    </select>
+
+    <!--查询所有权限信息列表 -->
+    <select id="getPermissionList"  resultType="java.lang.String">
+        SELECT url FROM p_path WHERE type >= 2 AND (project_type = #{projectType} OR project_type = 4) GROUP BY url
+    </select>
+
+
+</mapper>

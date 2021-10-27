@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.linkage.LinkageEventDao" >
+
+    <resultMap id="linkageEventResultMap" type="com.xjt.cloud.iot.core.entity.linkage.LinkageEvent" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="fault_device_id" property="faultDeviceId" jdbcType="BIGINT" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="fault_device_name" property="faultDeviceName" jdbcType="VARCHAR" />
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <result column="fault_device_qr_no" property="faultDeviceQrNo" jdbcType="VARCHAR" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="check_point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="fault_check_point_qr_no" property="faultCheckPointQrNo" jdbcType="VARCHAR" />
+        <result column="check_point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="building_floor_name" property="buildingFloorName" jdbcType="VARCHAR"/>
+
+        <result column="linkage_device_id" property="linkageDeviceId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="sensor_id" property="sensorId" jdbcType="VARCHAR" />
+        <result column="event_type" property="eventType" jdbcType="INTEGER" />
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER" />
+        <result column="confirm" property="confirm" jdbcType="INTEGER"/>
+        <result column="event_handle_times" property="endHandleTimes" jdbcType="TIMESTAMP"/>
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+        <result column="end_heartbeat_time" property="endHeartbeatTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="update_user_name" property="updateUserName" jdbcType="VARCHAR"/>
+        <result column="update_user_id" property="updateUserId" jdbcType="BIGINT"/>
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="deviceSql">
+        le.id, le.project_id, le.device_type_id, le.linkage_device_id, le.device_id, le.fault_device_id, le.check_point_id,
+        le.sensor_id, le.event_type, le.channel, le.recover_status, le.building_id, le.building_floor_id,
+        le.create_time, le.create_user_name, le.create_user_id, le.update_user_name, le.update_user_id, le.end_heartbeat_time, le.last_modify_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="deviceName != null and deviceName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
+        </if>
+        <if test="deviceQrNo != null and deviceQrNo != ''">
+            AND d.qr_no LIKE CONCAT('%',#{deviceQrNo},'%')
+        </if>
+
+        <if test="checkPointName != null and checkPointName != ''">
+            AND cp.point_name LIKE CONCAT('%',#{checkPointName},'%')
+        </if>
+        <if test="checkPointQrNo != null and checkPointQrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{checkPointQrNo},'%')
+        </if>
+
+        <if test="sensorId != null and sensorId != ''">
+            AND le.sensor_id LIKE CONCAT('%',#{sensorId},'%')
+        </if>
+
+        <if test="eventType != null and eventType > 0">
+            AND le.event_type = #{eventType}
+        </if>
+        <if test="byFaultEventType != null and byFaultEventType > 0">
+            AND le.event_type = #{byFaultEventType}
+        </if>
+        <if test="eventTypes != null and eventTypes.length > 0">
+            AND le.event_type IN
+            <foreach item="item" collection="eventTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="recoverStatus != null and recoverStatus > 0">
+            AND le.recover_status = #{recoverStatus}
+        </if>
+        <if test="recoverStatuss != null and recoverStatuss.length > 0">
+            AND le.recover_status IN
+            <foreach item="item" collection="recoverStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="createTime != null and endTime != null">
+            AND le.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="beginTime != null and endTime != null">
+            AND le.create_time BETWEEN #{beginTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="buildingId != null and buildingId > 0">
+            AND le.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId > 0">
+            AND le.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="buildingFloorIds != null and buildingFloorIds.length > 0">
+            AND le.building_floor_id IN
+            <foreach item="item" collection="buildingFloorIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="projectId != null and projectId > 0">
+            AND le.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND le.project_id IN
+            <foreach item="item" collection="projectIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="id != null and id > 0">
+            AND le.id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            AND le.id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="handleStatuss != null">
+            <foreach item="item" collection="handleStatuss" >
+                <if test="item == 1">AND leh.create_time IS NOT NULL</if>
+                <if test="item == 2">AND leh.create_time IS NULL</if>
+            </foreach>
+        </if>
+        <if test="handleStatus != null and handleStatus != 0">
+            <if test="handleStatus == 1">AND leh.create_time IS NOT NULL</if>
+            <if test="handleStatus == 2">AND leh.create_time IS NULL</if>
+        </if>
+
+        <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+            AND leh.device_fault_type_id = #{deviceFaultTypeId}
+        </if>
+    </sql>
+
+    <!-- 查询 联动事件 数量 -->
+    <select id="findLinkageEventTotalCount" parameterType="LinkageEvent" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT le.id)
+        FROM iot_manage.l_linkage_event le
+        LEFT JOIN iot_manage.l_linkage_event_handle leh ON le.id = leh.event_id
+        LEFT JOIN device_manage.d_device d ON le.device_id = d.id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = le.check_point_id
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 查询 联动事件 列表 -->
+    <select id="findLinkageEventList" parameterType="LinkageEvent" resultMap="linkageEventResultMap">
+        SELECT <include refid="deviceSql"/>,
+            MAX(leh.create_time) event_handle_times, IF(leh.id IS NULL, 1, 2) confirm,
+            MAX(IF(leh.id IS NULL, 2, 1)) eventExistStatus, MAX(IF(leh.id IS NULL,2,1)) handleStatus,
+            leh.description handleDescription, leh.create_user_name handleUserName,
+            d.qr_no device_qr_no, dt.device_sys_name device_name,
+            cp.point_location, cp.qr_no check_point_qr_no, cp.point_name check_point_name,
+            dt2.device_sys_name fault_device_name, cp2.qr_no fault_check_point_qr_no, d2.qr_no fault_device_qr_no
+            ,dft.fault_type
+        FROM iot_manage.l_linkage_event le
+        LEFT JOIN (
+            SELECT ta.id, ta.device_id, ta.device_fault_type_id, ta.event_id, ta.device_type, ta.description, ta.create_time, ta.create_user_name
+            FROM iot_manage.l_linkage_event_handle ta
+            INNER JOIN (
+                SELECT MAX(id) id
+                FROM iot_manage.l_linkage_event_handle
+                WHERE project_id = #{projectId}
+                <if test="deviceFaultTypeId != null and deviceFaultTypeId != 0">
+                    AND device_fault_type_id = #{deviceFaultTypeId}
+                </if>
+                <if test="handleDeviceType != null">
+                    AND device_type = #{handleDeviceType}
+                </if>
+                <if test="createTime != null">
+                    AND create_time >= #{createTime}
+                </if>
+                GROUP BY event_id
+            ) t ON t.id = ta.id
+        ) leh ON le.id = leh.event_id
+
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = leh.device_fault_type_id
+
+        LEFT JOIN device_manage.d_device d ON le.device_id = d.id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = le.device_type_id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = le.check_point_id
+
+        LEFT JOIN device_manage.d_device d2 ON le.fault_device_id = d2.id
+        LEFT JOIN device_manage.d_device_type dt2 ON dt2.id = d2.device_type_id
+        LEFT JOIN device_manage.d_check_point cp2 ON cp2.id = d2.check_point_id
+        <include refid="findWhere"/>
+        GROUP BY le.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 联动事件 饼图 -->
+    <select id="findLinkageEventSummaryReport" parameterType="LinkageEvent" resultType="LinkageDeviceReport">
+        SELECT COUNT(le.id) totalCount,
+            SUM(IF(le.event_type = 2, 1, 0)) failDevice,
+            SUM(IF(le.event_type = 3, 1, 0)) offLine
+        FROM iot_manage.l_linkage_event le
+        LEFT JOIN iot_manage.l_linkage_device ld ON ld.id = le.linkage_device_id
+        <include refid="findWhere"/>
+        AND ld.deleted = 0
+    </select>
+
+    <insert id="saveLinkageEvent" parameterType="LinkageEvent" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO `iot_manage`.`l_linkage_event`(`project_id`, `linkage_device_id`, `device_type_id`, `device_id`, `fault_device_id`,`check_point_id`, `sensor_id`,
+            `event_type`, `channel`, `recover_status`, `building_id`, `building_floor_id`,
+            `create_time`, `create_user_name`, `create_user_id`, `update_user_name`, `update_user_id`, `end_heartbeat_time`)
+        VALUES (#{projectId}, #{linkageDeviceId}, #{deviceTypeId}, #{deviceId}, #{faultDeviceId}, #{checkPointId}, #{sensorId},
+            #{eventType}, #{channel}, 2, #{buildingId}, #{buildingFloorId},
+            NOW(), #{createUserName}, #{createUserId}, #{updateUserName}, #{updateUserId}, #{endHeartbeatTime});
+    </insert>
+
+    <insert id="saveLinkageEventByDevice" parameterType="LinkageDevice">
+        INSERT INTO `iot_manage`.`l_linkage_event`(`project_id`, `linkage_device_id`, `device_type_id`, `device_id`, `fault_device_id`,`check_point_id`, `sensor_id`,
+            `event_type`, `channel`, `recover_status`, `building_id`, `building_floor_id`,
+            `create_time`, `create_user_name`, `create_user_id`, `update_user_name`, `update_user_id`)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.projectId}, #{item.id}, #{item.deviceTypeId}, #{item.deviceId}, #{item.faultDeviceId}, #{item.checkPointId}, #{item.sensorId},
+            #{item.eventType}, #{item.channel}, #{item.recoverStatus}, #{item.buildingId}, #{item.buildingFloorId},
+            NOW(), #{item.createUserName}, #{item.createUserId}, #{item.updateUserName}, #{item.updateUserId})
+        </foreach>
+    </insert>
+
+    <!-- 查询 声光报警事件 曲线图 -->
+    <select id="findLinkageEventReportCount" parameterType="LinkageEvent" resultType="LinkageEvent">
+        SELECT IFNULL(se.totalCount, 0) totalCount,
+            IFNULL(se.failDevice, 0) failDevice,
+            IFNULL(se.offLine, 0) offLine,
+            <include refid="formatTimeCol"/> timeDesc
+        FROM (
+            SELECT COUNT(le.id) totalCount,
+                SUM(IF(le.event_type = 2, 1, 0)) failDevice,
+                SUM(IF(le.event_type = 3, 1, 0)) offLine,
+                <include refid="formatTime"/>
+            FROM iot_manage.l_linkage_event le
+            LEFT JOIN iot_manage.l_linkage_device ld ON ld.id = le.linkage_device_id
+            <include refid="findWhere"/>
+            AND ld.deleted = 0
+            GROUP BY createTime
+        ) se
+        RIGHT JOIN (<include refid="formatTimeRow"/>) dayList ON <include refid="formatTimeOn"/>
+        ORDER BY timeDesc
+    </select>
+
+    <sql id="formatTimeCol">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTimeOrderBy">
+        <if test="groupType != null and groupType == 1">
+            str_to_date(dayList.createTime,'%H:%i')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            str_to_date(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            str_to_date(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            str_to_date(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTimeOn">
+        <if test="groupType != null and groupType == 1">
+            se.createTime = DATE_FORMAT(dayList.createTime,'%H')
+        </if>
+        <if test="groupType != null and groupType == 2">
+            se.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m-%d')
+        </if>
+        <if test="groupType != null and groupType == 3">
+            se.createTime = DATE_FORMAT(dayList.createTime,'%Y-%m')
+        </if>
+        <if test="groupType != null and groupType == 4">
+            se.createTime = DATE_FORMAT(dayList.createTime,'%Y')
+        </if>
+    </sql>
+
+    <sql id="formatTime">
+        <if test="groupType != null and groupType == 1">
+            DATE_FORMAT(le.create_time,'%H') createTime
+        </if>
+        <if test="groupType != null and groupType == 2">
+            DATE_FORMAT(le.create_time,'%Y-%m-%d') createTime
+        </if>
+        <if test="groupType != null and groupType == 3">
+            DATE_FORMAT(le.create_time,'%Y-%m') createTime
+        </if>
+        <if test="groupType != null and groupType == 4">
+            DATE_FORMAT(le.create_time,'%Y') createTime
+        </if>
+    </sql>
+
+    <sql id="formatTimeRow">
+        SELECT
+        <if test="groupType != null and groupType == 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d %H') createTime
+        </if>
+        <if test="groupType != null and groupType != 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 ${timeType}),'%Y-%m-%d') createTime
+        </if>
+        FROM (
+            SELECT @date := DATE_ADD(#{createTime}, interval -1 ${timeType})
+            FROM b_base_data
+            LIMIT #{dateTimeCount}
+        ) days
+    </sql>
+
+    <!-- 更新 -->
+    <update id="updateLinkageEvent" parameterType="LinkageEvent">
+        UPDATE iot_manage.l_linkage_event
+        <set>
+            <if test="channel != null">
+                channel = #{channel},
+            </if>
+            <if test="sensorId != null and sensorId != ''">
+                sensor_id = #{sensorId},
+            </if>
+            <if test="recoverStatus != null and recoverStatus == 1">
+                recover_status = #{recoverStatus},
+                end_heartbeat_time = NOW(),
+            </if>
+            <if test="updateUserName != null and updateUserName != ''">
+                update_user_name = #{updateUserName},
+            </if>
+            <if test="updateUserId != null and updateUserId > 0">
+                update_user_id = #{updateUserId},
+            </if>
+        </set>
+        WHERE
+        <if test="sensorId != null and sensorId != ''">
+            sensor_id = #{sensorId}
+        </if>
+        <if test="linkageDeviceId != null and linkageDeviceId != 0">
+            linkage_device_id = #{linkageDeviceId}
+        </if>
+        <if test="linkageDeviceIds != null and linkageDeviceIds.length > 0">
+            linkage_device_id IN
+            <foreach item="item" collection="linkageDeviceIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="eventType != null and eventType > 0">
+            AND event_type = #{eventType}
+        </if>
+        AND recover_status = 2
+    </update>
+
+</mapper>

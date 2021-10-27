@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.device.core.dao.device.CheckItemDao" >
+    <resultMap id="checkItemResultMap" type="com.xjt.cloud.device.core.entity.CheckItem" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="check_name" property="checkName" jdbcType="VARCHAR" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="check_specification" property="checkSpecification" jdbcType="VARCHAR" />
+        <result column="min_value" property="minValue" jdbcType="INTEGER" />
+        <result column="max_value" property="maxValue" jdbcType="INTEGER" />
+        <result column="period_type" property="periodType" jdbcType="INTEGER" />
+        <result column="item_available_results" property="itemAvailableResults" jdbcType="VARCHAR" />
+        <result column="check_type" property="checkType" jdbcType="INTEGER" />
+        <result column="description" property="description" jdbcType="VARCHAR" />
+        <result column="check_action" property="checkAction" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="check_item_vs_type" property="checkItemVsType" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="findCheckItemWhere">
+        WHERE  status &lt;= 98
+        <if test="checkItemVsType != null">
+            AND check_item_vs_type = #{checkItemVsType}
+        </if>
+        <if test="checkItemVsType == null">
+            AND check_item_vs_type = 1
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId > 0">
+            AND device_type_id = #{deviceTypeId}
+        </if>
+        <if test="checkType != null and checkType > 0">
+            AND check_type = #{checkType}
+        </if>
+        <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId > 0">
+            AND project_id = #{projectId}
+        </if>
+    </sql>
+
+    <sql id="selColumns">
+        id, check_name, device_type_id, check_specification, min_value, max_value, unit, period_type, item_available_results,
+        check_type, description, check_action, create_time, status, type
+    </sql>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findCheckItemListTotalCount" parameterType="CheckItem" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM d_device_check_item
+        <include refid="findCheckItemWhere"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findCheckItemList" parameterType="CheckItem" resultMap="checkItemResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_device_check_item
+        <include refid="findCheckItemWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+</mapper>

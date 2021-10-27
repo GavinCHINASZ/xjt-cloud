@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.report.ReportSystemDao" >
+    <resultMap id="reportRsultMap" type="com.xjt.cloud.report.core.entity.report.ReportSystem" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="report_name" property="reportName" jdbcType="VARCHAR" />
+        <id column="type" property="type" jdbcType="INTEGER" />
+        <id column="item_name" property="itemName" jdbcType="VARCHAR" />
+        <id column="sort_no" property="sortNo" jdbcType="INTEGER" />
+        <id column="parent_id" property="parentId" jdbcType="BIGINT" />
+        <id column="check_point_name" property="checkPointName" jdbcType="VARCHAR" />
+
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="selColumns">
+        `id`, create_time`, `report_name`, `report_no`, `type`, `item_name`, `sort_no`, `parent_id`
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="id != null and id != 0">
+            AND id = #{id}
+        </if>
+    </sql>
+
+    <!-- 查询列表 -->
+    <select id="findDeviceList" parameterType="ReportSystem" resultMap="reportRsultMap">
+        SELECT <include refid="selColumns"/>
+        FROM r_report_system
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 根据ID查询 -->
+    <select id="findById" parameterType="java.lang.Long" resultMap="reportRsultMap">
+        SELECT id, create_time, report_name, report_no, `type`, item_name, sort_no, parent_id
+        FROM r_report_system
+        where id = #{id}
+    </select>
+
+    <!-- 查询  -->
+    <select id="findByReportNameAndNoBySql" parameterType="Report" resultType="Report">
+        SELECT t.id, t.report_name reportName, t.parent_id parentId, t.systemName, t.item_name itemName, t.report_no reportNo, t.sort_no systemSortNo,
+            GROUP_CONCAT(DISTINCT t.device_check_item_id) itemIds, n.check_point_name,
+            MAX(n.building_name) buildingName, MAX(n.floor_name) floorName, SUM(n.deviceNum) deviceNum, SUM(n.normalNum) normalNum, MAX(n.memo) memo
+        FROM (
+            SELECT rss.id, rss.report_name, rss.parent_id, rs.item_name systemName, rss.item_name, rss.report_no, rss.sort_no,
+            dci.id device_check_item_id, dci.device_type_id
+            FROM r_report_system rs
+            INNER JOIN r_report_system rss ON rss.parent_id = rs.id
+            LEFT JOIN r_report_item ri ON rss.id = ri.report_system_id
+            LEFT JOIN device_manage.d_device_check_item dci ON dci.item_index = ri.device_check_item_id
+            AND dci.check_item_vs_type = #{checkItemVsType}
+            <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId > 0">
+                AND dci.project_id = #{projectId}
+            </if>
+            WHERE rss.report_name = #{reportName} AND rss.report_no = #{reportNo}
+            GROUP BY rss.id, dci.device_type_id
+        ) t
+        LEFT JOIN (
+            SELECT d.device_type_id, cr.device_id deviceId, cr.id checkRecordId, task.id taskId, b.building_name, bf.floor_name, cr.id check_record_id,
+                SUM(cr.device_count) deviceNum, SUM(if(cr.check_result = 0, 1, 0)) normalNum, MAX(cr.fault_description) memo, cr.check_point_name
+            FROM task_manage.t_task task
+            LEFT JOIN task_manage.t_check_record cr ON cr.task_id = task.id AND cr.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            LEFT JOIN project_manage.p_building b ON b.id = cr.building_id
+            LEFT JOIN project_manage.p_building_floor bf ON bf.id = cr.building_floor_id
+            LEFT JOIN device_manage.d_device d ON d.id = cr.device_id AND d.status &lt;= 98
+            LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+            WHERE task.project_id = #{projectId}
+            GROUP BY d.device_type_id
+        ) n ON t.device_type_id = n.device_type_id
+        GROUP BY t.id ORDER BY t.sort_no
+    </select>
+
+</mapper>

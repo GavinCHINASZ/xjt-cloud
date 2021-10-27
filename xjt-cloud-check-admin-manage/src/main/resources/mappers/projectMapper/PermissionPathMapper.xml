@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.project.PermissionPathDao" >
+
+    <!--权限Path列表查询-->
+    <select id="findPermissionPathListPage" parameterType="PermissionPath" resultType="PermissionPath">
+        SELECT pp.id, pp.permission_id as permissionId, pp.project_type as projectType, pp.path_id as pathId ,
+            pp.url, pm.permission_name as permissionName, p.path_name as pathName
+        FROM project_manage.p_permission_path pp
+        INNER JOIN project_manage.p_permission pm ON pp.permission_id = pm.id
+        INNER JOIN project_manage.p_path p ON p.id = path_id
+        WHERE pp.permission_id =#{permissionId}
+        <if test=" projectType != null">
+            AND pp.project_type = #{projectType}
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--权限Path列表查询数量-->
+    <select id="findPermissionPathListPageCount" parameterType="PermissionPath" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM project_manage.p_permission_path pp
+        WHERE pp.permission_id = #{permissionId}
+        <if test=" projectType != null">
+            AND pp.project_type = #{projectType}
+        </if>
+    </select>
+
+    <!--保存-->
+    <insert id="savePermissionPath" parameterType="PermissionPath" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO p_permission_path( path_id, permission_id, permission_type, url, project_type)
+        VALUES (#{pathId}, #{permissionId},  #{permissionType}, #{url}, #{projectType});
+    </insert>
+
+    <!--修改-->
+    <update id="modifyPermissionPath" parameterType="PermissionPath">
+        UPDATE p_permission_path
+        <set>
+            <if test="pathId != null and pathId != 0">
+                path_id = #{pathId},
+            </if>
+            <if test="perType != null and perType != 0">
+                per_type = #{perType},
+            </if>
+            <if test="permissionId != null and permissionId != 0">
+                permission_id = #{permissionId},
+            </if>
+            <if test="permissionType != null and permissionType != 0">
+                permission_type = #{permissionType},
+            </if>
+            <if test="projectType != null and projectType != 0">
+                project_type = #{projectType},
+            </if>
+            <if test="url != null and url != ''">
+                url = #{url},
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="id == null and pathId != null and pathId != 0">
+            path_id = #{pathId}
+        </if>
+        <if test="id == null and permissionId != null and permissionId != 0">
+            permission_id = #{permissionId}
+        </if>
+    </update>
+
+    <!--删除-->
+    <delete id="deletePermissionPath" parameterType="PermissionPath">
+        DELETE FROM p_permission_path
+        WHERE
+        <if test="permissionId != null and permissionId != 0">
+            permission_id = #{permissionId}
+        </if>
+        <if test="permissionId == null and pathId != null and pathId != 0">
+            path_id = #{pathId}
+        </if>
+    </delete>
+
+    <!--批量保存-->
+    <insert id="savePermissionPaths" parameterType="PermissionPath" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO p_permission_path( path_id, permission_id, permission_type, url, project_type)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+              (#{item.pathId}, #{item.permissionId},  #{item.permissionType}, #{item.url}, #{item.projectType})
+        </foreach>
+    </insert>
+</mapper>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.smoke.SmokeEventHandleDao" >
+
+    <resultMap id="SmokeEventHandleResultMap" type="com.xjt.cloud.iot.core.entity.smoke.SmokeEventHandle" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_fault_type_id" property="deviceFaultTypeId" jdbcType="BIGINT" />
+        <result column="smoke_device_id" property="smokeDeviceId" jdbcType="BIGINT" />
+        <result column="event_id" property="eventId" jdbcType="VARCHAR" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="img_urls" property="imgUrls" jdbcType="VARCHAR" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+        <result column="cause_analysis" property="causeAnalysis" jdbcType="VARCHAR" />
+        <result column="repair_method" property="repairMethod" jdbcType="VARCHAR" />
+        <result column="fault_level" property="faultLevel" jdbcType="INTEGER" />
+        <result column="repair_proposal" property="repairProposal" jdbcType="VARCHAR" />
+        <result column="fault_color" property="faultColor" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findSmokeEventHandleWhere">
+        WHERE 1=1
+        <if test="smokeDeviceId != null and smokeDeviceId != 0">
+            AND seh.smoke_device_id = #{smokeDeviceId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND seh.device_id = #{deviceId}
+        </if>
+        <if test="eventId != null and eventId != 0">
+            AND seh.event_id = #{eventId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND seh.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND seh.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND seh.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND seh.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <!-- 查询 烟感事件处理信息-->
+    <select id="findSmokeEventHandleList" parameterType="SmokeEventHandle" resultMap="SmokeEventHandleResultMap">
+        SELECT seh.*, dft.fault_type, dft.fault_level, dft.cause_analysis, dft.repair_method, dft.repair_proposal, dft.fault_color
+        FROM iot_manage.s_smoke_event_handle seh
+        INNER JOIN device_manage.d_device_fault_type dft ON seh.device_fault_type_id = dft.id
+        <include refid="findSmokeEventHandleWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 烟感事件处理信息列表总记录数-->
+    <select id="findSmokeEventHandleListCount" parameterType="SmokeEventHandle" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT seh.id)
+        FROM iot_manage.s_smoke_event_handle seh
+        INNER JOIN device_manage.d_device_fault_type dft ON seh.device_fault_type_id = dft.id
+        <include refid="findSmokeEventHandleWhere"/>
+    </select>
+
+    <!--添加 烟感事件处理信息-->
+    <insert id="saveSmokeEventHandle" parameterType="SmokeEventHandle">
+        INSERT INTO iot_manage.s_smoke_event_handle (project_id, device_id, device_fault_type_id, smoke_device_id, event_id, status,
+            device_type, description, img_urls, create_user_id, create_user_name, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.projectId}, #{item.deviceId}, #{item.deviceFaultTypeId}, #{item.smokeDeviceId}, #{item.eventId}, 1,
+            #{item.deviceType}, #{item.description}, #{item.imgUrls}, #{item.createUserId}, #{item.createUserName}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 查询 烟感事件处理信息-->
+    <select id="findSmokeEventFaultTypeColumnChart" parameterType="SmokeEventHandle" resultType="EventFaultReport">
+        SELECT COUNT(DISTINCT seh.id) faultCount,
+            dft.fault_event_type faultEventType, dft.fault_type faultType, dft.device_type deviceType, dft.fault_color faultColor
+        FROM (
+            SELECT seh.* 
+            FROM iot_manage.s_smoke_event_handle seh
+            INNER JOIN (
+                SELECT MAX(seh.id) id
+                FROM iot_manage.s_smoke_event_handle seh
+                INNER JOIN s_smoke_event se ON se.id = seh.event_id
+                <include refid="findSmokeEventFaultTypeColumnChartWhere"/>
+                GROUP BY seh.event_id
+            ) t ON t.id = seh.id 
+        ) seh
+        INNER JOIN device_manage.d_device_fault_type dft ON seh.device_fault_type_id = dft.id
+        GROUP BY dft.id ORDER BY dft.fault_event_type, dft.sort
+    </select>
+
+    <sql id="findSmokeEventFaultTypeColumnChartWhere">
+        WHERE 1=1
+        <if test="smokeDeviceId != null and smokeDeviceId != 0">
+            AND seh.smoke_device_id = #{smokeDeviceId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND seh.device_id = #{deviceId}
+        </if>
+        <if test="eventId != null and eventId != 0">
+            AND seh.event_id = #{eventId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND seh.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND se.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND seh.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND seh.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+</mapper>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud.iml" filepath="$PROJECT_DIR$/xjt-cloud.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-admin-manage/xjt-cloud-admin-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-admin-manage/xjt-cloud-admin-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-base/xjt-cloud-base.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-base/xjt-cloud-base.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-cas-client/xjt-cloud-cas-client.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-cas-client/xjt-cloud-cas-client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-cas-server/xjt-cloud-cas-server.iml" filepath="$PROJECT_DIR$/xjt-cloud-cas-server/xjt-cloud-cas-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-client-manage/xjt-cloud-client-api/xjt-cloud-client-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-client-manage/xjt-cloud-client-api/xjt-cloud-client-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-client-manage/xjt-cloud-client-core/xjt-cloud-client-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-client-manage/xjt-cloud-client-core/xjt-cloud-client-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-client-manage/xjt-cloud-client-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-client-manage/xjt-cloud-client-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-client-manage/xjt-cloud-client-web/xjt-cloud-client-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-client-manage/xjt-cloud-client-web/xjt-cloud-client-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-commons/xjt-cloud-commons.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-commons/xjt-cloud-commons.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-data-source/xjt-cloud-data-source.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-data-source/xjt-cloud-data-source.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-device-manage/xjt-cloud-device-api/xjt-cloud-device-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-device-manage/xjt-cloud-device-api/xjt-cloud-device-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-device-manage/xjt-cloud-device-core/xjt-cloud-device-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-device-manage/xjt-cloud-device-core/xjt-cloud-device-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-device-manage/xjt-cloud-device-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-device-manage/xjt-cloud-device-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-device-manage/xjt-cloud-device-web/xjt-cloud-device-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-device-manage/xjt-cloud-device-web/xjt-cloud-device-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-faultRepair-manage/xjt-cloud-faultRepair-api/xjt-cloud-faultRepair-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-faultRepair-manage/xjt-cloud-faultRepair-api/xjt-cloud-faultRepair-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-faultRepair-manage/xjt-cloud-faultRepair-core/xjt-cloud-faultRepair-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-faultRepair-manage/xjt-cloud-faultRepair-core/xjt-cloud-faultRepair-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-faultRepair-manage/xjt-cloud-faultRepair-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-faultRepair-manage/xjt-cloud-faultRepair-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-faultRepair-manage/xjt-cloud-faultRepair-web/xjt-cloud-faultRepair-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-faultRepair-manage/xjt-cloud-faultRepair-web/xjt-cloud-faultRepair-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-ftp/xjt-cloud-ftp.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-ftp/xjt-cloud-ftp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-api/xjt-cloud-iot-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-api/xjt-cloud-iot-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-core/xjt-cloud-iot-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-core/xjt-cloud-iot-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-netty/xjt-cloud-iot-netty.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-netty/xjt-cloud-iot-netty.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-web/xjt-cloud-iot-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-iot-manage/xjt-cloud-iot-web/xjt-cloud-iot-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-log-manage/xjt-cloud-log-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-log-manage/xjt-cloud-log-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-message-manage/xjt-cloud-message-api/xjt-cloud-message-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-message-manage/xjt-cloud-message-api/xjt-cloud-message-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-message-commons/xjt-cloud-message-commons.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-message-commons/xjt-cloud-message-commons.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-message-manage/xjt-cloud-message-core/xjt-cloud-message-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-message-manage/xjt-cloud-message-core/xjt-cloud-message-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-message-manage/xjt-cloud-message-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-message-manage/xjt-cloud-message-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-message-manage/xjt-cloud-message-web/xjt-cloud-message-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-message-manage/xjt-cloud-message-web/xjt-cloud-message-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-netty-manage/xjt-cloud-netty-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-netty-manage/xjt-cloud-netty-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-onenet/xjt-cloud-onenet.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-onenet/xjt-cloud-onenet.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-other/xjt-cloud-other.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-other/xjt-cloud-other.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-other-manage/xjt-cloud-other-api/xjt-cloud-other-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-other-manage/xjt-cloud-other-api/xjt-cloud-other-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-other-manage/xjt-cloud-other-core/xjt-cloud-other-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-other-manage/xjt-cloud-other-core/xjt-cloud-other-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-other-manage/xjt-cloud-other-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-other-manage/xjt-cloud-other-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-project-manage/xjt-cloud-project-api/xjt-cloud-project-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-project-manage/xjt-cloud-project-api/xjt-cloud-project-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-project-manage/xjt-cloud-project-core/xjt-cloud-project-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-project-manage/xjt-cloud-project-core/xjt-cloud-project-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-project-manage/xjt-cloud-project-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-project-manage/xjt-cloud-project-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-project-manage/xjt-cloud-project-web/xjt-cloud-project-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-project-manage/xjt-cloud-project-web/xjt-cloud-project-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-quartz/xjt-cloud-quartz.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-quartz/xjt-cloud-quartz.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-report-manage/xjt-cloud-report-api/xjt-cloud-report-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-report-manage/xjt-cloud-report-api/xjt-cloud-report-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-report-manage/xjt-cloud-report-core/xjt-cloud-report-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-report-manage/xjt-cloud-report-core/xjt-cloud-report-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-report-manage/xjt-cloud-report-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-report-manage/xjt-cloud-report-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-report-manage/xjt-cloud-report-web/xjt-cloud-report-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-report-manage/xjt-cloud-report-web/xjt-cloud-report-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-sys-manage/xjt-cloud-sys-api/xjt-cloud-sys-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-sys-manage/xjt-cloud-sys-api/xjt-cloud-sys-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-sys-manage/xjt-cloud-sys-core/xjt-cloud-sys-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-sys-manage/xjt-cloud-sys-core/xjt-cloud-sys-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-sys-manage/xjt-cloud-sys-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-sys-manage/xjt-cloud-sys-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-sys-manage/xjt-cloud-sys-web/xjt-cloud-sys-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-sys-manage/xjt-cloud-sys-web/xjt-cloud-sys-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-task-manage/xjt-cloud-task-api/xjt-cloud-task-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-task-manage/xjt-cloud-task-api/xjt-cloud-task-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-task-manage/xjt-cloud-task-core/xjt-cloud-task-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-task-manage/xjt-cloud-task-core/xjt-cloud-task-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-task-manage/xjt-cloud-task-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-task-manage/xjt-cloud-task-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-task-manage/xjt-cloud-task-web/xjt-cloud-task-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-task-manage/xjt-cloud-task-web/xjt-cloud-task-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-utils.iml" filepath="$PROJECT_DIR$/xjt-cloud-utils/xjt-cloud-utils.iml" />
+    </modules>
+  </component>
+</project>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.log.ProjectRunLogDao" >
+
+    <resultMap id="deviceTypeResultMap" type="com.xjt.cloud.admin.manage.entity.log.ProjectRunLog" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="item_value" property="itemValue" jdbcType="VARCHAR" />
+        <result column="deleted" property="deleted" jdbcType="BOOLEAN" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="projectRunLogSql">
+        prl.id, prl.item_value, prl.deleted, prl.create_time, prl.last_modify_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="itemValue != null and itemValue != ''">
+            AND prl.item_value = #{itemValue}
+        </if>
+        <if test="deleted != null">
+            AND prl.deleted = #{deleted}
+        </if>
+    </sql>
+
+    <!-- 查询 监听项目运行状态日志 数量 -->
+    <select id="findProjectRunLogCount" parameterType="ProjectRunLog" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM log_manage.l_project_run_log prl
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 保存 监听项目运行状态日志 -->
+    <insert id="saveProjectRunLog" parameterType="ProjectRunLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO log_manage.l_project_run_log (item_value, create_time)
+        VALUES (#{itemValue}, NOW());
+    </insert>
+
+    <!-- 更新 监听项目运行状态日志 -->
+    <update id="updateProjectRunLog" parameterType="ProjectRunLog">
+        UPDATE log_manage.l_project_run_log
+        <set>
+            <if test="deleted != null">
+                deleted = 1,
+            </if>
+        </set>
+        <where>
+            <if test="id != null and id > 0">
+                id = #{id}
+            </if>
+            <if test="itemValue != null and itemValue != ''">
+                item_value = #{itemValue}
+            </if>
+        </where>
+    </update>
+
+    <!-- 更新 监听项目运行状态日志 -->
+    <update id="updateProjectRunLogDeleted" parameterType="ProjectRunLog">
+        UPDATE log_manage.l_project_run_log
+        <set>
+            <if test="deleted != null">
+                deleted = 1,
+            </if>
+        </set>
+        <where>
+            <if test="id != null and id > 0">
+                id = #{id}
+            </if>
+            <if test="itemValue != null and itemValue != ''">
+                item_value = #{itemValue}
+            </if>
+            <if test="deleted != null">
+                deleted = #{deleted}
+            </if>
+        </where>
+    </update>
+
+</mapper>

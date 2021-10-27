@@ -1,0 +1,978 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.CheckRecordDao">
+    <resultMap id="checkRecordResultMap" type="com.xjt.cloud.task.core.entity.check.CheckRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="task_id" property="taskId" jdbcType="BIGINT"/>
+        <result column="task_name" property="taskName" jdbcType="VARCHAR"/>
+        <result column="task_parent_id" property="taskParentId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_start_time" property="checkStartTime" jdbcType="VARCHAR" />
+
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR"/>
+        <result column="device_count" property="deviceCount" jdbcType="INTEGER"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR"/>
+
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="check_point_name" property="checkPointName" jdbcType="VARCHAR"/>
+        <result column="check_point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR"/>
+        <result column="check_result" property="checkResult" jdbcType="INTEGER"/>
+        <result column="checker_name" property="checkerName" jdbcType="VARCHAR"/>
+        <result column="check_type" property="checkType" jdbcType="INTEGER"/>
+
+        <result column="device_fault_type_id" property="deviceFaultTypeId" jdbcType="BIGINT"/>
+        <result column="device_fault_type" property="deviceFaultType" jdbcType="VARCHAR"/>
+
+        <result column="org_name" property="orgName" jdbcType="VARCHAR"/>
+        <result column="task_status" property="taskStatus" jdbcType="INTEGER"/>
+
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="version_no" property="versionNo" jdbcType="BIGINT"/>
+        <result column="fault_device_count" property="faultDeviceCount" jdbcType="INTEGER"/>
+        <result column="handle_status" property="handleStatus" jdbcType="INTEGER"/>
+        <result column="fault_description" property="faultDescription" jdbcType="VARCHAR"/>
+
+        <result column="building_id" property="buildingId" jdbcType="INTEGER"/>
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="INTEGER"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="total_count" property="totalCount" jdbcType="INTEGER"/>
+
+        <result column="check_point_location" property="checkPointLocation" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="checkRecordSql">
+        cr.id, cr.task_id, cr.task_name, cr.task_parent_id, cr.project_id, cr.org_name, cr.device_id, cr.device_name, cr.device_qr_no, cr.device_count,
+        cr.point_location, cr.check_point_id, cr.check_point_qr_no, cr.check_point_name, cr.checker_name, cr.check_type, cr.handle_status, cr.check_result,
+        cr.check_start_time, cr.create_time, cr.create_user_id, cr.device_fault_type_id, cr.device_fault_type,
+        cr.old_id, cr.old_task_id, cr.old_task_parent_id, cr.old_project_id, cr.old_device_id, cr.old_check_point_id, cr.old_create_user_id,
+        cr.fault_description, cr.fault_device_count, cr.building_id, cr.building_floor_id, cr.version_no
+    </sql>
+
+    <sql id="findCheckRecordSql">
+        <where>
+            <if test="id != null">
+                AND cr.id = #{id}
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND cr.id IN
+                <foreach collection="ids" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="taskId != null">
+                AND cr.task_id = #{taskId}
+            </if>
+            <if test="taskIds != null and taskIds.length > 0">
+                AND cr.task_id IN
+                <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="projectId != null and projectId > 0">
+                AND cr.project_id = #{projectId}
+            </if>
+            <if test="taskParentId != null">
+                AND cr.task_parent_id = #{taskParentId}
+            </if>
+            <if test="deviceId != null">
+                AND cr.device_id = #{deviceId}
+            </if>
+
+            <if test="buildingIds != null and buildingIds.length > 0">
+                AND cr.building_id IN
+                <foreach collection="buildingIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="buildingFloorIds != null and buildingFloorIds.length > 0">
+                AND cr.building_floor_id IN
+                <foreach collection="buildingFloorIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="checkResults != null and checkResults.length > 0">
+                AND cr.check_result IN
+                <foreach collection="checkResults" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+
+            <if test="checkTypes != null and checkTypes.length > 0">
+                AND cr.check_type IN
+                <foreach collection="checkTypes" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="checkType != null">
+                AND cr.check_type = #{checkType}
+            </if>
+
+            <if test="checkResult != null and versionNo == null">
+                AND cr.check_result = #{checkResult}
+            </if>
+
+            <if test="versionNo != null and checkResult &gt; 0">
+                AND cr.check_result = #{checkResult}
+            </if>
+
+            <if test="taskStatus != null">
+                AND cr.task_status = #{taskStatus}
+            </if>
+            <if test="checkPointId != null">
+                AND cr.check_point_id = #{checkPointId}
+            </if>
+            <if test="faultDeviceCount != null and faultDeviceCount &lt; 1">
+                AND cr.fault_device_count != #{faultDeviceCount}
+            </if>
+            <if test="faultDeviceCount != null and faultDeviceCount &gt; 0">
+                AND cr.fault_device_count &gt; 0
+            </if>
+            <if test="startDate != null">
+                AND cr.create_time >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND cr.create_time &lt; #{endDate}
+            </if>
+
+            <if test="checkStartTime != null">
+                AND cr.check_start_time >= #{checkStartTime}
+            </if>
+            <if test="createTime != null and lastModifyTime == null">
+                AND cr.create_time >= #{createTime}
+            </if>
+            <if test="taskName != null and taskName != ''">
+                AND cr.task_name LIKE CONCAT('%', #{taskName}, '%')
+            </if>
+
+            <if test="deviceName != null and deviceName != ''">
+                AND (cr.device_name LIKE CONCAT('%', #{deviceName}, '%') OR cr.device_qr_no LIKE CONCAT('%',#{deviceName}, '%'))
+            </if>
+            <if test="deviceQrNo != null and deviceQrNo != ''">
+                AND cr.device_qr_no LIKE CONCAT('%',#{deviceQrNo},'%')
+            </if>
+            <if test="checkPointName != null and checkPointName != ''">
+                AND (cr.check_point_name LIKE CONCAT('%', #{checkPointName}, '%') OR cr.check_point_qr_no LIKE CONCAT('%', #{checkPointName}, '%'))
+            </if>
+            <if test="checkPointQrNo != null and checkPointQrNo != ''">
+                AND cr.check_point_qr_no LIKE CONCAT('%', #{checkPointQrNo}, '%')
+            </if>
+
+            <if test="checkerName != null and checkerName != ''">
+                AND (cr.checker_name LIKE CONCAT('%', #{checkerName}, '%') OR cr.org_name LIKE CONCAT('%',#{checkerName}, '%'))
+            </if>
+            <if test="createTime != null and lastModifyTime != null">
+                AND cr.create_time between #{createTime} and #{lastModifyTime}
+            </if>
+            <if test="buildingName != null and buildingName != ''">
+                AND (b.building_name LIKE CONCAT('%', #{buildingName}, '%') OR bf.floor_name LIKE CONCAT('%',
+                #{floorName}, '%'))
+            </if>
+
+            <if test="deviceCheckItemIds != null and deviceCheckItemIds.length > 0">
+                AND dci.id IN
+                <foreach collection="deviceCheckItemIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询巡检记录-->
+    <select id="findCheckRecordById" parameterType="java.lang.Long" resultMap="checkRecordResultMap">
+        SELECT
+            id,task_id, cr.task_name, task_parent_id, project_id, device_id, check_result,
+            org_name, task_status, check_point_qr_no, check_point_id, create_user_name, check_start_time
+        FROM t_check_record cr
+        LEFT JOIN t_task t ON t.id = cr.task_id
+        WHERE id = #{id} LIMIT 1
+    </select>
+
+    <!--添加巡检记录-->
+    <insert id="saveCheckRecord" parameterType="CheckRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_check_record
+        (`task_id`, `task_name`,  `project_id`, `org_name`, `device_id`, `device_name`,
+        `device_qr_no`, `device_count`, `point_location`, `check_point_id`, `check_point_qr_no`, `device_fault_type_id`, `device_fault_type`,
+        `check_point_name`, `checker_name`, `check_type`, `handle_status`, `check_result`, `check_start_time`, `create_time`, `create_user_id`,
+        `fault_description`, `fault_device_count`, `building_id`, `building_floor_id`, `version_no`)
+        VALUES
+           ( #{taskId}, #{taskName}, #{projectId}, #{orgName}, #{deviceId}, #{deviceName},
+            #{deviceQrNo}, #{deviceCount}, #{pointLocation}, #{checkPointId}, #{checkPointQrNo}, #{deviceFaultTypeId}, #{deviceFaultType},
+            #{checkPointName}, #{createUserName}, #{checkType}, #{handleStatus}, #{checkResult}, #{checkStartTime}, #{createTime}, #{createUserId},
+            #{faultDescription}, #{faultDeviceCount}, #{buildingId}, #{buildingFloorId}, #{versionNo})
+    </insert>
+
+    <!-- 批量保存 -->
+    <insert id="saveCheckRecordList" parameterType="CheckRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_check_record
+        (`task_id`, `task_name`, `project_id`, `org_name`, `device_id`, `device_name`,
+        `device_qr_no`, `device_count`, `point_location`, `check_point_id`, `check_point_qr_no`,
+        `check_point_name`, `checker_name`, `check_type`, `handle_status`, `check_result`, `check_start_time`, `create_time`,
+        `create_user_id`, `device_fault_type_id`, `device_fault_type`,
+        `fault_description`, `fault_device_count`, `building_id`, `building_floor_id`, `version_no`)
+        VALUES
+        <foreach item="item" collection="list" index="index" separator=",">
+            (#{item.taskId}, #{item.taskName}, #{item.projectId}, #{item.orgName}, #{item.deviceId}, #{item.deviceName},
+            #{item.deviceQrNo}, #{item.deviceCount}, #{item.pointLocation}, #{item.checkPointId}, #{item.checkPointQrNo},
+            #{item.checkPointName}, #{item.createUserName}, #{item.checkType}, #{item.handleStatus},
+            #{item.checkResult}, #{item.checkStartTime}, #{item.createTime},
+            #{item.createUserId}, #{item.deviceFaultTypeId}, #{item.deviceFaultType},
+            #{item.faultDescription}, #{item.faultDeviceCount}, #{item.buildingId}, #{item.buildingFloorId},
+            #{item.versionNo})
+        </foreach>
+    </insert>
+
+    <!-- 修改任务 -->
+    <update id="modifyCheckRecord" parameterType="CheckRecord">
+        UPDATE t_check_record
+        <set>
+            <if test="checkResult != null">
+                check_result = #{checkResult},
+            </if>
+            <if test="taskStatus != null and remark != ''">
+                task_status = #{taskStatus},
+            </if>
+            id = #{id}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!--<select id="findCheckRecordByTaskId" parameterType="java.lang.Long" resultType="CheckRecord">
+        SELECT
+            tcp.check_point_id checkPointId,dt.device_sys_name deviceName,b.building_name buildingName,f.floor_name floorName
+        FROM device_manage.d_check_point cp
+        LEFT JOIN device_manage.d_device d
+        ON cp.id = d.check_point_id
+        LEFT JOIN  device_manage.d_device_type dt
+        ON dt.id = d.device_type_id
+        LEFT JOIN project_manage.p_building b
+        ON cp.building_id = b.id
+        LEFT JOIN project_manage.p_building_floor f
+        ON cp.building_floor_id = f.id
+        LEFT JOIN  t_task_check_point tcp
+        ON tcp.check_point_id = cp.id
+        LEFT JOIN t_check_record cr
+        ON cr.task_parent_id = tcp.task_id
+        WHERE cr.task_id = #{taskId}
+    </select>-->
+
+    <select id="findCheckRecordByTaskId" parameterType="java.lang.Long" resultType="CheckRecord">
+        SELECT cr.checkPointId,cp.building_id buildingId,cp.building_floor_id buildingFloorId, d.device_type_id deviceTypeId
+        FROM (
+            SELECT t.id,t.deviceStatus, MAX(t.version_no), t.checkPointId, t.checkerName, t.orgName, t.createTime
+            FROM (
+                SELECT tcr.id,tcr.check_result deviceStatus,tcr.version_no,tcr.check_point_id checkPointId,
+                    tcr.checker_name checkerName, tcr.org_name orgName, tcr.create_time createTime
+                FROM task_manage.t_check_record tcr
+                WHERE tcr.task_id = #{taskId}
+                ORDER BY tcr.version_no DESC
+            ) t
+            GROUP BY t.id
+            ORDER BY t.version_no
+        ) cr
+        LEFT JOIN device_manage.d_check_point cp
+        ON cr.checkPointId = cp.id
+        LEFT JOIN device_manage.d_device d
+        ON cp.id = d.check_point_id
+    </select>
+
+    <!-- 查询巡检记录 -->
+    <select id="findCheckRecordList" parameterType="CheckRecord" resultMap="checkRecordResultMap">
+        SELECT n.id, n.task_id, n.task_name, n.project_id, n.org_name, n.device_id, n.device_name, n.device_qr_no, n.device_count,
+            n.point_location, n.check_point_id, n.check_point_qr_no, n.check_point_name, n.check_type, n.handle_status, n.check_result, n.checker_name,
+            n.check_start_time, n.create_time, n.create_user_id, n.fault_description, n.fault_device_count, n.building_id, n.building_floor_id, n.version_no,
+            b.building_name, bf.floor_name, dt.img_url,
+            CONCAT(b.building_name,bf.floor_name,n.point_location) as check_point_location
+        FROM (
+            SELECT
+                cr.id, cr.task_id, cr.task_name, cr.project_id, cr.org_name, cr.device_id, cr.device_name, cr.device_qr_no, cr.device_count, cr.point_location,
+                cr.check_point_id, cr.check_point_qr_no, cr.check_point_name, cr.check_type, cr.handle_status, cr.check_result, cr.check_start_time, cr.create_time,
+                cr.create_user_id, cr.fault_description, cr.fault_device_count, cr.building_id, cr.building_floor_id, cr.version_no, cr.checker_name
+            FROM t_check_record cr
+            <include refid="findCheckRecordSql"/>
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) n
+        LEFT JOIN device_manage.d_device d ON n.device_id = d.id AND n.project_id = d.project_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        LEFT JOIN project_manage.p_building b ON b.id = n.building_id
+        LEFT JOIN project_manage.p_building_floor bf ON bf.id = n.building_floor_id
+    </select>
+
+    <!-- 查询巡检记录 导出表格 -->
+    <select id="findDownCheckRecordList" parameterType="CheckRecord" resultType="CheckRecords">
+        SELECT n.task_name taskName, n.device_name deviceName, n.device_qr_no deviceQrNo, n.device_count deviceCount, n.check_point_qr_no checkPointQrNo,
+            n.check_point_name checkPointName, n.check_result checkResult, n.create_time createTime, n.checker_name checkerName,
+            CONCAT(b.building_name, bf.floor_name, n.point_location) as checkPointLocation
+        FROM (
+            SELECT
+                cr.id, cr.task_id, cr.task_name, cr.project_id, cr.org_name, cr.device_id, cr.device_name, cr.device_qr_no, cr.device_count, cr.point_location,
+                cr.check_point_id, cr.check_point_qr_no, cr.check_point_name, cr.check_type, cr.handle_status, cr.check_result, cr.check_start_time, cr.create_time,
+                cr.create_user_id, cr.fault_description, cr.fault_device_count, cr.building_id, cr.building_floor_id, cr.version_no, cr.checker_name
+            FROM t_check_record cr
+            <include refid="findCheckRecordSql"/>
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) n
+        LEFT JOIN device_manage.d_device d ON n.device_id = d.id AND n.project_id = d.project_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        LEFT JOIN project_manage.p_building b ON b.id = n.building_id
+        LEFT JOIN project_manage.p_building_floor bf ON bf.id = n.building_floor_id
+    </select>
+
+    <!-- 查询巡检记录 -->
+    <select id="findCheckRecordLists" parameterType="CheckRecord" resultMap="checkRecordResultMap">
+        SELECT n.id, n.task_id, n.task_name, n.project_id, n.org_name, n.device_id, n.device_name, n.device_qr_no, n.device_count,
+            n.point_location, n.check_point_id, n.check_point_qr_no, n.check_point_name, n.check_type, n.handle_status, n.check_result, n.checker_name,
+            n.check_start_time, n.create_time, n.create_user_id, n.fault_description, n.fault_device_count, n.building_id, n.building_floor_id, n.version_no,
+            b.building_name, bf.floor_name, dt.img_url
+        FROM (
+            SELECT cr.id, cr.task_id, cr.task_name, cr.project_id, cr.org_name, cr.device_id, cr.device_name, cr.device_qr_no, cr.device_count, cr.point_location,
+                cr.check_point_id, cr.check_point_qr_no, cr.check_point_name, cr.check_type, cr.handle_status, cr.check_result, cr.check_start_time, cr.create_time,
+                cr.create_user_id, cr.fault_description, cr.fault_device_count, cr.building_id, cr.building_floor_id, cr.version_no, cr.checker_name
+            FROM(
+                SELECT a.id, a.device_id, a.check_result
+                FROM t_check_record AS a, (
+                    SELECT MAX(device_id) AS device_id, MAX(create_time) AS create_time
+                    FROM t_check_record AS b
+                    <if test="projectId != null and projectId > 0">
+                        WHERE b.project_id = #{projectId}
+                    </if>
+                    GROUP BY b.device_id
+                ) AS b
+                WHERE a.device_id = b.device_id AND a.create_time = b.create_time
+                GROUP BY a.device_id
+            ) tcr
+            INNER JOIN t_check_record cr ON tcr.device_id = cr.device_id
+            <if test="versionNo != null and versionNo == 1">
+                AND tcr.check_result = cr.check_result AND tcr.id = cr.id
+            </if>
+            <if test="idString != null and idString != ''">
+                AND cr.id NOT IN (${idString})
+            </if>
+            <include refid="findCheckRecordSql"/>
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) n
+        LEFT JOIN device_manage.d_device d ON n.device_id = d.id AND n.project_id = d.project_id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        LEFT JOIN project_manage.p_building b ON b.id = n.building_id
+        LEFT JOIN project_manage.p_building_floor bf ON bf.id = n.building_floor_id
+    </select>
+
+    <!--查询最新一条巡检记录-->
+    <select id="findCheckRecord" parameterType="CheckRecord" resultMap="checkRecordResultMap">
+        SELECT cr.id, cr.task_id, cr.task_parent_id, cr.project_id, cr.org_name, cr.device_id, cr.device_name, cr.device_qr_no, cr.device_count, cr.checker_name,
+            cr.point_location, cr.check_point_id, cr.check_point_qr_no, cr.check_point_name, cr.check_type, cr.handle_status, cr.check_result,
+            cr.check_start_time, cr.create_time, cr.create_user_id, cr.fault_description, cr.fault_device_count, cr.building_id, cr.building_floor_id, cr.version_no
+        FROM t_check_record cr
+        <include refid="findCheckRecordSql"/>
+        order by cr.create_time desc limit 1
+    </select>
+
+    <!-- 巡检记录总数 -->
+    <select id="findCheckRecordCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(cr.id)
+        FROM t_check_record cr
+        GROUP BY cr.task_id, cr.check_point_id, cr.version_no,cr.device_id
+        <include refid="findCheckRecordSql"/>
+    </select>
+
+    <!-- 查询 巡检记录 数量 -->
+    <select id="findCheckRecordDeviceIds" parameterType="CheckRecord" resultType="java.lang.Long">
+        SELECT DISTINCT cr.device_id deviceId
+        FROM t_check_record cr
+        <where>
+            <if test="buildingName != null and buildingName != ''">
+                AND b.building_name LIKE CONCAT('%',#{buildingName},'%')
+            </if>
+            <if test="buildingName != null and buildingName != ''">
+                AND bf.floor_name LIKE CONCAT('%',#{floorName},'%')
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND d.device_name LIKE CONCAT('%',#{deviceName},'%')
+            </if>
+            <if test="userName != null and userName != ''">
+                AND u.user_uame LIKE CONCAT('%',#{userName},'%')
+            </if>
+        </where>
+        <include refid="findCheckRecordSql"/>
+    </select>
+
+    <!-- 查询设备id列表 -->
+    <select id="findCheckRecordTotalCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(t.id) totalCount
+        FROM (
+            SELECT cr.id
+            FROM t_check_record cr
+            <include refid="findCheckRecordSql"/>
+            GROUP BY cr.task_id, cr.check_point_id, cr.version_no,cr.device_id
+        ) t
+    </select>
+
+    <!-- 查询设备id列表 -->
+    <select id="findCheckRecordTotalCounts" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(tcr.id) totalCount
+        FROM(
+            SELECT a.id, a.device_id, a.check_result
+            FROM t_check_record AS a,(
+                SELECT MAX(device_id) AS device_id, MAX(create_time) AS create_time
+                FROM t_check_record AS b
+                <if test="projectId != null and projectId > 0">
+                    WHERE b.project_id = #{projectId}
+                </if>
+                GROUP BY b.device_id
+            ) AS b
+            WHERE a.device_id = b.device_id AND a.create_time = b.create_time
+            GROUP BY a.device_id
+        ) tcr
+        INNER JOIN t_check_record cr ON tcr.device_id = cr.device_id
+        <if test="versionNo != null and versionNo == 1">
+            AND tcr.check_result = cr.check_result AND tcr.id = cr.id
+        </if>
+        <if test="idString != null and idString != ''">
+            AND cr.id NOT IN (${idString})
+        </if>
+        <include refid="findCheckRecordSql"/>
+    </select>
+
+    <!-- 根据设备id查询最新的设备状态 -->
+    <select id="findCheckRecordResultByDeviceId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT cr.check_result
+        FROM t_check_record cr
+        LEFT JOIN t_task t ON t.id = cr.task_id
+        WHERE cr.device_id = #{deviceId}
+        ORDER BY cr.create_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- PC巡检记录 查询巡检详情：设备基本信息 -->
+    <select id="findCheckDetailsByCheckRecordId" parameterType="java.lang.Long" resultType="CheckDetails">
+        SELECT cr.id checkRecordId, cr.device_name deviceName, cr.device_qr_no deviceQrNo, cr.check_point_name checkPointName, cr.check_point_qr_no checkPointQrNo,
+            cr.point_location pointLocation, cr.check_result checkResult, cr.checker_name checkerName, cr.org_name orgName,
+            cr.check_start_time checkStartTime, cr.create_time createTime,
+            t.task_name taskName, cr.version_no versionNo,
+            t.task_type taskType, t.task_status taskStatus,
+            d.memo deviceMemo
+        FROM t_check_record cr
+        LEFT JOIN t_task t ON t.id = cr.task_id
+        LEFT JOIN device_manage.d_device d ON d.check_point_id = cr.check_point_id
+        WHERE cr.id = #{checkRecordId} LIMIT 1;
+    </select>
+
+    <!-- 根据巡检记录id查询设备系统名称 -->
+    <select id="findDeviceSysNameByCheckRecordId" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT ddt.device_sys_name sysName
+        FROM t_check_record cr
+        LEFT JOIN device_manage.d_device d ON cr.device_id = d.id
+        LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        LEFT JOIN device_manage.d_device_type ddt ON dt.parent_id = ddt.id
+        WHERE cr.id = #{checkRecordId}
+    </select>
+
+    <!-- 根据任务id统计已检设备数量 -->
+    <select id="findCheckedDeviceNumByTaskId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT
+            COUNT(DISTINCT tcr.device_id) num
+        FROM t_check_record tcr
+        WHERE tcr.task_id = #{taskId}
+    </select>
+
+    <!-- 根据巡检记录id查询巡检详情 -->
+    <!-- <select id="findCheckRecordDetailsById" parameterType="java.lang.Long" resultType="">
+         SELECT
+             tcp.create_time createTime,tcp.task_name taskName,d.device_name deviceName,d.qr_no deviceQrNo,dcp.point_location pointLocation,
+             u.user_name userName,t.task_type taskType,t.task_period_type taskPeriodTpe,tcp.check_result checkResult
+         FROM t_check_record tcp
+         INNER JOIN device_manage.d_device d
+         ON tcp.device_id = d.id
+         INNER JOIN device_manage.d_check_point dcp
+         ON dcp.id = tcp.check_point_id
+         INNER JOIN sys.s_user u
+         ON tcp.create_user_id = u.id
+         INNER JOIN task t
+         ON t.id = tcp.task_id
+         WHERE tcp.id = #{checkRecordId}
+     </select>-->
+
+    <!-- 根据设备id查询最新的巡检记录id -->
+    <select id="findCheckRecordIdByDeviceId" parameterType="java.lang.Long" resultType="java.lang.Long">
+        SELECT tcp.id
+        FROM t_check_record tcp
+        WHERE tcp.device_id = #{deviceId}
+        ORDER BY tcp.create_time DESC
+        LIMIT 1
+    </select>
+
+    <!--查询巡检点巡检记录-->
+    <select id="findTaskCheckPointCheckRecordList" parameterType="CheckRecord" resultMap="checkRecordResultMap">
+        SELECT  cr.device_name, cr.device_qr_no, cr.device_count, cr.fault_description, cr.fault_device_count, cr.handle_status, cr.check_result,
+                cr.id, cr.task_id, cr.check_point_id, cr.device_id, cr.check_start_time, cr.create_time, cr.checker_name
+        FROM t_check_record cr
+        LEFT JOIN project_manage.p_org_user ou ON ou.user_id = cr.create_user_id AND ou.project_id = cr.project_id
+        WHERE cr.version_no = (
+            SELECT MAX(c.version_no)
+            FROM t_check_record c WHERE c.task_id = #{taskId} AND c.check_point_id = #{checkPointId}
+            <if test="id != null and id > 0">
+                 AND  c.id = #{id}
+            </if>
+        )
+        AND cr.task_id = #{taskId} AND cr.check_point_id = #{checkPointId}
+    </select>
+
+    <!-- 查询 故障巡查数量  总巡检设备数  故障设备数量 -->
+    <select id="findCheckRecordData" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT SUM(t.check_result = 1) faultCheckCount, SUM(t.device_count) deviceCount, SUM(t.fault_device_count) faultDeviceCount
+        FROM (
+            SELECT cr.check_result, cr.device_count, cr.fault_device_count
+            FROM t_check_record cr
+            <include refid="findCheckRecordSql"/>
+            GROUP BY cr.task_id, cr.check_point_id, cr.version_no, cr.device_id
+        )t
+    </select>
+
+    <!-- 查询 总设备数 正常数 故障数 -->
+    <select id="findCheckRecordDeviceData" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT COUNT(n.device_id) deviceCount,
+            SUM(if(n.check_result = 0, 1, 0)) normalDeviceCount,
+            SUM(if(n.check_result = 1, 1, 0)) faultDeviceCount
+        FROM(
+            SELECT cr.id, cr.device_id, cr.check_result
+            FROM t_check_record AS cr
+            INNER JOIN(
+                SELECT MAX(device_id) AS device_id, MAX(create_time) AS create_time
+                FROM t_check_record AS b
+                <if test="projectId != null and projectId > 0">
+                    WHERE b.project_id = #{projectId}
+                    <if test="startDate != null">
+                        AND b.create_time >= #{startDate}
+                    </if>
+                    <if test="endDate != null">
+                        AND b.create_time &lt; #{endDate}
+                    </if>
+                    <if test="checkTypes != null and checkTypes.length > 0">
+                        AND b.check_type IN
+                        <foreach collection="checkTypes" item="item" separator="," open="(" close=")">
+                            #{item}
+                        </foreach>
+                    </if>
+                </if>
+                GROUP BY b.device_id
+            ) AS b
+            ON cr.device_id = b.device_id AND cr.create_time = b.create_time
+            <include refid="findCheckRecordSql"/>
+            GROUP BY cr.device_id
+            ORDER BY cr.create_time desc
+        ) n
+    </select>
+
+    <!-- 修改任务 -->
+    <update id="deletedCheckRecord" parameterType="CheckRecord">
+        UPDATE t_check_record
+        <set>
+            deleted = #{deleted}
+        </set>
+        WHERE id IN
+        <foreach collection="ids" item="ids" separator="," open="(" close=")">
+            #{ids}
+        </foreach>
+    </update>
+
+    <!-- 月度工单统计 人员情况 数量 -->
+    <select id="findUserOverviewTotalCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(t.checker_name)
+        FROM(
+            SELECT DISTINCT cr.checker_name
+            FROM t_check_record cr
+            <include refid="findCheckRecordSql"/>
+            GROUP BY cr.checker_name
+        ) t
+    </select>
+
+    <!-- 月度工单统计 人员情况 -->
+    <select id="findUserOverview" parameterType="CheckRecord" resultMap="checkRecordResultMap">
+        SELECT DISTINCT cr.checker_name checker_name, COUNT(DISTINCT cr.check_point_id) total_count
+        FROM t_check_record cr
+        <include refid="findCheckRecordSql"/>
+        GROUP BY cr.checker_name
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询项目当月故障巡检记录数量-->
+    <select id="findProjectCurrentMonthFaultCheckRecordCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT count( DISTINCT cr.task_id, cr.check_point_id, cr.version_no ) AS count
+        FROM t_check_record cr
+        WHERE cr.check_result = 1 AND cr.project_id = #{projectId} AND DATE_FORMAT( cr.create_time, '%Y%m' ) = DATE_FORMAT(now() , '%Y%m' )
+    </select>
+
+    <!-- 查询 建筑消防设施巡查表 巡检内容 -->
+    <select id="findReportItem" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT dtt.device_sys_name deviceSysName, cr.device_name deviceName, dci.check_name checkName,
+            cr.device_qr_no deviceQrNo, cr.check_result checkResult, cr.checker_name checkerName, cr.check_start_time checkStartTime, cr.create_time createTime, cr.id,
+            cr.check_point_id checkPointId, cr.check_point_qr_no checkPointQrNo, cr.check_point_name checkPointName, cr.task_id taskId
+        FROM device_manage.d_device_check_item dci
+        INNER JOIN device_manage.d_device_type dt ON dt.id = dci.device_type_id
+        LEFT JOIN device_manage.d_device_type dtt ON dtt.id = dt.parent_id
+        INNER JOIN device_manage.d_device d ON d.device_type_id = dt.id
+        INNER JOIN task_manage.t_check_record cr ON cr.device_id = d.id
+        <include refid="findCheckRecordSql"/>
+        AND dci.check_item_vs_type = #{checkItemVsType}
+        <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+            AND dci.project_id = #{projectId}
+        </if>
+        GROUP BY cr.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 建筑消防设施巡查表 巡检内容 总数 -->
+    <select id="findReportItemTotalCount" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT COUNT(n.id) totalCount
+        FROM (
+            SELECT cr.id
+            FROM device_manage.d_device_check_item dci
+            INNER JOIN device_manage.d_device_type dt ON dt.id = dci.device_type_id
+            INNER JOIN device_manage.d_device d ON d.device_type_id = dt.id
+            INNER JOIN task_manage.t_check_record cr ON cr.device_id = d.id
+            <include refid="findCheckRecordSql"/>
+            AND dci.check_item_vs_type = #{checkItemVsType}
+            <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+                AND dci.project_id = #{projectId}
+            </if>
+            GROUP BY cr.id
+        ) n
+    </select>
+
+    <!--查询巡检点巡检记录-->
+    <select id="findCheckPointRecordList" resultMap="checkRecordResultMap">
+        SELECT cr.task_id,cr.create_time,cr.id
+        FROM t_check_record cr
+        WHERE cr.check_point_id =#{checkPointId}
+        GROUP BY cr.check_point_id,cr.task_id,cr.version_no
+        ORDER BY cr.create_time desc ;
+    </select>
+
+    <!--保存自动检测设备-->
+    <insert id="saveAutomaticCheckDevice" parameterType="CheckRecord" >
+        INSERT INTO `t_automatic_check_device`
+            (`task_id`, `device_id`, `project_id`, `check_start_time`, `create_time`, `create_user_id`, `status`,`device_qr_no`,`check_qr_no`)
+        VALUES (#{taskId}, #{deviceId}, #{projectId}, #{checkStartTime}, now(), #{createUserId}, 0, #{deviceQrNo}, #{checkPointQrNo});
+    </insert>
+
+    <!--删除自动检测设备-->
+    <delete id="deletedAutomaticCheckDevice" parameterType="CheckRecord">
+        delete from t_automatic_check_device
+        where task_id = #{taskId} and project_id = #{projectId} and device_id = #{deviceId}
+    </delete>
+
+
+    <!--查询自动检测设备状态-->
+    <select id="findAutomaticCheckDeviceStatus" parameterType="CheckRecord" resultType="java.lang.Integer">
+        SELECT acd.status
+        FROM t_automatic_check_device acd
+        WHERE acd.task_id = #{taskId} AND acd.project_id = #{projectId} AND acd.device_id = #{deviceId}
+        ORDER BY acd.create_time DESC limit 1
+    </select>
+
+    <!--更新自动检测状态-->
+    <update id="updAutomaticCheckDeviceStatus"  >
+        update t_automatic_check_device acd
+        set acd.status = 1
+        where acd.project_id = #{projectId} and (acd.device_qr_no = #{deviceQrNo} or acd.check_qr_no = #{deviceQrNo})
+    </update>
+
+    <!-- 07b2 -->
+    <select id="findInhaleSmokeSeven" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT t.point_name deviceQrNo, x.colA, x.colB, x.colC, x.colD, x.colE, x.colF, x.colG, x.colH, x.colI,
+            x.check_result checkResult, x.result_description faultDescription,
+            t.point_location pointLocation
+        FROM (
+            SELECT d.id, cp.point_location, cp.point_name, cp.qr_no
+            FROM device_manage.d_device_type dt
+            INNER JOIN device_manage.d_device d ON dt.id = d.device_type_id
+            LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+            WHERE dt.device_sys_name = '吸气式烟雾探测器'
+            GROUP BY cp.id
+        ) t
+        INNER JOIN (
+            SELECT m.id, MAX(m.check_result) check_result,
+                GROUP_CONCAT(case when m.result_description != ' ' THEN m.result_description else null END ) result_description, m.device_id,
+                MAX(colA) colA, MAX(colB) colB, MAX(colC) colC, MAX(colD) colD, MAX(colE) colE, MAX(colF) colF,
+                MAX(colG) colG, MAX(colH) colH, MAX(colI) colI
+            FROM(
+                SELECT n.id, n.check_result, n.result_description, n.device_id,
+                    CASE WHEN dci.device_check_type = 13 THEN n.check_result END AS colA,
+                    CASE WHEN dci.device_check_type = 14 THEN n.check_result END AS colB,
+                    CASE WHEN dci.device_check_type = 15 THEN n.check_result END AS colC,
+                    CASE WHEN dci.device_check_type = 1362 THEN n.check_result END AS colD,
+
+                    CASE WHEN dci.device_check_type = 1363 THEN n.check_value END AS colE,
+                    CASE WHEN dci.device_check_type = 1364 THEN n.check_value END AS colF,
+
+                    CASE WHEN dci.device_check_type = 1116 THEN n.check_result END AS colG,
+
+                    CASE WHEN dci.device_check_type = 1365 THEN n.check_value END AS colH,
+                    CASE WHEN dci.device_check_type = 1366 THEN n.check_value END AS colI
+                FROM (
+                    SELECT a.id, a.device_name, a.device_id, a.check_id, a.check_result, a.result_description, a.create_time, a.check_value
+                    FROM t_check_item_record AS a
+                    <if test="taskIds != null and taskIds.length > 0">
+                        WHERE a.task_id IN
+                        <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                            #{item}
+                        </foreach>
+                    </if>
+                    ORDER BY a.create_time desc
+                ) n
+                INNER JOIN device_manage.d_device_check_item dci ON dci.id = n.check_id
+                AND dci.check_item_vs_type = #{checkItemVsType}
+                <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+                    AND dci.project_id = #{projectId}
+                </if>
+            ) m
+            GROUP BY device_id
+        ) x ON x.device_id = t.id
+    </select>
+
+    <!-- 08B2 -->
+    <select id="downInhaleSmokeTable" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT t.point_name deviceQrNo, t.point_location pointLocation, t.manage_region manageRegion, t.terminal_name checkName, t.terminal_code terminalCode, t.address,
+            x.colA, x.colB, x.colC, x.colD, if(x.colB = 0, 0, x.checkResult) checkResult, x.faultDescription
+        FROM (
+            SELECT cp.point_name, cp.point_location, cp.manage_region,
+                ddt.id device_terminal_id, ddt.device_id, ddt.check_point_id, ddt.terminal_name, ddt.terminal_code, ddt.address
+            FROM device_manage.d_device_type dt
+            LEFT JOIN device_manage.d_device_terminal ddt ON dt.id = ddt.device_type_id
+            LEFT JOIN device_manage.d_check_point cp ON cp.id = ddt.check_point_id
+            LEFT JOIN device_manage.d_device_check_item dci ON dci.device_type_id = dt.id
+            INNER JOIN t_check_item_record cir ON cir.device_id = ddt.device_id
+            WHERE dt.device_sys_name = '吸气式烟雾探测器'
+            <if test="taskIds != null and taskIds.length > 0">
+                AND cir.task_id IN
+                <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            AND dci.check_item_vs_type = #{checkItemVsType}
+            <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+                AND dci.project_id = #{projectId}
+            </if>
+            GROUP BY ddt.id
+        ) t
+        LEFT JOIN (
+            SELECT a.device_id, a.check_name, a.terminal_code, a.colA, a.colB, b.colC, b.colD,
+                if(a.checkResult >= b.checkResult, a.checkResult, b.checkResult) checkResult, a.faultDescription
+            FROM (
+                SELECT m.id, m.device_id, m.check_name, m.terminal_code, MAX(m.colA) colA, MAX(m.colB) colB, MAX(m.check_result) checkResult,
+                        cr.fault_description faultDescription
+                FROM (
+                    SELECT n.id, n.check_record_id, n.device_id, n.check_name, n.terminal_code, n.create_time,
+                        CASE WHEN n.check_specification = '主机报警信息' THEN n.check_result END AS colA,
+                        CASE WHEN n.check_specification = '工作站报警信息' THEN n.check_result END AS colB,
+                        n.check_result, n.result_description
+                    FROM (
+                        SELECT s.id, s.check_record_id, s.device_id, s.device_name, s.check_id, s.result_description, s.create_time, s.check_name, s.remark, s.check_specification,
+                            s.check_result, s.terminal_code
+                        FROM t_check_item_record s
+                        <if test="taskIds != null and taskIds.length > 0">
+                            WHERE s.task_id IN
+                            <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                                #{item}
+                            </foreach>
+                            AND s.terminal_code is not null
+                        </if>
+                        ORDER BY s.create_time desc
+                    ) n ORDER BY n.create_time desc
+                ) m
+                LEFT JOIN t_check_record cr ON cr.id = m.check_record_id
+                GROUP BY device_id, terminal_code
+            ) a
+            LEFT JOIN (
+                SELECT w.id, w.device_id, w.check_name, w.terminal_code, MAX(w.colC) colC, MAX(w.colD) colD, MAX(w.check_result) checkResult
+                FROM (
+                    SELECT q.id, q.device_id, q.check_name, q.terminal_code, q.create_time,
+                        CASE WHEN q.check_specification = '平面图位置' THEN q.check_result END AS colC,
+                        CASE WHEN q.check_specification = '火灾模式号' THEN q.remark END AS colD, q.check_result, q.result_description
+                    FROM (
+                        SELECT d.id, d.device_id, d.device_name, d.check_id, d.result_description, d.create_time, d.check_name, d.remark, d.check_specification,
+                            d.check_result, d.terminal_code
+                        FROM t_check_item_record d
+                        <if test="taskIds != null and taskIds.length > 0">
+                            WHERE d.task_id IN
+                            <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                                #{item}
+                            </foreach>
+                            AND d.terminal_code is null
+                        </if>
+                        ORDER BY d.create_time desc
+                    ) q ORDER BY q.create_time desc
+                ) w
+                GROUP BY device_id, terminal_code
+            ) b ON a.device_id = b.device_id
+            GROUP BY a.device_id, a.terminal_code
+        ) x ON x.device_id = t.device_id AND t.terminal_code = x.terminal_code
+    </select>
+
+    <!-- 09B2 -->
+    <select id="downAlarmTable" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT m.device_name deviceName, m.qr_no deviceQrNo, m.device_id deviceId, m.checkPointName, m.pointLocation,
+            MAX(m.check_result) checkResult, MAX(colA) colA, MAX(colB) colB, m.fault_description faultDescription
+        FROM(
+            SELECT n.create_time, n.device_name, cp.qr_no, cp.point_name checkPointName, cp.point_location pointLocation,
+                n.device_id, n.check_id, n.check_result, cr.fault_description,
+                CASE WHEN n.check_name = '主机报警信息' THEN n.check_result END AS colA,
+                CASE WHEN n.check_name = '工作站报警信息' THEN n.check_result END AS colB
+            FROM(
+                SELECT cir.id, cir.check_record_id, cir.create_time, cir.device_name, cir.device_id, cir.check_name, cir.check_id, cir.check_result,
+                       cir.result_description
+                FROM t_check_item_record cir
+                <if test="taskIds != null and taskIds.length > 0">
+                    WHERE cir.task_id IN
+                    <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                AND (cir.device_name in('探测器', '手报', '消火栓按钮', '感温电缆', '感温光纤', '烟感') OR cir.device_name LIKE CONCAT('%', '电气火灾', '%'))
+                ORDER BY cir.create_time DESC
+            ) n
+            LEFT JOIN device_manage.d_device d ON d.id = n.device_id
+            LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+            LEFT JOIN task_manage.t_check_record cr ON cr.id = n.check_record_id
+            ORDER BY create_time DESC
+        ) m
+        GROUP BY device_id
+    </select>
+
+    <!-- 11B2 -->
+    <select id="downDirectelEctricTable" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT t.qr_no deviceQrNo, t.point_name checkPointName,
+            x.colA, x.colB, x.colC, x.colD, x.colE, x.colF, x.colG, x.check_result checkResult, x.result_description faultDescription
+        FROM (
+            SELECT d.id, d.qr_no, cp.point_location, cp.point_name
+            FROM device_manage.d_device_type dt
+            INNER JOIN device_manage.d_device d ON dt.id = d.device_type_id
+            LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+            WHERE dt.device_sys_name = '直流电源盘'
+            GROUP BY d.id
+        ) t
+        INNER JOIN (
+            SELECT m.device_id,  m.create_time,
+                MAX(m.colA) colA, MAX(m.colB) colB, MAX(m.colC) colC, MAX(m.colD) colD, MAX(m.colE) colE, MAX(m.colF) colF, MAX(m.colG) colG,
+                MAX(m.check_result) check_result,
+                GROUP_CONCAT(case when m.result_description != ' ' THEN m.result_description else null END ) result_description
+            FROM(
+                SELECT n.id, n.device_id, n.check_result, n.result_description, n.create_time,
+                    CASE WHEN dci.device_check_type = 1104 THEN n.check_result END AS colA,
+                    CASE WHEN dci.device_check_type = 1105 THEN n.check_result END AS colB,
+                    CASE WHEN dci.device_check_type = 1106 THEN n.check_result END AS colC,
+                    CASE WHEN dci.device_check_type = 1375 THEN n.check_result END AS colD,
+                    CASE WHEN dci.device_check_type = 1107 THEN n.check_value END AS colE,
+                    CASE WHEN dci.device_check_type = 1367 THEN n.check_value END AS colF,
+                    CASE WHEN dci.device_check_type = 1368 THEN n.check_result END AS colG
+                FROM (
+                    SELECT a.id, a.device_id, a.check_result, a.check_id, a.result_description, a.create_time, a.check_value
+                    FROM t_check_item_record AS a
+                    <if test="taskIds != null and taskIds.length > 0">
+                        WHERE a.task_id IN
+                        <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                            #{item}
+                        </foreach>
+                    </if>
+                    ORDER BY a.create_time DESC
+                ) n
+                LEFT JOIN device_manage.d_device_check_item dci ON dci.id = n.check_id
+                WHERE dci.check_item_vs_type = #{checkItemVsType}
+                    <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+                        AND dci.project_id = #{projectId}
+                    </if>
+            ) m
+            GROUP BY device_id
+            ORDER BY create_time DESC
+        ) x ON x.device_id = t.id
+    </select>
+
+    <!-- 微型消防站巡检卡 -->
+    <select id="findFireControlList" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT n.device_type_id, n.device_sys_name deviceSysName, n.unit,
+            t.device_count deviceCount, t.check_result checkResult, t.checker_name checkerName, t.check_start_time checkStartTime, t.create_time createTime,
+            t.fault_description faultDescription
+        FROM (
+            SELECT dtt.id device_type_id, dtt.device_sys_name, dci.unit, dtt.sort
+            FROM device_manage.d_device_type dt
+            LEFT JOIN device_manage.d_device_type dtt ON dtt.parent_id = dt.id
+            LEFT JOIN device_manage.d_device_check_item dci ON dci.device_type_id = dtt.id
+            WHERE dt.device_sys_name = '微型消防站系统'
+            AND dci.check_item_vs_type = #{checkItemVsType}
+            <if test="checkItemVsType != null and checkItemVsType == 3 and projectId != null and projectId != 0">
+                AND dci.project_id = #{projectId}
+            </if>
+            GROUP BY dtt.id ORDER BY dtt.sort ASC
+        ) n
+        LEFT JOIN device_manage.d_device d ON d.device_type_id = n.device_type_id
+        LEFT JOIN (
+            SELECT m.id, m.device_id, m.device_count, m.check_result, m.checker_name, m.check_start_time, m.create_time,
+                GROUP_CONCAT(case when cir.result_description != ' ' THEN cir.result_description else null END ) fault_description
+            FROM(
+                SELECT a.id, a.device_id, a.device_count, a.check_result, a.checker_name, a.check_start_time, a.create_time
+                FROM t_check_record AS a,
+                (
+                    SELECT MAX(task_id) AS task_id, MAX(create_time) AS create_time
+                    FROM t_check_record AS b
+                    <if test="taskIds != null and taskIds.length > 0">
+                        WHERE b.task_id IN
+                        <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                            #{item}
+                        </foreach>
+                    </if>
+                    GROUP BY b.id
+                ) AS b
+                WHERE a.task_id = b.task_id AND a.create_time = b.create_time
+                GROUP BY a.id
+            ) m
+            LEFT JOIN task_manage.t_check_item_record cir ON cir.check_record_id = m.id
+            GROUP BY m.id
+        ) t ON t.device_id = d.id
+        GROUP BY n.device_type_id ORDER BY n.sort ASC
+    </select>
+
+    <!-- 微型消防站巡检卡 -->
+    <select id="findCheckRecordIdString" parameterType="CheckRecord" resultType="CheckRecord">
+        SELECT GROUP_CONCAT(a.id ) idString
+        FROM t_check_record AS a, (
+            SELECT MAX(device_id) AS device_id, MAX(create_time) AS create_time
+            FROM t_check_record AS b
+            WHERE b.project_id = #{projectId}
+            GROUP BY b.device_id
+        ) AS b
+        WHERE a.device_id = b.device_id AND a.create_time = b.create_time AND a.check_result = 1
+    </select>
+
+    <!-- 查询 检修人 -->
+    <select id="findCheckerName" parameterType="CheckRecord" resultType="java.lang.String">
+        SELECT GROUP_CONCAT(DISTINCT cr.checker_name)
+        FROM t_check_record cr
+        <include refid="findCheckRecordSql"/>
+    </select>
+
+    <!-- 查询 检修人 -->
+    <select id="findCheckerNameList" parameterType="CheckRecord" resultType="java.lang.String">
+        SELECT cr.checker_name
+        FROM t_check_record cr
+        LEFT JOIN project_manage.p_org_user ou ON ou.user_id = cr.create_user_id AND ou.project_id = cr.project_id
+        WHERE cr.version_no = (
+            SELECT MAX(c.version_no)
+            FROM t_check_record c
+            WHERE c.task_id = #{taskId} AND c.check_point_id = #{checkPointId}
+            <if test="id != null and id > 0">
+                AND  c.id = #{id}
+            </if>
+        )
+        AND cr.task_id = #{taskId} AND cr.check_point_id = #{checkPointId}
+    </select>
+
+</mapper>

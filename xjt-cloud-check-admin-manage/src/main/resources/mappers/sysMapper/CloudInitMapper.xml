@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.sys.CloudInitDao" >
+    <resultMap id="cloudInitResultMap" type="com.xjt.cloud.admin.manage.entity.sys.CloudInit">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT" />
+        <result column="cloud_type" property="cloudType" jdbcType="VARCHAR" />
+        <result column="app_version" property="appVersion" jdbcType="VARCHAR" />
+        <result column="info_name" property="infoName" jdbcType="VARCHAR" />
+        <result column="type" property="type" jdbcType="INTEGER" />
+        <result column="type_code" property="typeCode" jdbcType="VARCHAR" />
+        <result column="title" property="title" jdbcType="VARCHAR" />
+        <result column="keyword" property="keyword" jdbcType="VARCHAR" />
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER" />
+        <result column="carousel" property="carousel" jdbcType="INTEGER" />
+        <result column="content" property="content" jdbcType="VARCHAR" />
+        <result column="intro" property="intro" jdbcType="VARCHAR" />
+        <result column="modify_status" property="modifyStatus" jdbcType="INTEGER" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="update_user_name" property="updateUserName" jdbcType="VARCHAR" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="findListWhere">
+        <if test="cloudType != null">
+            AND cloud_type = #{cloudType}
+        </if>
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+    </sql>
+
+    <!-- 查询平台信息初使化信息列表 -->
+    <select id="findCloudInitList" resultMap="cloudInitResultMap" parameterType="CloudInit">
+        SELECT *
+        FROM s_cloud_init
+        WHERE status &lt;= 98
+        <include refid="findListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+    <!-- 查询平台信息初使化信息列表总行数 -->
+    <select id="findCloudInitListTotalCount" resultType="java.lang.Integer" parameterType="CloudInit">
+        SELECT COUNT(*)
+        FROM s_cloud_init
+        WHERE status &lt;= 98 <include refid="findListWhere"/>
+    </select>
+    <!--新增平台信息初使化信息 -->
+    <insert id="saveCloudInit" parameterType="CloudInit" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO s_cloud_init (parent_id, cloud_type, app_version, info_name, type, type_code, title, keyword, sort_order, carousel, content,
+            status, modify_status, create_time, create_user_name, intro,thumbnail)
+        VALUES
+        (#{parentId}, #{cloudType}, #{appVersion}, #{infoName}, #{type}, #{typeCode}, #{title}, #{keyword}, #{sortOrder}, #{carousel}, #{content},
+            1, 1, NOW(), #{createUserName}, #{intro}, #{thumbnail});
+    </insert>
+    <!--修改平台信息初使化信息 -->
+    <update id="modifyCloudInit" parameterType="CloudInit">
+        UPDATE s_cloud_init
+        <set>
+            modify_status = 2,
+            <if test="parentId != null">
+                parent_id = #{parentId},
+            </if>
+            <if test="cloudType != null">
+                cloud_type = #{cloudType},
+            </if>
+            <if test="appVersion != null">
+                app_version = #{appVersion},
+            </if>
+            <if test="infoName != null">
+                info_name = #{infoName},
+            </if>
+            <if test="type != null">
+                type = #{type},
+            </if>
+            <if test="typeCode != null">
+                type_code = #{typeCode},
+            </if>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="keyword != null">
+                keyword = #{keyword},
+            </if>
+            <if test="sortOrder != null">
+                sort_order = #{sortOrder},
+            </if>
+            <if test="carousel != null">
+                carousel = #{carousel},
+            </if>
+            <if test="content != null">
+                content = #{content},
+            </if>
+            <if test="intro != null">
+                intro = #{intro},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="lastModifyTime != null">
+                last_modify_time = #{lastModifyTime},
+            </if>
+            <if test="updateUserName != null">
+                update_user_name = #{updateUserName},
+            </if>
+            <if test="thumbnail != null">
+                thumbnail = #{thumbnail},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

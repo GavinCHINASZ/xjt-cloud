@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.electricalFire.ElectricalFireEventDao" >
+
+    <resultMap id="fireAlarmEventResultMap" type="com.xjt.cloud.iot.core.entity.electricalFire.ElectricalFireEvent" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="leakage_curr_value" property="leakageCurrValue" jdbcType="VARCHAR"/>
+        <result column="temp_value" property="tempValue" jdbcType="VARCHAR"/>
+        <result column="leakage_alarm_value" property="leakageAlarmValue" jdbcType="VARCHAR"/>
+        <result column="temp_alarm_value" property="tempAlarmValue" jdbcType="VARCHAR"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="record_id" property="recordId" jdbcType="BIGINT"/>
+        <result column="event_type" property="eventType" jdbcType="INTEGER"/>
+        <result column="recover_time" property="recoverTime" jdbcType="TIMESTAMP"/>
+        <result column="recover_record_id" property="recoverRecordId" jdbcType="BIGINT"/>
+        <result column="recover_status" property="recoverStatus" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="handle_status" property="handle_status" jdbcType="INTEGER"/>
+        <result column="channel" property="channel" jdbcType="VARCHAR"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <result column="remarks" property="remarks" jdbcType="VARCHAR"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="handler_id" property="handlerId" jdbcType="BIGINT"/>
+        <result column="handler_name" property="handlerName" jdbcType="VARCHAR"/>
+        <result column="handle_time" property="handleTime" jdbcType="TIMESTAMP"/>
+        <result column="update_user_id" property="updateUserId" jdbcType="BIGINT"/>
+        <result column="update_time" property="update_time" jdbcType="TIMESTAMP"/>
+        <result column="fault_type" property="faultType" jdbcType="INTEGER"/>
+        <result column="device_location" property="deviceLocation" jdbcType="VARCHAR"/>
+        <result column="point_qr_no" property="pointQrNo" jdbcType="VARCHAR"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="sqlWhere">
+        <where>
+            efd.status &lt; 99
+            <if test="projectId != null and projectId != 0">
+                AND efe.project_id = #{projectId}
+            </if>
+
+            <if test="sensorNo != null and sensorNo != ''">
+                AND efe.sensor_no = #{sensorNo}
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                AND efe.device_id = #{deviceId}
+            </if>
+            <if test="recordId != null and recordId != 0">
+                AND efe.record_id = #{recordId}
+            </if>
+            <if test="eventType != null">
+                AND efe.event_type = #{eventType}
+            </if>
+            <if test="recoverTime != null">
+                AND efe.recover_time = #{recoverTime}
+            </if>
+            <if test="recoverRecordId != null and recoverRecordId != 0">
+                AND efe.recover_record_id = #{recoverRecordId}
+            </if>
+            <if test="recoverStatus != null">
+                AND efe.recover_status = #{recoverStatus}
+            </if>
+            <if test="recoverStatuss != null and recoverStatuss.length > 0">
+                AND efe.recover_status IN
+                <foreach collection="recoverStatuss" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="createTime != null">
+                AND efe.create_time = #{createTime}
+            </if>
+            <if test="startTime != null">
+                AND efe.create_time &gt;=  #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND efe.create_time &lt; #{endTime}
+            </if>
+            <if test="handleStatus != null">
+                AND efe.handle_status = #{handleStatus}
+            </if>
+            <if test="channel != null and channel != ''">
+                AND efe.channel = #{channel}
+            </if>
+            <if test="sensorNo != null and sensorNo != ''">
+                AND efe.sensor_no = #{channel}
+            </if>
+            <if test="faultType != null and faultType != 0">
+                AND efe.fault_type = #{faultType}
+            </if>
+            <if test="eventTypeArr != null and eventTypeArr.length > 0">
+                AND efe.event_type IN
+                <foreach collection="eventTypeArr" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="handleStatuss != null and handleStatuss.length > 0">
+                AND efe.handle_status IN
+                <foreach collection="handleStatuss" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="ids != null and ids.length != 0">
+                AND efe.id IN
+                <foreach collection="ids" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+
+    <!--根据条件查询电气火灾事件列表-->
+    <select id="findElectricalFireEventList" parameterType="ElectricalFireEvent" resultType="ElectricalFireEvent">
+        SELECT
+        efe.id,efe.project_id projectId,efd.leakage_curr_value leakageCurrValue,efd.temp_value tempValue,efe.leakage_alarm_value leakageAlarmValue,
+        efe.temp_alarm_value tempAlarmValue,efe.device_id deviceId,efe.device_name deviceName,efe.record_id recordId,
+        efe.event_type eventType,efe.recover_time recoverTime,efe.recover_record_id recoverRecordId,efe.recover_status recoverStatus,
+        efe.create_time createTime,efe.handle_status handleStatus,efe.channel,efe.sensor_no sensorNo,efe.url,efe.remarks,
+        efe.handler_id handlerId, efe.handler_name handlerName,efe.fault_type faultType,efe.device_location deviceLocation,
+        efe.point_qr_no pointQrNo, efe.check_point_id checkPointId, efe.device_qr_no deviceQrNo
+        FROM e_electrical_fire_event efe
+        INNER JOIN e_electrical_fire_device efd ON efd.device_id = efe.device_id AND efd.status &lt;= 98
+        <include refid="sqlWhere"></include>
+        GROUP BY efe.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--更新电气火灾设备信息-->
+    <update id="modifyElectricalFireEvent" parameterType="ElectricalFireEvent">
+        UPDATE e_electrical_fire_event
+        <set>
+            <if test="handleStatus != null">
+                handle_status = #{handleStatus},
+            </if>
+            <if test="recoverStatus != null">
+                recover_status = #{recoverStatus},
+            </if>
+            <if test="recoverRecordId != null and recoverRecordId != 0">
+                recover_record_id = #{recoverRecordId},
+                recover_time = NOW(),
+            </if>
+            <if test="url != null and url != ''">
+                url = #{url},
+            </if>
+            <if test="remarks != null and remarks != ''">
+                remarks = #{remarks},
+            </if>
+            <if test="handlerId != null and handlerId != 0">
+                handler_id = #{handlerId},
+                handle_time = NOW(),
+            </if>
+            <if test="handlerName != null and handlerName != ''">
+                handler_name = #{handlerName},
+            </if>
+            <if test="updateUserId != null and updateUserId != 0">
+                update_user_id = #{updateUserId},
+                update_time = NOW()
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length != 0">
+            id IN
+            <foreach collection="ids" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!--插入电气火灾设备信息-->
+    <insert id="saveElectricalFireEvent" parameterType="ElectricalFireEvent" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO e_electrical_fire_event
+            (project_id, device_id, leakage_alarm_value, temp_alarm_value, device_name, record_id, event_type,
+            sensor_no, create_time, recover_status, handle_status, channel,fault_type,device_location,
+            point_qr_no, check_point_id, device_qr_no)
+        VALUES
+            (#{projectId}, #{deviceId}, #{leakageAlarmValue}, #{tempAlarmValue}, #{deviceName}, #{recordId}, #{eventType},
+            #{sensorNo}, NOW(), 2, 2, #{channel}, #{faultType}, #{deviceLocation}, #{pointQrNo}, #{checkPointId}, #{deviceQrNo});
+    </insert>
+    <!-- 查询火警主机设备数量 -->
+    <select id="findElectricalFireEventCount" parameterType="ElectricalFireEvent" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT efe.id) totalCount
+        FROM e_electrical_fire_event efe
+        INNER JOIN e_electrical_fire_device efd ON efd.device_id = efe.device_id AND efd.status &lt;= 98
+        <include refid="sqlWhere"></include>
+    </select>
+
+    <!-- 查询火警主机设备数量 -->
+    <select id="countElectricalFireReport" parameterType="ElectricalFireReport" resultType="ElectricalFireReport">
+        SELECT SUM(IF(efe.event_type = 1,1,0)) leakageEventCount, SUM(IF(efe.event_type = 2,1,0)) tempEventCount,
+            SUM(IF(efe.event_type = 3,1,0)) faultEventCount, SUM(IF(efe.event_type = 4,1,0)) offLineCount
+        FROM e_electrical_fire_event efe
+        INNER JOIN e_electrical_fire_device efd ON efd.device_id = efe.device_id AND efd.status &lt;= 98
+        WHERE efe.project_id = #{projectId} AND efe.recover_status = 2
+        <if test="startTime != null">
+            AND efe.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND efe.create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <sql id="formatCreateTime">
+        <if test="dateType != null and dateType == 1">
+            ,DATE_FORMAT(date_list.createTime, '%H:%i') createTime
+        </if>
+        <if test="dateType != null and dateType == 2">
+            ,DATE_FORMAT(date_list.createTime, '%m-%d') createTime
+        </if>
+        <if test="dateType != null and dateType == 3">
+            ,DATE_FORMAT(date_list.createTime, '%Y-%m') createTime
+        </if>
+        <if test="dateType != null and dateType == 4">
+            ,DATE_FORMAT(date_list.createTime, '%Y') createTime
+        </if>
+    </sql>
+
+    <sql id="formatTime">
+        <if test="dateType != null and dateType == 1">
+            ,DATE_FORMAT(e.create_time, '%Y-%m-%d %H') createTime
+        </if>
+        <if test="dateType != null and dateType == 2">
+            ,DATE_FORMAT(e.create_time, '%Y-%m-%d') createTime
+        </if>
+        <if test="dateType != null and dateType == 3">
+            ,DATE_FORMAT(e.create_time, '%Y-%m') createTime
+        </if>
+        <if test="dateType != null and dateType == 4">
+            ,DATE_FORMAT(e.create_time, '%Y') createTime
+        </if>
+    </sql>
+
+    <sql id="formatTimeRow">
+        <if test="dateType != null and dateType == 1">
+            @date := DATE_FORMAT(DATE_ADD(@date, interval 1 HOUR),'%Y-%m-%d %H') createTime
+        </if>
+        <if test="dateType != null and dateType == 2">
+            @date := DATE_ADD(@date, interval 1 DAY) createTime
+        </if>
+        <if test="dateType != null and dateType == 3">
+            @date := DATE_ADD(@date, interval 1 MONTH) createTime
+        </if>
+        <if test="dateType != null and dateType == 4">
+            @date := DATE_ADD(@date, interval 1 YEAR) createTime
+        </if>
+    </sql>
+
+    <select id="findBrokenLineEventNum" parameterType="ElectricalFireEvent" resultType="ElectricalFireReport">
+        SELECT IFNULL(d.eventTotalCount, 0) eventTotalCount, IFNULL(d.leakageEventCount, 0) leakageEventCount,
+            IFNULL(d.tempEventCount, 0) tempEventCount, IFNULL(d.faultEventCount, 0) faultEventCount, IFNULL(d.offLineCount,0) offLineCount
+            <include refid="formatCreateTime"></include>
+        FROM(
+            SELECT
+                COUNT(e.id) eventTotalCount, SUM(e.event_type = 1) leakageEventCount, SUM(e.event_type = 2) tempEventCount,
+                SUM(e.event_type = 3) faultEventCount, SUM(e.event_type = 4) offLineCount
+                <include refid="formatTime"></include>
+            FROM e_electrical_fire_event e
+            RIGHT JOIN (
+                SELECT fad.device_id
+                FROM e_electrical_fire_device fad
+                WHERE fad.status &lt; 99
+                <if test="projectId != null and projectId != 0">
+                    AND fad.project_id = #{projectId}
+                </if>
+                <if test="projectIds != null and projectIds.length > 0">
+                    AND fad.project_id IN
+                    <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+            ) fad ON e.device_id = fad.device_id
+            WHERE e.create_time BETWEEN #{startTime} AND #{endTime}
+            <if test="projectId != null and projectId != 0">
+                AND e.project_id = #{projectId}
+            </if>
+            <if test="recoverStatus != null and recoverStatus != 0">
+                AND e.recover_status = #{recoverStatus}
+            </if>
+            <if test="projectIds != null and projectIds.length > 0">
+                AND e.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY createTime
+        ) d
+        RIGHT JOIN(
+            SELECT <include refid="formatTimeRow"></include>
+            FROM(
+                SELECT
+                <include refid="formatTimeLine"></include>
+                FROM b_base_data
+                LIMIT #{dateNum}
+            ) days
+            LIMIT #{dateNum}
+        ) date_list ON <include refid="formatTimeON"></include>
+        ORDER BY createTime
+    </select>
+
+    <sql id="formatTimeLine">
+        <if test="dateType != null and dateType == 1">
+            @date := DATE_ADD(DATE_FORMAT(#{startTime}, '%Y-%m-%d %H'), interval -1 HOUR)
+        </if>
+        <if test="dateType != null and dateType == 2">
+            @date := DATE_ADD(DATE_FORMAT(#{startTime}, '%Y-%m-%d'), interval -1 DAY)
+        </if>
+        <if test="dateType != null and dateType == 3">
+            @date := DATE_ADD(DATE_FORMAT(#{startTime}, '%Y-%m-%d'), interval -1 MONTH)
+        </if>
+        <if test="dateType != null and dateType == 4">
+            @date := DATE_ADD(DATE_FORMAT(#{startTime}, '%Y-%m-%d'), interval -1 YEAR)
+        </if>
+    </sql>
+
+    <sql id="formatTimeON">
+        <if test="dateType != null and dateType == 1">
+            DATE_FORMAT(date_list.createTime,'%Y-%m-%d %H') = d.createTime
+        </if>
+        <if test="dateType != null and dateType == 2">
+            DATE_FORMAT(date_list.createTime,'%Y-%m-%d') = d.createTime
+        </if>
+        <if test="dateType != null and dateType == 3">
+            DATE_FORMAT(date_list.createTime,'%Y-%m') = d.createTime
+        </if>
+        <if test="dateType != null and dateType == 4">
+            DATE_FORMAT(date_list.createTime,'%Y') = d.createTime
+        </if>
+    </sql>
+
+    <!--根据id查询电气火灾事件详情-->
+    <select id="findElectricalFireEventDetail" parameterType="ElectricalFireEvent" resultType="ElectricalFireEvent">
+        SELECT
+            efe.id,efe.project_id projectId,efd.leakage_curr_value leakageCurrValue,efd.temp_value tempValue,efe.leakage_alarm_value leakageAlarmValue,
+            efe.temp_alarm_value tempAlarmValue,efe.device_id deviceId,efe.device_name deviceName,efe.record_id recordId,
+            efe.event_type eventType,efe.recover_time recoverTime,efe.recover_record_id recoverRecordId,efe.recover_status recoverStatus,
+            efe.create_time createTime,efe.handle_status handleStatus,efe.channel,efe.sensor_no sensorNo,efe.url,efe.remarks,
+            efe.handler_id handlerId, efe.handler_name handlerName,efe.fault_type faultType,efe.device_location deviceLocation,
+            efe.point_qr_no pointQrNo, efe.check_point_id checkPointId, efe.device_qr_no deviceQrNo
+        FROM e_electrical_fire_event efe
+        INNER JOIN e_electrical_fire_device efd ON efd.device_id = efe.device_id AND efd.status &lt;= 98
+        WHERE efe.id = #{id} LIMIT 1
+    </select>
+
+    <!--更新电气火灾设备信息-->
+    <update id="recoverEventStatus" parameterType="ElectricalFireEvent">
+        UPDATE e_electrical_fire_event
+        <set>
+            <if test="recoverStatus != null">
+                recover_status = #{recoverStatus},
+            </if>
+            <if test="recoverRecordId != null and recoverRecordId != 0">
+                recover_record_id = #{recoverRecordId},
+                recover_time = NOW(),
+            </if>
+        </set>
+        WHERE
+        <if test="sensorNo != null and sensorNo != ''">
+            sensor_no = #{sensorNo}
+        </if>
+        <if test="channel != null and channel != 0">
+            channel = #{item}
+        </if>
+        <if test="eventType != null and eventType != 0">
+            event_type = #{eventType}
+        </if>
+        <if test="faultType != null and faultType != 0">
+            fault_type = #{faultType}
+        </if>
+    </update>
+</mapper>

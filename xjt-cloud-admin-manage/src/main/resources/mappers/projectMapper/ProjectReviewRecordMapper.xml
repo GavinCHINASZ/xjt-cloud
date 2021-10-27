@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.project.ProjectReviewRecordDao">
+
+
+    <resultMap id="ProjectReviewRecordResultMap" type="com.xjt.cloud.admin.manage.entity.project.ProjectReviewRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <result column="project_status" property="projectStatus" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="review_user_id" property="reviewUserId" jdbcType="BIGINT"/>
+        <result column="review_time" property="reviewTime" jdbcType="TIMESTAMP"/>
+        <result column="review_opinion" property="reviewOpinion" jdbcType="VARCHAR"/>
+        <result column="version_number" property="versionNumber" jdbcType="VARCHAR"/>
+        <result column="fire_safety_owner" property="fireSafetyOwner" jdbcType="VARCHAR"/>
+        <result column="fire_safety_owner_phone" property="fireSafetyOwnerPhone" jdbcType="VARCHAR"/>
+        <result column="fire_safety_manager" property="fireSafetyManager" jdbcType="VARCHAR"/>
+        <result column="fire_safety_manager_phone" property="fireSafetyManagerPhone" jdbcType="VARCHAR"/>
+        <result column="isOwner" property="isOwner" jdbcType="BOOLEAN"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="owner_id" property="ownerId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="user_name" property="reviewName" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        prr.project_name,prr.description,prr.review_time,prr.review_user_id,prr.project_id,prr.version_number,prr.fire_safety_owner,prr.fire_safety_owner_phone,prr.fire_safety_manager,prr.fire_safety_manager_phone,prr.company_name,prr.address,prr.project_status,prr.owner_id,prr.image_url
+    </sql>
+    <!--查询项目审核记录-->
+    <select id="findProjectReviewRecordList" parameterType="ProjectReviewRecord" resultMap="ProjectReviewRecordResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        ,u.user_name
+        from project_manage.p_project_review_record prr
+        INNER JOIN sys_manage.s_user u on prr.review_user_id = u.id
+        where prr.project_id = #{projectId}
+        ORDER BY prr.review_time desc
+    </select>
+</mapper>

@@ -1,0 +1,778 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.device.core.dao.device.DeviceDao" >
+    <resultMap id="deviceResultMap" type="com.xjt.cloud.device.core.entity.Device" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="parent_id" property="parentId" jdbcType="BIGINT" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="VARCHAR" />
+        <result column="project_name" property="projectName" jdbcType="BIGINT" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR" />
+
+        <result column="iot_id" property="iotId" jdbcType="BIGINT" />
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR" />
+        <result column="iot_status" property="iotStatus" jdbcType="INTEGER" />
+
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="old_device_qr_no" property="oldDeviceQrNo" jdbcType="VARCHAR" />
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <result column="org_type" property="orgType" jdbcType="INTEGER" />
+
+        <result column="num" property="num" jdbcType="INTEGER" />
+        <result column="brand" property="brand" jdbcType="VARCHAR" />
+        <result column="model" property="model" jdbcType="VARCHAR" />
+        <result column="spec" property="spec" jdbcType="VARCHAR" />
+        <result column="production_date" property="productionDate" jdbcType="TIMESTAMP" />
+        <result column="expiry_date" property="expiryDate" jdbcType="TIMESTAMP" />
+        <result column="expiry_date_end" property="expiryDateEnd" jdbcType="TIMESTAMP" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="send_modify_time" property="sendModifyTime" jdbcType="TIMESTAMP" />
+        <result column="send_modify_time_end" property="sendModifyTimeEnd" jdbcType="TIMESTAMP" />
+        <result column="status_update_time" property="statusUpdateTime" jdbcType="TIMESTAMP" />
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER" />
+        <result column="memo" property="memo" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="pointQrNo" property="pointQrNo" jdbcType="VARCHAR" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="point_name" property="pointName" jdbcType="VARCHAR" />
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="use_method" property="useMethod" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="selColumns">
+        d.id, d.device_type_id, d.project_id, d.check_point_id, d.iot_id, d.iot_status, d.sensor_no, dt.device_sys_name device_name, d.status,
+        d.old_device_qr_no, d.qr_no, d.num,
+        d.brand, d.model, d.spec, d.production_date, d.expiry_date,d.expiry_date_end, d.create_time, d.memo, d.device_status,
+        d.status_update_time,d.last_modify_time,
+        d.send_modify_time, d.send_modify_time_end,d.device_type,
+        cp.point_location, cp.qr_no pointQrNo, cp.point_name, cp.building_id, cp.building_floor_id,
+        dt.device_sys_name, dt.img_url, dt.use_method
+    </sql>
+
+    <sql id="findCheckWhere">
+        WHERE  d.status &lt;= 98 AND cp.status &lt;= 98
+        <if test="id != null and id != 0">
+            AND d.id = #{id}
+        </if>
+        <if test="nullQrNo">
+            AND d.num = 0
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND d.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds != ''">
+            AND d.project_id IN (${projectIds})
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND d.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="deviceTypeIds != null">
+            AND d.device_type_id IN
+            <foreach collection="deviceTypeIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="checkPointId != null and checkPointId != 0">
+            AND d.check_point_id = #{checkPointId}
+        </if>
+
+        <if test="deviceType != null and deviceType != 0">
+            AND d.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null and deviceTypes.length > 0">
+            AND d.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="pinYinInitials != null and pinYinInitials != ''">
+            d.pin_yin_initials = #{pinYinInitials},
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND d.qr_no = #{qrNo}
+        </if>
+        <if test="deviceName != null and deviceName != ''">
+            AND (dt.device_sys_name LIKE CONCAT('%', #{deviceName}, '%') OR d.qr_no LIKE CONCAT('%',#{deviceName},'%'))
+        </if>
+        <if test="statusUpdateTime != null">
+            AND d.status_update_time = #{statusUpdateTime}
+        </if>
+        <if test="deviceStatus != null ">
+            AND d.device_status = #{deviceStatus}
+        </if>
+        <if test="buildingId != null">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="buildingIds != null">
+            AND cp.building_id IN
+            <foreach collection="buildingIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="buildingFloorIds != null">
+            AND cp.building_floor_id IN
+            <foreach collection="buildingFloorIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pointName != null and pointName != ''">
+            AND (cp.point_name LIKE CONCAT('%',#{pointName},'%') OR cp.qr_no LIKE CONCAT('%',#{pointName},'%'))
+        </if>
+        <if test="pointDeviceNameQrNo != null and pointDeviceNameQrNo != ''">
+            AND (dt.device_sys_name LIKE CONCAT('%', #{pointDeviceNameQrNo}, '%') OR d.qr_no LIKE CONCAT('%',#{pointDeviceNameQrNo},'%')
+                OR cp.point_name LIKE CONCAT('%',#{pointDeviceNameQrNo},'%') OR cp.qr_no LIKE CONCAT('%',#{pointDeviceNameQrNo},'%')
+            )
+        </if>
+        <if test="pointQrNo != null and pointQrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{pointQrNo},'%')
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="iotRelation != null and iotRelation">
+            AND d.iot_id  >= 1
+        </if>
+        <if test="pointLayout != null and pointLayout != 0">
+            <if test="pointLayout == 1">
+                AND fpp.id &gt;= 1
+            </if>
+            <if test="pointLayout == 2">
+                AND fpp.id IS NULL
+            </if>
+        </if>
+    </sql>
+
+    <!-- 查询设备列表总行数-->
+    <select id="findDeviceListTotalCount" parameterType="Device" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM d_device d
+        LEFT JOIN d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN d_device_type dt ON dt.id = d.device_type_id
+        <if test="pointLayout != null and pointLayout != 0">
+            LEFT JOIN project_manage.p_floor_point_position fpp ON d.id = fpp.device_id
+        </if>
+        <include refid="findCheckWhere"/>
+    </select>
+
+    <!-- 查询设备列表-->
+    <select id="findDeviceList" parameterType="Device" resultMap="deviceResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_device d
+        LEFT JOIN d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN d_device_type dt ON dt.id = d.device_type_id
+        <if test="pointLayout != null and pointLayout != 0">
+            LEFT JOIN project_manage.p_floor_point_position fpp ON d.id = fpp.device_id
+        </if>
+        <include refid="findCheckWhere"/>
+
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备树结构 -->
+    <select id="findDeviceListTree" parameterType="Device" resultMap="deviceResultMap">
+        SELECT b.id id, 0 parent_id, b.building_name device_sys_name, '1' org_type, null qr_no,
+            b.id building_id, null building_floor_id, null check_point_id, null device_type_id
+        FROM project_manage.p_building b
+        WHERE b.project_id = #{projectId} AND b.deleted = false
+
+        UNION ALL
+        SELECT bf.id id, bf.building_id parentId, bf.floor_name device_sys_name, '2' org_type, null qr_no,
+            null building_id, bf.id building_floor_id, null check_point_id, null device_type_id
+        FROM project_manage.p_building_floor bf
+        LEFT JOIN project_manage.p_building b ON b.id = bf.building_id
+        WHERE b.project_id = #{projectId} AND bf.deleted = false
+
+        UNION ALL
+        SELECT d.id id, cp.building_id parentId, dt.device_sys_name device_sys_name, '3' org_type, d.qr_no,
+            cp.building_id, cp.building_floor_id, cp.id check_point_id, d.device_type_id
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        INNER JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        <include refid="findCheckWhere"/>
+    </select>
+
+    <!-- 查询水压设备列表-->
+    <select id="findDeviceListBoundIot" parameterType="Device" resultMap="deviceResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        FROM d_device d
+        INNER JOIN d_check_point cp ON cp.id = d.check_point_id AND cp.status &lt;= 98
+        INNER JOIN d_device_type dt ON dt.id = d.device_type_id AND dt.status &lt;= 98
+        <include refid="boundDeviceListSql"/>
+        ORDER BY d.create_time DESC
+    </select>
+
+    <sql id="boundDeviceListSql">
+        <where>
+            d.status &lt;= 98
+            <if test="iotId != null and iotId == 0">
+                AND d.iot_id = 0
+            </if>
+            <if test="iotId != null and iotId >= 1">
+                AND d.iot_id = #{iotId}
+            </if>
+            <if test="iotId == null">
+                AND d.iot_id >= 1
+            </if>
+
+            <if test="buildingId != null">
+                AND cp.building_id = #{buildingId}
+            </if>
+            <if test="buildingFloorId != null">
+                AND cp.building_floor_id = #{buildingFloorId}
+            </if>
+            <if test="pointQrNo != null and pointQrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{pointQrNo},'%')
+            </if>
+
+            <if test="pinYinInitials != null and pinYinInitials != ''">
+                d.pin_yin_initials = #{pinYinInitials},
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND d.project_id = #{projectId}
+            </if>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                AND d.device_type_id = #{deviceTypeId}
+            </if>
+            <if test="checkPointId != null and checkPointId != 0">
+                AND d.check_point_id = #{checkPointId}
+            </if>
+            <if test="deviceType != null and deviceType != 0">
+                AND d.device_type = #{deviceType}
+            </if>
+            <if test="deviceTypes != null">
+                AND d.device_type IN
+                <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询设备-->
+    <select id="findDevice" parameterType="Device" resultMap="deviceResultMap">
+        SELECT <include refid="selColumns"/>  FROM d_device  d
+        LEFT JOIN d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN d_device_type dt ON dt.id = d.device_type_id
+         <include refid="findCheckWhere"/> LIMIT 1
+    </select>
+
+    <!--添加设备-->
+    <insert id="saveDevice" parameterType="Device" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_device (create_time,device_type_id, project_id, check_point_id, status, old_device_qr_no, qr_no, num, brand, model,
+            spec, production_date, expiry_date, expiry_date_end,memo, status_update_time, device_status, send_modify_time,send_modify_time_end,
+            create_user_name,create_user_id,device_type)
+        VALUES (NOW(),#{deviceTypeId}, #{projectId}, #{checkPointId},  1, #{oldDeviceQrNo}, #{qrNo}, #{num}, #{brand}, #{model},
+        #{spec}, #{productionDate}, #{expiryDate}, #{expiryDateEnd},#{memo}, #{statusUpdateTime}, 1, #{sendModifyTime}, #{sendModifyTimeEnd},
+        #{createUserName}, #{createUserId},#{saveDeviceType});
+    </insert>
+
+    <!-- 查询设备汇总信息-->
+    <select id="findDeviceReport" parameterType="PointDeviceReport" resultType="PointDeviceReport">
+        SELECT
+        SUM(IF(type='device' AND status = 1,num,0)) deviceNormalNum,
+        SUM(IF(type='device' AND status = 2,num,0)) deviceExceptionNum
+        FROM(
+        SELECT SUM(d.num) num , d.device_status status, 'device' type
+        FROM d_device d
+        LEFT JOIN d_check_point cp ON cp.id = d.check_point_id AND d.status &lt;= 98
+        WHERE d.status &lt;= 98
+        <if test="projectId != null and projectId != 0">
+            AND d.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null">
+            AND d.project_id IN
+            <foreach collection="projectIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="startTime != null and endTime != null">
+            AND d.create_time BETWEEN #{startTime} AND #{endTime}
+        </if>
+        <if test="buildingId != null">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        GROUP BY d.device_status )t
+    </select>
+
+    <!--添加设备-->
+    <insert id="saveDevices" parameterType="Device" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_device (device_type_id, project_id, check_point_id, status, old_device_qr_no, qr_no, num, brand, model,
+        spec, production_date, expiry_date, expiry_date_end,memo, status_update_time, device_status, send_modify_time,
+        send_modify_time_end, create_user_name,create_user_id,device_type)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.deviceTypeId}, #{item.projectId}, #{item.checkPointId},  1, #{item.oldDeviceQrNo}, #{item.qrNo}, #{item.num}, #{item.brand}, #{item.model},
+            #{item.spec}, #{item.productionDate}, #{item.expiryDate}, #{item.expiryDateEnd},#{item.memo},  #{item.statusUpdateTime}, 1, #{item.sendModifyTime},
+             #{item.sendModifyTimeEnd}, #{item.createUserName}, #{item.createUserId},#{item.saveDeviceType})
+        </foreach>
+    </insert>
+
+    <!--修改设备-->
+    <update id="modifyDevice" parameterType="Device">
+        UPDATE d_device
+        <set>
+            last_modify_time = NOW(),
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                device_type_id = #{deviceTypeId} ,
+            </if>
+            <if test="saveDeviceType != null and saveDeviceType != 0">
+                device_Type = #{saveDeviceType} ,
+            </if>
+            <if test="projectId != null and projectId != 0">
+                project_id = #{projectId} ,
+            </if>
+            <if test="checkPointId != null and checkPointId != 0">
+                check_point_id = #{checkPointId} ,
+            </if>
+            <if test="iotId != null">
+                iot_id = #{iotId} ,
+            </if>
+            <if test="oldDeviceQrNo != null and oldDeviceQrNo != ''">
+                old_device_qr_no = #{oldDeviceQrNo} ,
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                qr_no = #{qrNo} ,
+            </if>
+            <if test="num != null and num != 0">
+                num = #{num} ,
+            </if>
+            <if test="brand != null and brand != ''">
+                brand = #{brand} ,
+            </if>
+            <if test="model != null and model != ''">
+                model = #{model} ,
+            </if>
+            <if test="spec != null and spec != ''">
+                spec = #{spec} ,
+            </if>
+            <if test="productionDate != null">
+                production_date = #{productionDate} ,
+            </if>
+            <if test="expiryDate != null">
+                expiry_date = #{expiryDate} ,
+            </if>
+            <if test="expiryDateEnd != null">
+                expiry_date_end = #{expiryDateEnd} ,
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo} ,
+            </if>
+            <if test="statusUpdateTime != null">
+                status_update_time = #{statusUpdateTime} ,
+            </if>
+            <if test="deviceStatus != null ">
+                device_status = #{deviceStatus} ,
+            </if>
+            <if test="status != null ">
+                status = #{status} ,
+            </if>
+            <if test="sendModifyTime != null ">
+                send_modify_time = #{sendModifyTime} ,
+            </if>
+            <if test="sendModifyTimeEnd != null ">
+                send_modify_time_end = #{sendModifyTimeEnd} ,
+            </if>
+        </set>
+        WHERE
+        <if test="byQrNo != null and byQrNo != ''">
+            qr_no = #{byQrNo}
+        </if>
+        <if test="id != null and id != 0">
+             id = #{id}
+        </if>
+        <if test="byCheckPointId != null and byCheckPointId != 0">
+            check_point_id = #{byCheckPointId}
+        </if>
+        <if test="byCheckPointIds != null">
+            check_point_id IN
+            <foreach collection="byCheckPointIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="ids != null">
+             id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!--巡检点批量清除设备绑定-->
+    <update id="pointClearBindDevices" parameterType="Device">
+        UPDATE d_device
+        SET
+            check_point_id = 0,
+            last_modify_time = NOW()
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null">
+            id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!--查询设备档案 -->
+    <select id="reportFindDeviceRecordBaseInfo" parameterType="ReportDeviceRecord" resultType="ReportDeviceRecord">
+        SELECT dt.device_sys_name deviceName, d.qr_no qrNo, cp.qr_no pointQrNo, d.create_time createTime, d.create_user_name createUserName,
+        cp.point_location  pointLocation, cr.checkNum, cr.failNum, frr.repairNum, o.org_name orgName,
+        CONCAT(DATE_FORMAT(d.send_modify_time,'%Y-%m-%d'),'至',DATE_FORMAT(d.send_modify_time_end, '%Y-%m-%d')) sendModifyTime,
+        CONCAT(DATE_FORMAT(d.expiry_date,'%Y-%m-%d'),'至',DATE_FORMAT(d.expiry_date_end,'%Y-%m-%d')) expiryDate,
+        p.project_name projectName, d.memo,dt.img_url imgUrl
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        LEFT JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id
+        LEFT JOIN project_manage.p_organization o ON cp.org_id = o.id
+        LEFT JOIN project_manage.p_project p ON cp.project_id = p.id
+        LEFT JOIN ( SELECT device_id, COUNT(*) checkNum, SUM(IF(check_result=1,1,0)) failNum
+            FROM task_manage.t_check_record
+            WHERE device_id = #{id} ) cr ON d.id = cr.device_id
+        LEFT JOIN ( SELECT device_id, COUNT(*) repairNum
+            FROM fault_repair_manage.f_fault_repair_record
+            WHERE work_order_status >= 4 AND device_id = #{id}) frr ON frr.device_id = d.id
+        WHERE d.id = #{id}
+    </select>
+
+    <!--查询设备档案饼图 -->
+    <select id="findDeviceReportPie" parameterType="ReportDeviceRecord" resultType="ReportDeviceRecord">
+        SELECT COUNT(DISTINCT cir.id) countNum, IfNULL(dft.fault_type,'其它') faultType FROM task_manage.t_check_item_record cir
+        LEFT JOIN device_manage.d_device_fault_type dft ON dft.id = cir.device_fault_type_id
+        WHERE cir.device_id = #{id} AND cir.check_result = 1
+        GROUP BY dft.id ORDER BY countNum DESC
+    </select>
+
+    <!-- 查询设备档案列表信息 -->
+    <select id="reportFindDeviceRecordList" parameterType="ReportDeviceRecord" resultType="ReportDeviceRecord">
+        SELECT *
+        FROM (
+            SELECT '登记' type, '登记' orderName, d.create_time createTime, '登记成功' operationResult, d.create_user_name
+                createUserName,o.org_name orgName
+            FROM device_manage.d_device d
+            LEFT JOIN project_manage.p_org_user ou ON d.create_user_id = ou.user_id AND ou.project_id=#{projectId}
+            LEFT JOIN project_manage.p_organization o ON o.id = ou.org_id
+            WHERE 1 = 1
+            <if test="id != null">
+                AND d.id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND d.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND d.create_user_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND o.org_name = #{orgName}
+            </if>
+
+            UNION ALL
+            SELECT '维修'  type, '维修' orderName, f.create_time,
+            CASE work_order_status WHEN 1 THEN '待指派' WHEN 2 THEN '维修中' WHEN 3 THEN '待审核' WHEN 4 THEN '已修复' ELSE '不予处理' END ,
+                f.create_user_name,org_name
+            FROM  fault_repair_manage.f_fault_repair_record f
+            WHERE 1 = 1
+            <if test="id != null">
+                AND f.device_id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND f.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND f.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND f.create_user_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND org_name = #{orgName}
+            </if>
+
+            UNION ALL
+            SELECT CASE t.task_type WHEN 0 THEN '巡查' WHEN 1 THEN '检查' ELSE '保养' END,
+                t.task_name orderName, cr.create_time, IF(cr.check_result=0,'正常','故障'), cr.checker_name,cr.org_name
+            FROM  task_manage.t_check_record cr
+            INNER JOIN task_manage.t_task t ON cr.task_id = t.id
+            WHERE 1 = 1
+            <if test="id != null">
+                AND cr.device_id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND cr.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND cr.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND cr.checker_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND cr.org_name = #{orgName}
+            </if>
+        ) t
+        WHERE 1=1
+        <if test="orderName != null and orderName != ''">
+            AND t.orderName LIKE CONCAT('',#{orderName}, '%')
+        </if>
+        <if test="operationResult != null and operationResult != ''">
+            AND t.operationResult = #{operationResult}
+        </if>
+        <if test="type != null and type != ''">
+            AND t.type = #{type}
+        </if>
+        ORDER BY createTime DESC
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备档案列表信息 -->
+    <select id="reportFindDeviceRecordListTotalCount" parameterType="ReportDeviceRecord" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM (
+            SELECT  '登记' type,'登记' orderName, '登记成功' operationResult
+            FROM  device_manage.d_device d
+            WHERE 1 = 1
+            <if test="id != null">
+                AND d.id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND d.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND d.create_user_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+
+            UNION ALL
+            SELECT '维修'  type,'维修' orderName,
+            CASE f.work_order_status WHEN 1 THEN '待指派' WHEN 2 THEN '维修中' WHEN 3 THEN '待审核' WHEN 4 THEN '已修复' ELSE '不予处理' END
+            FROM  fault_repair_manage.f_fault_repair_record f
+            WHERE 1 = 1
+            <if test="id != null">
+                AND f.device_id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND f.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND f.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND f.create_user_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+
+            UNION ALL
+            SELECT  CASE t.task_type WHEN 0 THEN '巡查' WHEN 1 THEN '检查' ELSE '保养' END,
+                cr.checker_name,  IF(cr.check_result=0,'正常','故障')
+            FROM  task_manage.t_check_record cr
+            INNER JOIN task_manage.t_task t ON cr.task_id = t.id
+            WHERE 1 = 1
+            <if test="id != null">
+                AND cr.device_id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND cr.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND cr.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND cr.checker_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+        ) t
+        WHERE 1 = 1
+        <if test="orderName != null and orderName != ''">
+            AND t.orderName LIKE CONCAT('',#{orderName}, '%')
+        </if>
+        <if test="operationResult != null and operationResult != ''">
+            AND t.operationResult = #{operationResult}
+        </if>
+        <if test="type != null and type != ''">
+            AND t.type = #{type}
+        </if>
+    </select>
+
+    <!-- 查询设备档案基本信息总数 -->
+    <select id="findDeviceRecordCount" parameterType="ReportDeviceRecord" resultType="ReportDeviceRecord">
+        SELECT SUM(IF(type = 'registerNum',num,0)) registerNum, SUM(IF(type = 'repairNum',num,0)) repairNum,
+        SUM(IF(type = 'checkNum',num,0)) checkNum
+        FROM (
+            SELECT 'registerNum' type, COUNT(*) num
+            FROM device_manage.d_device d
+            INNER JOIN project_manage.p_org_user ou ON d.create_user_id = ou.user_id AND ou.project_id=#{projectId}
+            INNER JOIN project_manage.p_organization o ON o.id = ou.org_id
+            WHERE 1 = 1
+            <if test="id != null">
+                AND d.id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND d.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND d.create_user_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND o.org_name = #{orgName}
+            </if>
+
+            UNION ALL
+            SELECT 'repairNum'  type, COUNT(*) num
+            FROM  fault_repair_manage.f_fault_repair_record f
+            WHERE 1 = 1
+            <if test="id != null">
+                AND f.device_id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND f.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND f.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND f.create_user_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND org_name = #{orgName}
+            </if>
+
+            UNION ALL
+            SELECT 'checkNum' type ,COUNT(*) num
+            FROM  task_manage.t_check_record cr
+            INNER JOIN task_manage.t_task t ON cr.task_id = t.id
+            WHERE 1 = 1
+            <if test="id != null">
+                AND cr.device_id = #{id}
+            </if>
+            <if test="checkPointId != null">
+                AND cr.check_point_id = #{checkPointId}
+            </if>
+            <if test="createTime != null and endTime != null">
+                AND cr.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND cr.checker_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND cr.org_name = #{orgName}
+            </if>
+        ) t
+    </select>
+
+    <!-- 以巡检点id查询设备档案基本信息总数 -->
+    <select id="findDeviceRecordCountByPoint" parameterType="ReportDeviceRecord" resultType="ReportDeviceRecord">
+        SELECT SUM(IF(type = 'registerNum',num,0)) registerNum, SUM(IF(type = 'repairNum',num,0)) repairNum,
+            SUM(IF(type = 'checkNum',num,0)) checkNum
+        FROM (
+            SELECT 'registerNum' type, COUNT(*) num
+            FROM device_manage.d_device d
+            INNER JOIN project_manage.p_org_user ou ON d.create_user_id = ou.user_id AND ou.project_id=#{projectId}
+            INNER JOIN project_manage.p_organization o ON o.id = ou.org_id
+            INNER JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id
+            WHERE cp.id = #{checkPointId}
+            <if test="createTime != null and endTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND d.create_user_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND o.org_name = #{orgName}
+            </if>
+
+            UNION ALL
+            SELECT 'repairNum'  type, COUNT(*) num
+            FROM fault_repair_manage.f_fault_repair_record f
+            INNER JOIN device_manage.d_device d ON d.id = f.device_id
+            INNER JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id
+            WHERE cp.id = #{checkPointId}
+            <if test="createTime != null and endTime != null">
+                AND f.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND f.create_user_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND org_name = #{orgName}
+            </if>
+
+            UNION ALL
+            SELECT 'checkNum' type, COUNT(*) num
+            FROM task_manage.t_check_record cr
+            INNER JOIN task_manage.t_task t ON cr.task_id = t.id
+            INNER JOIN device_manage.d_device d ON d.id = cr.device_id
+            INNER JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id
+            WHERE cp.id = #{checkPointId}
+            <if test="createTime != null and endTime != null">
+                AND cr.create_time BETWEEN #{createTime} AND #{endTime}
+            </if>
+            <if test="createUserName != null and createUserName != null">
+                AND cr.checker_name LIKE CONCAT('',#{createUserName}, '%')
+            </if>
+            <if test="orgName != null and orgName != null">
+                AND cr.org_name = #{orgName}
+            </if>
+        ) t
+    </select>
+
+    <!-- 查询 项目内要过期的设备 -->
+    <select id="findDeviceRemindTask" parameterType="DeviceRemind" resultMap="deviceResultMap">
+        SELECT d.id, d.project_id, d.check_point_id, dt.device_sys_name device_name, d.qr_no, d.num,
+            dt.device_sys_name device_name, dt.img_url,
+            p.project_name, b.id building_id, b.building_name, bf.id building_floor_id, bf.floor_name, cp.point_location
+        FROM d_device d
+        INNER JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        LEFT JOIN d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN project_manage.p_building b ON b.id = cp.building_id
+        LEFT JOIN project_manage.p_building_floor bf ON bf.id = cp.building_floor_id
+        LEFT JOIN project_manage.p_project p ON d.project_id = p.id
+        WHERE d.project_id = #{projectId} AND (
+            SELECT DATE_FORMAT(CURDATE(),'%Y-%m-%d %H:%i:%s')) = (SELECT DATE_SUB(dd.expiry_date_end, INTERVAL #{deviceRemind} DAY)
+            FROM d_device dd
+            WHERE d.ID = dd.ID AND dd.expiry_date_end != ''
+        )
+    </select>
+
+    <!-- 查询 项目内要 送修 的设备 -->
+    <select id="findRepairRemindTask" parameterType="DeviceRemind" resultMap="deviceResultMap">
+        SELECT d.id, d.project_id, d.check_point_id, dt.device_sys_name device_name, d.qr_no, d.num,
+            dt.device_sys_name device_name, dt.img_url,
+            p.project_name, b.id building_id, b.building_name, bf.id building_floor_id, bf.floor_name, cp.point_location
+        FROM d_device d
+        INNER JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        LEFT JOIN d_check_point cp ON cp.id = d.check_point_id
+        LEFT JOIN project_manage.p_building b ON b.id = cp.building_id
+        LEFT JOIN project_manage.p_building_floor bf ON bf.id = cp.building_floor_id
+        LEFT JOIN project_manage.p_project p ON d.project_id = p.id
+        WHERE d.project_id = #{projectId} AND
+        (
+            SELECT DATE_FORMAT(CURDATE(),'%Y-%m-%d %H:%i:%s')) = (SELECT DATE_SUB(dd.send_modify_time_end, INTERVAL #{repairRemind} DAY)
+            FROM d_device dd WHERE d.ID = dd.ID AND dd.send_modify_time_end != ''
+        )
+    </select>
+</mapper>

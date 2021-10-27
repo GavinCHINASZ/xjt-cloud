@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.info.InfoManageDao" >
+    <resultMap id="infoContentResultMap" type="com.xjt.cloud.admin.manage.entity.info.InfoContent">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="cloud_type" property="cloudType" jdbcType="INTEGER" />
+        <result column="page_type" property="pageType" jdbcType="VARCHAR" />
+        <result column="info_type" property="infoType" jdbcType="VARCHAR" />
+        <result column="img_width" property="imgWidth" jdbcType="INTEGER" />
+        <result column="img_height" property="imgHeight" jdbcType="INTEGER" />
+        <result column="info_manage_id" property="infoManageId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="property_1" property="property1" jdbcType="VARCHAR" />
+        <result column="property_2" property="property2" jdbcType="VARCHAR" />
+        <result column="property_3" property="property3" jdbcType="VARCHAR" />
+        <result column="property_4" property="property4" jdbcType="VARCHAR" />
+        <result column="property_5" property="property5" jdbcType="VARCHAR" />
+        <result column="property_6" property="property6" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findManageListWhere">
+        <if test="cloudType != null and cloudType != ''">
+            AND cloud_type = #{cloudType}
+        </if>
+        <if test="pageType != null and pageType != ''">
+            AND page_type = #{pageType}
+        </if>
+        <if test="infoType != null and infoType != ''">
+            AND info_type = #{infoType}
+        </if>
+    </sql>
+
+    <!-- 查询平台信息初使化信息列表 -->
+    <select id="findInfoManageList" resultMap="infoContentResultMap" parameterType="InfoContent">
+        SELECT *
+        FROM backstage_manage.w_info_manage
+        WHERE status &lt;= 98
+        <include refid="findManageListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询平台信息初使化信息列表总行数 -->
+    <select id="findInfoManageListTotalCount" resultType="java.lang.Integer" parameterType="InfoContent">
+        SELECT COUNT(*)
+        FROM backstage_manage.w_info_manage
+        WHERE status &lt;= 98 <include refid="findManageListWhere"/>
+    </select>
+
+    <!--新增平台信息初使化信息 -->
+    <insert id="saveInfoManage" parameterType="InfoContent" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO backstage_manage.w_info_manage (
+        cloud_type, page_type, info_type, status, create_time,img_width,img_height)
+        VALUES
+        (#{cloudType}, #{pageType}, #{infoType}, 1, NOW(),#{imgWidth},#{imgHeight});
+    </insert>
+
+    <!--修改平台信息初使化信息 -->
+    <update id="modifyInfoManage" parameterType="InfoContent">
+        UPDATE backstage_manage.w_info_manage
+        <set>
+            <if test="cloudType != null">
+                cloud_type = #{cloudType},
+            </if>
+            <if test="pageType != null">
+                page_type = #{pageType},
+            </if>
+            <if test="infoType != null">
+                info_type = #{infoType},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="imgWidth != null">
+                img_width = #{imgWidth},
+            </if>
+            <if test="imgHeight != null">
+                img_height = #{imgHeight},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!--  ///////////////////////////////////////////////////////资讯内容管理///////////////////////////////////////////////// -->
+    <sql id="findContentListWhere">
+        <if test="cloudType != null and cloudType != ''">
+            AND im.cloud_type = #{cloudType}
+        </if>
+        <if test="pageType != null and pageType != ''">
+            AND im.page_type = #{pageType}
+        </if>
+        <if test="infoType != null and pageType != ''">
+            AND im.info_type = #{infoType}
+        </if>
+        <if test="infoManageId != null and infoManageId != ''">
+            AND ic.info_manage_id = #{infoManageId}
+        </if>
+    </sql>
+
+    <!-- 查询平台信息初使化信息列表 -->
+    <select id="findInfoContentList" resultMap="infoContentResultMap" parameterType="InfoContent">
+        SELECT ic.id,ic.info_manage_id, ic.sort, ic.title, ic.intro, ic.url, ic.thumbnail, ic.content,
+        im.cloud_type, im.page_type, im.info_type,ic.create_time,ic.property_1,ic.property_2,
+        ic.property_3 ,
+        ic.property_4,ic.property_5,ic.property_6,im.img_width,im.img_height
+        FROM backstage_manage.w_info_content ic
+        INNER JOIN backstage_manage.w_info_manage im ON im.id = ic.info_manage_id
+        WHERE ic.status &lt;= 98 AND im.status &lt;= 98
+        <include refid="findContentListWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询平台信息初使化信息列表总行数 -->
+    <select id="findInfoContentListTotalCount" resultType="java.lang.Integer" parameterType="InfoContent">
+        SELECT COUNT(*) FROM backstage_manage.w_info_content ic
+        INNER JOIN backstage_manage.w_info_manage im ON im.id = ic.info_manage_id
+        WHERE ic.status &lt;= 98  AND im.status &lt;= 98
+        <include refid="findContentListWhere"/>
+    </select>
+    <!--新增平台信息初使化信息 -->
+    <insert id="saveInfoContent" parameterType="InfoContent" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO backstage_manage.w_info_content (info_manage_id, sort, title, intro, url, thumbnail, content, status, create_time,
+        property_1,property_2,property_3 ,property_4,property_5,property_6)
+        VALUES
+        (#{infoManageId}, #{sort}, #{title}, #{intro}, #{url}, #{thumbnail}, #{content}, 1, NOW(),
+        #{property1},#{property2},#{property3},#{property4},#{property5},#{property6});
+    </insert>
+    <!--修改平台信息初使化信息 -->
+    <update id="modifyInfoContent" parameterType="InfoContent">
+        UPDATE backstage_manage.w_info_content
+        <set>
+            <if test="sort != null">
+                sort = #{sort},
+            </if>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="intro != null">
+                intro = #{intro},
+            </if>
+            <if test="url != null">
+                url = #{url},
+            </if>
+            <if test="thumbnail != null">
+                thumbnail = #{thumbnail},
+            </if>
+            <if test="content != null">
+                content = #{content},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="property1 != null">
+                property_1 = #{property1},
+            </if>
+            <if test="property2 != null">
+                property_2 = #{property2},
+            </if>
+            <if test="property3 != null">
+                property_3 = #{property3},
+            </if>
+            <if test="property4 != null">
+                property_4 = #{property4},
+            </if>
+            <if test="property5 != null">
+                property_5 = #{property5},
+            </if>
+            <if test="property6 != null">
+                property_6 = #{property6},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

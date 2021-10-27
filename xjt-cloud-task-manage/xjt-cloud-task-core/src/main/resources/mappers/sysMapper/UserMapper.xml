@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.sys.UserDao">
+
+    <!--功能描述: 根据角色id查询用户名称和部门员工角色id-->
+    <select id="findUserByRoleId" parameterType="java.lang.String" resultType="User">
+        SELECT u.id userId,ou.user_name userName,our.org_user_id orgUserId
+        FROM sys_manage.s_user u
+        LEFT JOIN project_manage.p_org_user ou ON u.id = ou.user_id
+        LEFT JOIN project_manage.p_org_user_role our ON ou.id = our.org_user_id
+        LEFT JOIN project_manage.p_role r ON r.id = our.role_id
+        WHERE r.id = #{roleId} AND our.project_id = #{projectId}
+        <if test="userName != null and userName != ''">
+            AND ou.user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="orgIds != null and orgIds.length > 0">
+            AND ou.org_id IN
+            <foreach collection="orgIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!--功能描述:根据项目id查询用户名称和部门员工角色id-->
+    <select id="findUserByProjectId" resultType="User">
+        SELECT u.id userId,u.user_name userName,our.org_user_id orgUserId
+        FROM project_manage.p_role r
+        LEFT JOIN project_manage.p_org_user_role our ON r.id = our.role_id
+        LEFT JOIN project_manage.p_org_user ou ON ou.id = our.org_user_id
+        LEFT JOIN sys_manage.s_user u ON u.id = ou.user_id
+        WHERE r.source_type = 2 AND our.project_id = #{projectId}
+    </select>
+
+    <!--功能描述: 根据部门员工角色id查询员工名称-->
+    <select id="findUserNameByOrgUserRoleId" resultType="java.lang.String">
+        SELECT u.user_name userName
+        FROM project_manage.p_role r
+        LEFT JOIN project_manage.p_org_user_role our ON r.id = our.role_id
+        LEFT JOIN project_manage.p_org_user ou ON ou.id = our.org_user_id
+        LEFT JOIN sys_manage.s_user u ON u.id = ou.user_id
+        <where>
+            1 = 1
+            <if test="orgUserId != null and orgUserId != 0">
+                AND our.org_user_id = #{orgUserId}
+            </if>
+            <if test="userId != null and userId != 0">
+                AND u.id = #{userId}
+            </if>
+        </where>
+    </select>
+
+    <!--功能描述: 根据任务id查询员工名称-->
+    <select id="findUserNameByTaskId" parameterType="TaskExecutor" resultType="java.lang.String">
+        SELECT DISTINCT ou.user_name userName
+        FROM project_manage.p_org_user ou
+        LEFT JOIN task_manage.t_executor e ON ou.id = e.executor_id
+        <where>
+            1 = 1
+            <if test="taskId != null and taskId != 0">
+                AND e.task_id = #{taskId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND e.project_id = #{projectId}
+            </if>
+            <if test="executorType != null">
+                AND e.executor_type = #{executorType}
+            </if>
+        </where>
+    </select>
+
+    <select id="findUserByTaskId" parameterType="TaskExecutor" resultType="User">
+        SELECT DISTINCT ou.user_name userName,ou.user_id userId, e.executor_id orgUserId, e.role_id roleId
+        FROM project_manage.p_org_user ou
+        LEFT JOIN task_manage.t_executor e ON ou.id = e.executor_id
+        <where>
+            1 = 1
+            <if test="taskId != null and taskId != 0">
+                AND e.task_id = #{taskId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND e.project_id = #{projectId}
+            </if>
+            <if test="executorType != null">
+                AND e.executor_type = #{executorType}
+            </if>
+        </where>
+    </select>
+
+    <!--功能描述: 根据任务id查询员工名称-->
+    <select id="findUser" resultType="User">
+        SELECT our.org_user_id orgUserId,u.id userId,ou.user_name userName
+        FROM project_manage.p_role r
+        LEFT JOIN project_manage.p_org_user_role our ON r.id = our.role_id
+        LEFT JOIN project_manage.p_org_user ou ON ou.id = our.org_user_id
+        LEFT JOIN sys_manage.s_user u ON u.id = ou.user_id
+        <where>
+            1 = 1
+            <if test="userId != null and userId != 0">
+                AND u.id = #{id}
+            </if>
+            <if test="orgUserId != null and orgUserId != 0">
+                AND our.org_user_id = #{orgUserId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询任务消息推送执行人 -->
+    <select id="findSendMessageUserIds" resultType="java.lang.Long">
+        SELECT DISTINCT our.user_id
+        FROM project_manage.p_org_user_role  our
+        LEFT JOIN task_manage.t_executor e ON e.executor_id = our.org_user_id
+        WHERE e.executor_type = #{executorType} AND e.task_id = #{taskId}
+        GROUP BY our.user_id
+    </select>
+
+    <select id="findUserMessageByUserId" resultType="com.xjt.cloud.task.core.entity.User" parameterType="User">
+        SELECT u.id, u.task_id taskId, u.building_id buildingId, u.building_floor_id buildingFloorId,org_id orgId,
+        app_task_id appTaskId,app_task_parent_id appTaskParentId,app_org_id appOrgId,app_building_id appBuildingId,
+        app_building_floor_id appBuildingFloorId
+        FROM sys_manage.s_user u
+        WHERE u.id = #{userId} LIMIT 1
+    </select>
+
+    <select id="getOrgNameString" resultType="java.lang.String">
+        SELECT po.org_name orgName
+        FROM project_manage.p_organization po
+        LEFT JOIN project_manage.p_org_user pou ON po.id = pou.org_id
+        WHERE pou.project_id = #{projectId} AND pou.user_id = #{userId}
+        LIMIT 1;
+    </select>
+
+    <!--  //////////////////////////////////////////////////////////////兼容5.0版本方法////////////////////////////// -->
+    <!--功能描述: 根据角色id查询用户名称和部门员工角色id-->
+    <select id="findUserByRoleIdCV5" parameterType="java.lang.String" resultType="User">
+        SELECT u.id userId,ou.user_name userName,our.org_user_id orgUserId
+        FROM sys_manage.s_user u
+        LEFT JOIN project_manage.p_org_user ou ON u.id = ou.user_id
+        LEFT JOIN project_manage.p_org_user_role our ON ou.id = our.org_user_id
+        LEFT JOIN project_manage.p_role r ON r.id = our.role_id
+        WHERE r.id = #{roleId}
+        <if test="userName != null and userName != ''">
+            AND ou.user_name LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <if test="orgIds != null and orgIds.length > 0">
+            AND ou.org_id IN
+            <foreach collection="orgIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!--功能描述:根据项目id查询用户名称和部门员工角色id-->
+    <select id="findUserByProjectIdCV5" resultType="User">
+        SELECT u.id userId,u.user_name userName,our.org_user_id orgUserId
+        FROM project_manage.p_role r
+        LEFT JOIN project_manage.p_org_user_role our ON r.id = our.role_id
+        LEFT JOIN project_manage.p_org_user ou ON ou.id = our.org_user_id
+        LEFT JOIN sys_manage.s_user u ON u.id = ou.user_id
+        WHERE r.source_type = 2 AND r.source_id = #{projectId}
+    </select>
+</mapper>

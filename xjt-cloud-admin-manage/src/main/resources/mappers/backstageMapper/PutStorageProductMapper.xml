@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.backstage.PutStorageProductDao" >
+    <resultMap id="putStorageProductResultMap" type="com.xjt.cloud.admin.manage.entity.inventory.PutStorageProduct" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="producer_id" property="producerId" jdbcType="BIGINT" />
+        <result column="put_storage_id" property="putStorageId" jdbcType="BIGINT" />
+        <result column="producer_name" property="producerName" jdbcType="VARCHAR" />
+        <result column="product_id" property="productId" jdbcType="BIGINT" />
+        <result column="product_name" property="productName" jdbcType="VARCHAR" />
+        <result column="order_num" property="orderNum" jdbcType="VARCHAR" />
+        <result column="property_1" property="property1" jdbcType="VARCHAR" />
+        <result column="property_2" property="property2" jdbcType="VARCHAR" />
+        <result column="property_3" property="property3" jdbcType="VARCHAR" />
+        <result column="property_4" property="property4" jdbcType="VARCHAR" />
+        <result column="property_5" property="property5" jdbcType="VARCHAR" />
+        <result column="property_6" property="property6" jdbcType="VARCHAR" />
+        <result column="product_status" property="productStatus" jdbcType="INTEGER" />
+        <result column="storage_status" property="storageStatus" jdbcType="INTEGER" />
+        <result column="total_flow" property="totalFlow" jdbcType="INTEGER" />
+        <result column="used_flow" property="usedFlow" jdbcType="INTEGER" />
+        <result column="active_date" property="activeDate" jdbcType="TIMESTAMP" />
+        <result column="open_date" property="openDate" jdbcType="TIMESTAMP" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="findPutStorageProductWhere">
+        WHERE  psc.status &lt;= 98
+        <if test="producerName != null and producerName != ''">
+            AND p.producer_name = #{producerName}
+        </if>
+        <if test="orderNum != null and orderNum != ''">
+            AND ps.order_num = #{orderNum}
+        </if>
+        <if test="producerId != null and producerId != 0">
+            AND ps.producer_id = #{producerId}
+        </if>
+        <if test="putStorageId != null and putStorageId != 0">
+            AND psc.put_storage_id = #{putStorageId}
+        </if>
+        <if test="productId != null and productId != 0">
+            AND ps.product_id = #{productId}
+        </if>
+        <if test="storageStatus != null and storageStatus != 0">
+            AND psc.storage_status = #{storageStatus}
+        </if>
+        <if test="productStatus != null and productStatus != 0">
+            AND psc.product_status = #{productStatus}
+        </if>
+        <if test="storageStatus != null and storageStatus != 0">
+            AND psc.storage_status = #{storageStatus}
+        </if>
+    </sql>
+
+    <sql id="selColumns">
+        psc.id, psc.put_storage_id, psc.producer_id,psc.product_id,pr.product_name, psc.storage_status,psc.property_1, psc.property_2, psc.property_3,
+        psc.property_4,psc.property_5,psc.property_6,
+        psc.status, psc.product_status, psc.total_flow, psc.used_flow,
+        psc.active_date, psc.open_date, psc.memo, psc.create_time,ps.order_num,p.producer_name
+    </sql>
+
+    <!-- 查询 入库信息关联物产品实体类列表总记录数-->
+    <select id="findPutStorageProductListTotalCount" parameterType="PutStorageProduct" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM backstage_manage.i_put_storage_product psc
+        INNER JOIN backstage_manage.i_producer p ON psc.producer_id = p.id AND p.status &lt;= 98
+        INNER JOIN backstage_manage.i_put_storage ps ON ps.id = psc.put_storage_id  AND ps.status &lt;= 98
+        INNER JOIN backstage_manage.i_product pr ON ps.product_id = pr.id AND pr.status &lt;= 98 AND p.id = pr.producer_id
+        <include refid="findPutStorageProductWhere"/>
+    </select>
+
+    <!-- 查询 入库信息关联物产品实体类列表-->
+    <select id="findPutStorageProductList" parameterType="PutStorageProduct" resultMap="putStorageProductResultMap">
+        SELECT <include refid="selColumns"/>
+        <if test="sql != null and sql != ''">
+            ,t.property_1
+        </if>
+        FROM backstage_manage.i_put_storage_product psc
+        INNER JOIN backstage_manage.i_producer p ON psc.producer_id = p.id AND p.status &lt;= 98
+        INNER JOIN backstage_manage.i_put_storage ps ON ps.id = psc.put_storage_id  AND ps.status &lt;= 98
+        INNER JOIN backstage_manage.i_product pr ON ps.product_id = pr.id AND pr.status &lt;= 98 AND p.id = pr.producer_id
+        <if test="sql != null and sql != ''">
+            RIGHT JOIN ( ${sql}) t ON t.property_1 = psc.property_1
+        </if>
+        <include refid="findPutStorageProductWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 添加 入库信息关联物产品实体类 -->
+    <insert id="savePutStorageProduct" parameterType="PutStorageProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO backstage_manage.i_put_storage_product (put_storage_id, producer_id,product_id, property_1, property_2, property_3, property_4, property_5, property_6,
+            status, product_status,storage_status,total_flow, used_flow, active_date, open_date, memo, create_time)
+        VALUES (#{putStorageId}, #{producerId},#{productId}, #{property1}, #{property2}, #{property3}, #{property4}, #{property5}, #{property6},
+            1, 1,1, #{totalFlow}, #{usedFlow}, #{activeDate}, #{openDate}, #{memo}, NOW());
+    </insert>
+
+    <!-- 批量保存 入库信息关联物产品实体类 -->
+    <insert id="savePutStorageProductList" parameterType="PutStorageProduct">
+        INSERT INTO backstage_manage.i_put_storage_product (put_storage_id, producer_id, product_id,
+            property_1, property_2, property_3, property_4, property_5, property_6,
+            status, product_status, storage_status, total_flow, used_flow, active_date, open_date, memo, create_time)
+        VALUES
+        <foreach collection="putStorageProductList" item="item" separator=","  close=";">
+            (#{putStorage.id}, #{putStorage.producerId}, #{item.productId},
+            #{item.property1}, #{item.property2}, #{item.property3}, #{item.property4}, #{item.property5}, #{item.property6},
+            1, 1, 1, #{item.totalFlow}, #{item.usedFlow}, #{item.activeDate}, #{item.openDate}, #{item.memo}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 修改 入库信息关联物产品实体类 -->
+    <update id="modifyPutStorageProduct" parameterType="PutStorageProduct">
+        UPDATE backstage_manage.i_put_storage_product
+        <set>
+            <if test="property1 != null and property1 != ''">
+                property_1 = #{property1} ,
+            </if>
+            <if test="property2 != null and property2 != ''">
+                property_2 = #{property2} ,
+            </if>
+            <if test="property3 != null and property3 != ''">
+                property_3 = #{property3} ,
+            </if>
+            <if test="property4 != null and property4 != ''">
+                property_4 = #{property4} ,
+            </if>
+            <if test="property5 != null and property5 != ''">
+                property_5 = #{property5} ,
+            </if>
+            <if test="property6 != null and property6 != ''">
+                property_6 = #{property6} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="productStatus != null and productStatus != 0">
+                product_status = #{productStatus} ,
+            </if>
+            <if test="storageStatus != null and storageStatus != 0">
+                storage_status = #{storageStatus} ,
+            </if>
+            <if test="totalFlow != null and totalFlow != 0">
+                total_flow = #{totalFlow} ,
+            </if>
+            <if test="usedFlow != null">
+                used_flow = #{usedFlow} ,
+            </if>
+            <if test="activeDate != null">
+                active_date = #{activeDate} ,
+            </if>
+            <if test="openDate != null">
+                open_date = #{openDate} ,
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo},
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids != ''">
+            id IN (${ids})
+        </if>
+    </update>
+
+</mapper>

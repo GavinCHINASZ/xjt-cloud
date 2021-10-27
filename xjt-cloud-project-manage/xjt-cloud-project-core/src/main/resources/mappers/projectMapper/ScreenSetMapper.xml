@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.ScreenSetDao">
+
+    <resultMap id="screenSetResultMap" type="com.xjt.cloud.project.core.entity.ScreenSet">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="is_show_fire_alarm" property="isShowFireAlarm" jdbcType="INTEGER"/>
+        <result column="is_show_vesa" property="isShowVesa" jdbcType="INTEGER"/>
+        <result column="is_show_water_gage" property="isShowWaterGage" jdbcType="INTEGER"/>
+        <result column="is_show_water_immersion" property="isShowWaterImmersion" jdbcType="INTEGER"/>
+        <result column="is_show_hydrant" property="isShowHydrant" jdbcType="INTEGER"/>
+        <result column="is_show_smoke" property="isShowSmoke" jdbcType="INTEGER"/>
+        <result column="is_show_linkage" property="isShowLinkage" jdbcType="INTEGER"/>
+        <result column="is_show_fire_eye" property="isShowFireEye" jdbcType="INTEGER"/>
+        <result column="msg_Types" property="msgTypes" jdbcType="VARCHAR"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <result column="device_count" property="deviceCount" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="screenSetSql">
+        `id`, `project_id`, `create_user_id`, `create_time`, `last_modify_time`, `update_user_id`, `create_user_name`, `update_user_name`, `is_show_fire_alarm`,
+        `is_show_vesa`, `is_show_water_gage`, `is_show_water_immersion`, `msg_types`, `is_show_hydrant`, `is_show_smoke`, `is_show_linkage`, `is_show_fire_eye`,
+        `msg_levels`
+    </sql>
+
+    <insert id="save" parameterType="ScreenSet" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO `p_screen_set`( `create_user_id`, `create_time`,`create_user_name`, `is_show_fire_alarm`,`is_show_vesa`,
+            `is_show_water_gage`, `is_show_water_immersion`,`is_show_hydrant`,`is_show_smoke`, `is_show_linkage`, is_show_fire_eye,
+            `msg_levels`, `project_Id`, msg_Types)
+        VALUES (#{createUserId}, now(), #{createUserName}, #{isShowFireAlarm}, #{isShowVesa}
+            ,#{isShowWaterGage}, #{isShowWaterImmersion}, #{isShowHydrant}, #{isShowSmoke}, #{isShowLinkage}, #{isShowFireEye},
+            #{msgLevels}, #{projectId}, #{msgTypes});
+    </insert>
+
+    <update id="modifyScreenSet" parameterType="ScreenSet">
+        UPDATE p_screen_set
+        SET
+            `is_show_fire_alarm` = #{isShowFireAlarm},
+            `is_show_vesa` = #{isShowVesa},
+            `is_show_water_gage` = #{isShowWaterGage},
+            `is_show_water_immersion` = #{isShowWaterImmersion},
+            `is_show_hydrant` = #{isShowHydrant},
+            `is_show_smoke` = #{isShowSmoke},
+            `is_show_linkage` = #{isShowLinkage},
+            `is_show_fire_eye` = #{isShowFireEye},
+            `msg_levels` = #{msgLevels},
+            msg_Types = #{msgTypes}
+        WHERE id = #{id}
+    </update>
+
+    <!--查询项目大屏设置-->
+    <select id="findScreenSet" resultMap="screenSetResultMap" parameterType="ScreenSet">
+        SELECT ss.id, ss.project_id, ss.is_show_vesa, ss.is_show_water_gage, ss.is_show_fire_alarm, ss.is_show_fire_alarm, ss.msg_types,
+            ss.is_show_water_immersion, ss.is_show_hydrant, ss.is_show_smoke, ss.is_show_linkage, ss.is_show_fire_eye, ss.msg_levels msgLevels,
+            ifnull(pml.event_type_name_level_1, pmld.event_type_name_level_1) eventTypeNameLevel1,
+            ifnull(pml.event_type_name_level_2, pmld.event_type_name_level_2) eventTypeNameLevel2,
+            ifnull(pml.event_type_name_level_3, pmld.event_type_name_level_3) eventTypeNameLevel3,
+            ifnull(pml.event_type_name_level_4, pmld.event_type_name_level_4) eventTypeNameLevel4
+        FROM p_screen_set ss
+        LEFT JOIN p_project_msg_level pml ON ss.project_id = pml.project_id
+        LEFT JOIN p_project_msg_level pmld ON pmld.type = 3
+        WHERE ss.project_Id = #{projectId}
+        ORDER BY ss.last_modify_time DESC
+        LIMIT 1;
+    </select>
+
+    <!--查询项目大屏设置列表-->
+    <select id="findScreenProjectList" resultMap="screenSetResultMap" parameterType="Project">
+        SELECT p.id AS project_id, p.project_name, SUM(d.num) AS device_count,
+            ss.is_show_water_immersion, ss.is_show_vesa,
+            ss.is_show_water_gage, ss.is_show_fire_alarm, ss.is_show_hydrant, ss.is_show_smoke, ss.is_show_linkage,
+            ss.is_show_fire_eye, ss.msg_types
+        FROM p_project p
+        INNER JOIN p_org_user_role our ON p.id = our.project_id
+        INNER JOIN p_role_permission rp ON our.role_id = rp.role_id
+        INNER JOIN p_permission pm ON rp.permission_id = pm.id
+        LEFT JOIN device_manage.d_device d ON p.id = d.project_id AND d.status &lt;= 98
+
+        INNER JOIN (
+            SELECT <include refid="screenSetSql"/>
+            FROM p_screen_set
+            WHERE id IN(
+                SELECT MAX(id)
+                FROM p_screen_set
+                GROUP BY project_id ORDER BY last_modify_time DESC
+            ) ORDER BY id desc
+        ) ss ON p.id = ss.project_id
+
+        WHERE our.user_id =#{ownerId} AND pm.sign ='screen_manage' AND p.deleted = false AND p.project_status = 2
+        <if test="projectName != null">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+        GROUP BY p.id 
+        ORDER BY p.create_time ASC ;
+    </select>
+
+    <!--查询项目大屏设置列表-->
+    <select id="findScreenProjectListCV5" resultMap="screenSetResultMap" parameterType="Project">
+        SELECT p.id AS project_id,p.project_name, SUM(d.num) AS device_count,
+            ss.is_show_water_immersion, ss.is_show_vesa,
+            ss.is_show_water_gage, ss.is_show_fire_alarm, ss.is_show_hydrant, ss.is_show_smoke, ss.is_show_linkage,
+            ss.is_show_fire_eye, ss.msg_types
+        FROM p_project p
+        INNER JOIN p_org_user_role our ON p.id = our.project_id
+        INNER JOIN p_role_permission rp ON rp.source_id = p.id AND our.role_id = rp.role_id
+        INNER JOIN p_permission pm ON rp.permission_id = pm.id
+        LEFT JOIN device_manage.d_device d ON p.id = d.project_id AND d.status &lt;= 98
+        INNER JOIN p_screen_set ss ON p.id = ss.project_id
+        WHERE our.user_id = #{ownerId} AND pm.sign ='screen_manage' AND p.deleted = false AND p.project_status = 2
+        <if test="projectName != null">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+        GROUP BY p.id
+        ORDER BY p.create_time ASC ;
+    </select>
+
+    <select id="findScreenProjectListCount" resultType="java.lang.Integer" parameterType="Project">
+        SELECT COUNT(p.id)
+        FROM p_project p
+        INNER JOIN p_org_user_role our ON p.id = our.project_id
+        INNER JOIN p_role_permission rp ON our.role_id = rp.role_id
+        INNER JOIN p_permission pm ON rp.permission_id = pm.id
+        INNER JOIN p_screen_set ss ON p.id = ss.project_id
+        WHERE our.user_id =#{ownerId} AND pm.sign ='screen_manage' AND p.deleted = false AND p.project_status = 2
+        <if test="projectName != null">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+        ORDER BY p.create_time ASC ;
+    </select>
+
+    <select id="findScreenProjectListCountCV5" resultType="java.lang.Integer" parameterType="Project">
+        SELECT count(p.id)
+        FROM p_project p
+        INNER JOIN p_org_user_role our ON p.id = our.project_id
+        INNER JOIN p_role_permission rp ON rp.source_id = p.id AND our.role_id = rp.role_id
+        INNER JOIN p_permission pm ON rp.permission_id = pm.id
+        INNER JOIN p_screen_set ss ON p.id = ss.project_id
+        WHERE our.user_id =#{ownerId} AND pm.sign ='screen_manage' AND p.deleted = false AND p.project_status =2
+        <if test="projectName != null">
+            AND p.project_name LIKE CONCAT('%',#{projectName},'%')
+        </if>
+        ORDER BY p.create_time ASC;
+    </select>
+</mapper>

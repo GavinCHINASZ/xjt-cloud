@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.TaskPointLayoutDao">
+    <resultMap id="taskPointLayoutResultMap" type="com.xjt.cloud.task.core.entity.task.TaskPointLayout" >
+        <result column="floor_id" property="floorId" jdbcType="BIGINT"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="org_id" property="orgId" jdbcType="BIGINT"/>
+        <result column="task_id" property="taskId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="axis_x" property="axisX" jdbcType="INTEGER"/>
+        <result column="axis_y" property="axisY" jdbcType="INTEGER"/>
+        <result column="task_check_point_status" property="taskCheckPointStatus" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <result column="upper_id" property="upperId" jdbcType="BIGINT"/>
+        <result column="next_id" property="nextId" jdbcType="BIGINT"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 以巡检点id查询巡检点所在楼层的所有布点信息-->
+    <select id="findFloorPointPositionByFloorAllList" parameterType="TaskPointLayout" resultMap="taskPointLayoutResultMap">
+        SELECT fpp.floor_id, fpp.check_point_id, fpp.sort, fpp.axis_x, fpp.axis_y,fpp.upper_id,fpp.next_id,fpp.points,fpp.org_id,fpp.device_id
+        FROM project_manage.p_floor_point_position fpp
+        INNER JOIN device_manage.d_check_point cp ON fpp.floor_id = cp.building_floor_id
+        WHERE cp.status &lt;=98 AND (fpp.upper_id > 0 OR fpp.next_id > 0)
+        <if test="byCheckPointIds != null">
+            AND cp.id IN
+            <foreach collection="byCheckPointIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY fpp.id ORDER BY fpp.floor_id,fpp.sort
+    </select>
+    <!--以巡检点id查询巡检点布点信息 -->
+    <select id="findFloorPointPositionByCheckPointList" parameterType="TaskPointLayout" resultMap="taskPointLayoutResultMap">
+        SELECT fpp.id pointLayoutId,fpp.floor_id, fpp.check_point_id, fpp.sort, fpp.axis_x, fpp.axis_y,fpp.upper_id,fpp.next_id,fpp.points,fpp.org_id,fpp.device_id,#{taskId} task_id
+        FROM project_manage.p_floor_point_position fpp
+        INNER JOIN device_manage.d_check_point cp ON fpp.check_point_id = cp.id
+        WHERE cp.status &lt;=98
+        <if test="byCheckPointIds != null">
+            AND cp.id IN
+            <foreach collection="byCheckPointIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY fpp.id ORDER BY fpp.floor_id,fpp.sort
+    </select>
+    
+    <!--删除任务巡检点点位-->
+    <delete id="delTaskPointPosition" parameterType="java.lang.Long">
+        DELETE FROM t_task_point_position WHERE task_id = #{taskId}
+        <if test="id != null">
+           AND id = #{id}
+        </if>
+
+        <if test="floorId != null">
+            AND floor_id = #{floorId}
+        </if>
+        <if test="checkPointId != null">
+            AND check_point_id = #{checkPointId}
+        </if>
+        <if test="orgId != null">
+            AND org_id = #{orgId}
+        </if>
+        <if test="deviceId != null">
+            AND device_id = #{deviceId}
+        </if>
+        <if test="ids != null">
+            AND id IN (${ids})
+        </if>
+    </delete>
+
+    <!--保存任务巡检点点位-->
+    <insert id="saveTaskPointPosition" parameterType="TaskPointLayout" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_task_point_position (floor_id, check_point_id, sort, axis_x, axis_y, create_time,upper_id,next_id,points,org_id,device_id,task_id)
+        VALUES
+        (#{floorId}, #{checkPointId}, #{sort}, #{axisX}, #{axisY}, now(),#{upperId},#{nextId},#{points},#{orgId},#{deviceId},#{taskId});
+    </insert>
+
+    <!--保存任务巡检点点位列表-->
+    <insert id="saveTaskPointPositionList" parameterType="TaskPointLayout" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_task_point_position (floor_id, check_point_id, sort, axis_x, axis_y, create_time,upper_id,next_id,points,org_id,device_id,task_id)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.floorId}, #{item.checkPointId}, #{item.sort}, #{item.axisX}, #{item.axisY}, now(),#{item.upperId},#{item.nextId},
+            #{item.points},#{item.orgId},#{item.deviceId},#{item.taskId})
+        </foreach>
+
+    </insert>
+
+    <update id="modifyTaskPointPositionList" parameterType="TaskPointLayout">
+        UPDATE t_task_point_position
+        <trim prefix="set" suffixOverrides=",">
+            next_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                WHEN id = #{item.id} then #{item.nextId}
+            </foreach>
+            upper_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when id = #{item.id} then #{item.upperId}
+            </foreach>
+            points =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when id = #{item.id} then #{item.points}
+            </foreach>
+        </trim>
+        WHERE id IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!--查询任务巡检点点位-->
+    <select id="findTaskPointPositionList" parameterType="TaskPointLayout" resultMap="taskPointLayoutResultMap">
+        SELECT tpp.id, tpp.floor_id, tpp.check_point_id, tpp.sort, tpp.axis_x, tpp.axis_y,tpp.upper_id,tpp.next_id,tpp.points,tpp.org_id,tpp.device_id,
+        tpp.create_time,cp.building_id, cp.point_location, d.last_modify_time,
+        d.device_status devicePointStatus,
+        cp.qr_no pointQrNo,cp.point_name, d.qr_no, d.device_type_id,MAX(d.status_update_time) statusUpdateTime,
+        dt.device_sys_name deviceName,tpp.task_id
+        FROM t_task_point_position tpp
+        INNER JOIN device_manage.d_check_point cp ON tpp.check_point_id = cp.id
+        INNER JOIN device_manage.d_device d ON d.id = tpp.device_id AND d.check_point_id = tpp.check_point_id
+        INNER JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        WHERE cp.status &lt;=98 AND d.status &lt;=98 AND tpp.task_id = #{taskId}
+        <if test="orgId != null and orgId != 0">
+            AND tpp.org_id = #{orgId}
+        </if>
+        <if test="floorId != null and floorId != 0">
+            AND tpp.floor_id = #{floorId}
+        </if>
+        GROUP BY tpp.id ORDER BY tpp.sort
+    </select>
+
+    <!--查询App任务巡检点点位-->
+    <select id="findAppTaskPointPositionList" parameterType="TaskPointLayout" resultMap="taskPointLayoutResultMap">
+        SELECT tpp.id, tpp.floor_id, tpp.check_point_id, tpp.sort, tpp.axis_x, tpp.axis_y,tpp.upper_id,tpp.next_id,tpp.points,tpp.org_id,tpp.device_id,
+        tpp.create_time,cp.building_id, cp.point_location, d.last_modify_time,
+        d.device_status devicePointStatus,cr.create_time checkRecordTime,
+        cp.qr_no pointQrNo,cp.point_name, d.qr_no, d.device_type_id,MAX(d.status_update_time) statusUpdateTime,
+        dt.device_sys_name deviceName,tpp.task_id,IF(cr.check_result IS NULL,0,cr.check_result + 1) task_check_point_status
+        FROM t_task_point_position tpp
+        INNER JOIN t_task t ON t.parent_id = tpp.task_id AND t.deleted = false
+        LEFT JOIN t_check_record cr  ON cr.device_id = tpp.device_id AND cr.check_point_id = tpp.check_point_id AND t.id = cr.task_id
+        INNER JOIN device_manage.d_check_point cp ON tpp.check_point_id = cp.id
+        INNER JOIN t_task_check_point tcp ON tcp.check_point_id = cp.id AND tpp.task_id = tcp.task_id
+        INNER JOIN device_manage.d_device d ON d.id = tpp.device_id AND d.check_point_id = tpp.check_point_id
+        INNER JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        WHERE cp.status &lt;=98 AND d.status &lt;=98 AND t.id = #{taskId}
+        <if test="orgId != null and orgId != 0">
+            AND tpp.org_id = #{orgId}
+        </if>
+        <if test="floorId != null and floorId != 0">
+            AND tpp.floor_id = #{floorId}
+        </if>
+        GROUP BY tpp.id ORDER BY tpp.sort
+    </select>
+
+    <!--查询任务的设备布点数-->
+    <select id="findTaskPointPositionCount" parameterType="TaskPointLayout" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_task_point_position tpp
+        WHERE tpp.task_id = #{taskId}
+    </select>
+
+    <!--查询任务布点里的巡检点列表-->
+    <select id="findTaskPointPositionCheckPointList" parameterType="TaskPointLayout"  resultType="java.lang.Long">
+        SELECT DISTINCT check_point_id
+        FROM t_task_point_position tpp
+        WHERE tpp.task_id = #{taskId} AND check_point_id > 0
+    </select>
+
+    <!--以巡检点id查询布点信息-->
+    <select id="findPointPositionIds" parameterType="TaskPointLayout" resultType="TaskPointLayout">
+        SELECT GROUP_CONCAT(id) ids FROM t_task_point_position tpp
+        WHERE task_id = #{taskId}
+        <if test="byDeviceIds != null">
+            AND device_id IN
+            <foreach collection="byDeviceIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceId != null">
+            AND device_id = #{deviceId},
+        </if>
+    </select>
+
+    <!--更新任务巡检点点位-->
+    <update id="modifyTaskPointPosition" parameterType="TaskPointLayout">
+        UPDATE t_task_point_position
+        <set>
+            <if test="floorId != null">
+                floor_id = #{floorId},
+            </if>
+            <if test="checkPointId != null">
+                check_point_id = #{checkPointId},
+            </if>
+            <if test="deviceId != null">
+                device_id = #{deviceId},
+            </if>
+            <if test="sort != null">
+                sort = #{sort},
+            </if>
+            <if test="axisX != null">
+                axis_x = #{axisX},
+            </if>
+            <if test="axisY != null">
+                axis_y = #{axisY},
+            </if>
+            <if test="upperId != null">
+                upper_id = #{upperId},
+            </if>
+            <if test="nextId != null">
+                next_id = #{nextId},
+            </if>
+            <if test="points != null">
+                points = #{points},
+            </if>
+        </set>
+        WHERE task_id = #{taskId}
+        <if test="id != null">
+            AND id =  #{id}
+        </if>
+        <if test="oldUpperId != null">
+            AND upper_id = #{oldUpperId}
+        </if>
+        <if test="oldNextId != null">
+            AND next_id = #{oldNextId}
+        </if>
+        <if test="oldUpperIds != null">
+            AND upper_id IN (${oldUpperIds})
+        </if>
+        <if test="oldNextIds != null">
+            AND next_id IN (${oldNextIds})
+        </if>
+    </update>
+</mapper>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.project.RoleDao">
+
+    <!--功能描述:根据项目id获取角色名称列表-->
+    <select id="getRoleNameBySourceId" resultType="Role">
+        SELECT
+            r.id,r.role_name roleName
+        FROM project_manage.p_role r
+        INNER JOIN p_org_user_role our ON r.id = our.role_id
+        WHERE  r.source_type = 2 AND our.project_id = #{projectId}
+    </select>
+
+    <!--  //////////////////////////////////////////////////////////////兼容5.0版本方法////////////////////////////// -->
+    <select id="getRoleNameBySourceIdCV5" resultType="Role">
+        SELECT
+            r.id,r.role_name roleName
+        FROM project_manage.p_role r
+        WHERE  r.source_type = 2
+        AND    r.source_id = #{projectId}
+    </select>
+</mapper>

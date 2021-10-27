@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.ProjectFileDao">
+    <resultMap id="projectFileResultMap" type="com.xjt.cloud.project.core.entity.ProjectFile">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="file_name" property="fileName" jdbcType="VARCHAR"/>
+        <result column="file_url" property="fileUrl" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="is_file" property="isFile" jdbcType="INTEGER"/>
+        <result column="file_directory" property="fileDirectory" jdbcType="VARCHAR"/>
+        <result column="file_directory" property="oldFileDirectory" jdbcType="VARCHAR"/>
+        <result column="file_type" property="fileType" jdbcType="INTEGER"/>
+
+    </resultMap>
+
+
+    <!--保存项目文件-->
+    <insert id="saveProjectFile" parameterType="ProjectFile" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `p_project_file`(`file_name`, `file_url`, `project_id`, `create_user_id`, `create_time`,
+         `type`, `create_user_name`, `parent_id`, `file_type`, `is_file`, `file_directory`)
+          VALUES
+         (#{fileName}, #{fileUrl}, #{projectId}, #{createUserId},NOW(),#{type},
+         #{createUserName},#{parentId},#{fileType},#{isFile},#{oldFileDirectory})
+    </insert>
+
+    <!--查询项目文件列表-->
+    <select id="findProjectFileList" parameterType="ProjectFile" resultMap="projectFileResultMap">
+       SELECT pf.id,pf.file_name,pf.file_url,pf.project_id,pf.create_time,pf.create_user_name,pf.parent_id,pf.file_type,pf.is_file,pf.file_directory
+        from p_project_file pf
+       where pf.deleted = 0 and  pf.project_id = #{projectId}
+        <if test="type != null">
+            and pf.type = #{type}
+        </if>
+        <if test="fileName != null">
+            and pf.file_name like  CONCAT('%',#{fileName},'%')
+            <if test="parentId != 0">
+                and pf.file_directory like CONCAT('%[_',#{parentId},'_]%')
+            </if>
+        </if>
+
+        <if test="parentId != null and fileName == null and createUserName == null and startTime == null and endTime == null">
+            and pf.parent_id = #{parentId}
+        </if>
+        <if test="createUserName != null">
+            and pf.create_user_name like CONCAT('%',#{createUserName},'%')
+            <if test="parentId != 0">
+                and pf.file_directory like CONCAT('%[_',#{parentId},'_]%')
+            </if>
+        </if>
+        <if test="startTime != null">
+            AND pf.create_time <![CDATA[ >= ]]> #{startTime}
+            <if test="parentId != 0">
+                and pf.file_directory like CONCAT('%[_',#{parentId},'_]%')
+            </if>
+        </if>
+        <if test="endTime != null">
+            AND pf.create_time <![CDATA[ <= ]]> #{endTime}
+            <if test="parentId != 0">
+                and pf.file_directory like CONCAT('%[_',#{parentId},'_]%')
+            </if>
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+
+
+
+    <select id="findProjectFileParentIds" parameterType="ProjectFile" resultMap="projectFileResultMap">
+        SELECT pf.id,pf.file_name,pf.file_url,pf.project_id,pf.create_time,pf.create_user_name,pf.parent_id,pf.file_type,pf.is_file,pf.file_directory
+        from p_project_file pf
+         where pf.deleted = 0 and  pf.parent_id in
+            <foreach collection="list" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+    </select>
+
+    <!--根据ID查询-->
+    <select id="findProjectFileId" parameterType="ProjectFile" resultMap="projectFileResultMap">
+        SELECT pf.id,pf.file_name,pf.file_url,pf.project_id,pf.create_time,pf.create_user_name,pf.parent_id,pf.file_type,pf.is_file,pf.file_directory
+        from p_project_file pf
+        where pf.deleted = 0 and  pf.id = #{id}
+    </select>
+
+
+    <!--查询项目文件列表数量-->
+    <select id="findProjectFileListCount" parameterType="ProjectFile" resultType="java.lang.Integer">
+        SELECT count(*)
+        from p_project_file pf
+        where pf.deleted = 0 and  pf.project_id = #{projectId}
+        <if test="type != null">
+            and pf.type = #{type}
+        </if>
+        <if test="fileName != null">
+            and pf.file_name like  CONCAT('%',#{fileName},'%')
+            <if test="parentId != 0">
+                and pf.file_directory like CONCAT('%[_',#{parentId},'_]%')
+            </if>
+        </if>
+
+        <if test="parentId != null and fileName == null and createUserName == null and startTime == null and endTime == null">
+            and pf.parent_id = #{parentId}
+        </if>
+        <if test="createUserName != null">
+            and pf.create_user_name like CONCAT('%[_',#{createUserName},'_]%')
+            <if test="parentId != 0">
+                and pf.file_directory like CONCAT('%[_',#{parentId},'_]%')
+            </if>
+        </if>
+        <if test="startTime != null">
+            AND pf.create_time <![CDATA[ >= ]]> #{startTime}
+            <if test="parentId != 0">
+                and pf.file_directory like CONCAT('%[_',#{parentId},'_]%')
+            </if>
+        </if>
+        <if test="endTime != null">
+            AND pf.create_time <![CDATA[ <= ]]> #{endTime}
+            <if test="parentId != 0">
+                and pf.file_directory like CONCAT('%[_',#{parentId},'_]%')
+            </if>
+        </if>
+    </select>
+
+    <!--更新项目文件信息-->
+    <update id="updateProjectFile" parameterType="BuildingFloor">
+         update   p_project_file
+         <set>
+             <if test="deleted!=null">
+                deleted = #{deleted},
+             </if>
+             <if test="fileName!=null">
+                 file_name = #{fileName},
+             </if>
+             update_user_id = #{updateUserId},
+             update_user_name = #{updateUserName}
+         </set>
+         WHERE
+        <if test="id!=null">
+            id =  #{id}
+        </if>
+        <if test="ids!=null">
+            id   in
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+    </update>
+
+
+    <!--修改项目子目录信息-->
+    <update id="updateProjectFileChild" parameterType="BuildingFloor">
+        update   p_project_file
+        <set>
+
+            <if test="fileDirectory!=null">
+                file_directory = #{fileDirectory},
+            </if>
+            update_user_id = #{updateUserId},
+            update_user_name = #{updateUserName}
+        </set>
+        WHERE
+        <if test="oldFileDirectory != null">
+            file_directory =  #{oldFileDirectory}
+        </if>
+
+    </update>
+
+
+</mapper>

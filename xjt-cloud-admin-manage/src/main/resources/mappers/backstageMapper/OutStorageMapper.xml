@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.backstage.OutStorageDao" >
+    <resultMap id="outStorageResultMap" type="com.xjt.cloud.admin.manage.entity.inventory.OutStorage" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="order_num" property="orderNum" jdbcType="VARCHAR" />
+        <result column="producer_id" property="producerId" jdbcType="BIGINT" />
+        <result column="product_id" property="productId" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="findOutStorageWhere">
+        WHERE  ps.status &lt;= 98
+        <if test="producerId != null and producerId != ''">
+            AND osp.producer_id = #{producerId}
+        </if>
+        <if test="productId != null and productId != ''">
+            AND osp.product_id = #{productId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND ps.project_id = #{projectId}
+        </if>
+    </sql>
+    <sql id="selColumns">
+        ps.id, ps.order_num, ps.project_id,ps.recipients, ps.memo,ps.status,  ps.create_time
+    </sql>
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findOutStorageListTotalCount" parameterType="OutStorage" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT ps.id)
+        FROM backstage_manage.i_out_storage ps
+        LEFT JOIN backstage_manage.i_out_storage_product osp ON osp.out_storage_id = ps.id AND osp.status &lt;= 98
+        <include refid="findOutStorageWhere"/>
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findOutStorageList" parameterType="OutStorage" resultMap="outStorageResultMap">
+        SELECT <include refid="selColumns"/>,p.project_name
+        FROM backstage_manage.i_out_storage ps
+        LEFT JOIN backstage_manage.i_out_storage_product osp ON osp.out_storage_id = ps.id AND osp.status &lt;= 98
+        INNER JOIN project_manage.p_project p ON ps.project_id = p.id AND  p.deleted = false
+        <include refid="findOutStorageWhere"/>
+        GROUP BY ps.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备巡检项-->
+    <select id="findOutStorage" parameterType="OutStorage" resultMap="outStorageResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM backstage_manage.i_out_storage ps
+        WHERE ps.status &lt;= 98 AND ps.order_num = #{orderNum} LIMIT 1
+    </select>
+
+    <!--添加设备巡检项-->
+    <insert id="saveOutStorage" parameterType="OutStorage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO backstage_manage.i_out_storage (
+        order_num, project_id, status, recipients, memo, create_time)
+         VALUES (#{orderNum}, #{projectId}, 1 ,#{recipients}, #{memo}, NOW());
+    </insert>
+
+    <!--修改设备巡检项-->
+    <update id="modifyOutStorage" parameterType="OutStorage">
+        UPDATE backstage_manage.i_out_storage
+        <set>
+            <if test="orderNum != null and orderNum != ''">
+                order_num = #{orderNum} ,
+            </if>
+            <if test="recipients != null and recipients != ''">
+                recipients = #{recipients} ,
+            </if>
+            <if test="projectId != null and projectId != 0">
+                project_id = #{projectId} ,
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status} ,
+            </if>
+            <if test="memo != null and memo != ''">
+                memo = #{memo} ,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+</mapper>

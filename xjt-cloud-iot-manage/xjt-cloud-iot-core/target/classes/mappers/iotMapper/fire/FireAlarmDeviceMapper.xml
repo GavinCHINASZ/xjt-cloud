@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.fire.FireAlarmDeviceDao" >
+
+    <resultMap id="fireAlarmDeviceResultMap" type="com.xjt.cloud.iot.core.entity.fire.FireAlarmDevice" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="brand" property="brand" jdbcType="VARCHAR" />
+        <result column="model" property="model" jdbcType="VARCHAR" />
+        <result column="trans_device_name" property="transDeviceName" jdbcType="VARCHAR" />
+        <result column="trans_device_id" property="transDeviceId" jdbcType="VARCHAR" />
+        <result column="fire_alarm_no" property="fireAlarmNo" jdbcType="VARCHAR" />
+        <result column="device_position" property="devicePosition" jdbcType="VARCHAR" />
+        <result column="trans_device_type" property="transDeviceType" jdbcType="INTEGER" />
+        <result column="code_type" property="codeType" jdbcType="INTEGER" />
+        <result column="end_heartbeat_time" property="endHeartbeatTime" jdbcType="TIMESTAMP"/>
+        <result column="check_point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR"/>
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="send_type" property="sendType" jdbcType="INTEGER"/>
+        <result column="status_update_time" property="statusUpdateTime" jdbcType="TIMESTAMP"/>
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER"/>
+        <result column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR"/>
+        <result column="fire_count" property="fireCount" jdbcType="BIGINT"/>
+        <result column="monitor_count" property="monitorCount" jdbcType="BIGINT"/>
+        <result column="fault_count" property="faultCount" jdbcType="BIGINT"/>
+        <result column="memo" property="memo" jdbcType="VARCHAR"/>
+        <result column="fire_alarm_type" property="fireAlarmType" jdbcType="INTEGER"/>
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="send_message" property="sendMessage" jdbcType="INTEGER"/>
+    </resultMap>
+    <!--根据条件查询火警主机设备-->
+    <select id="findIsSameFireAlarmDevice" parameterType="FireAlarmDevice" resultType="FireAlarmDevice">
+         SELECT
+            fad.id,fad.trans_device_id transDeviceId, fad.fire_alarm_no fireAlarmNo,
+            fad.trans_device_type transDeviceType,fad.trans_device_name transDeviceName,fad.project_id projectId
+        FROM f_fire_alarm_device fad
+        <where>
+            fad.status &lt; 99
+            <if test="projectId != null and projectId != 0">
+                AND fad.project_id = #{projectId}
+            </if>
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND fad.trans_device_id = #{transDeviceId}
+            </if>
+            <if test="fireAlarmNo != null">
+                AND fad.fire_alarm_no = #{fireAlarmNo}
+            </if>
+            <if test="transDeviceType != null and transDeviceType != 0">
+                AND fad.trans_device_type = #{transDeviceType}
+            </if>
+            <if test="transDeviceName != null and transDeviceName != ''">
+                AND fad.trans_device_name = #{transDeviceName}
+            </if>
+            <if test="fireAlarmType != null and fireAlarmType != 0">
+                AND fad.fire_alarm_type = #{fireAlarmType}
+            </if>
+        </where>
+        GROUP BY fad.project_id
+    </select>
+
+    <!--保存火警主机设备-->
+    <insert id="saveFireAlarmDevice" parameterType="FireAlarmDevice" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO f_fire_alarm_device
+            (project_id, device_id,trans_device_name, trans_device_id,
+            fire_alarm_no, trans_device_type, fire_alarm_type, create_time,create_user_id, status, device_status, code_type)
+        VALUES
+            (#{projectId}, #{deviceId}, #{transDeviceName}, #{transDeviceId},
+             #{fireAlarmNo}, #{transDeviceType}, #{fireAlarmType}, NOW(),#{createUserId}, 0, 2, #{codeType});
+    </insert>
+
+    <update id="modifyFireAlarmDevice" parameterType="FireAlarmDevice">
+        UPDATE f_fire_alarm_device
+        SET trans_device_name = #{transDeviceName}, trans_device_id = #{transDeviceId}, device_id = #{deviceId},
+         fire_alarm_no = #{fireAlarmNo}, trans_device_type = #{transDeviceType}, fire_alarm_type = #{fireAlarmType},
+         update_user_id = #{updateUserId}, last_modify_time = NOW()
+        WHERE
+        id = #{id}
+    </update>
+
+    <!-- 查询火警主机设备列表 -->
+    <select id="findFireAlarmDeviceList" parameterType="FireAlarmDevice" resultMap="fireAlarmDeviceResultMap">
+        SELECT
+            fad.id, fad.project_id, d.brand, d.model, fad.trans_device_name, fad.trans_device_id, fad.fire_alarm_type,
+            fad.code_type, cp.point_location device_position, fad.trans_device_type, cp.qr_no check_point_qr_no, IFNULL(fad.device_status,2) device_status,
+            d.qr_no device_qr_no, fad.fire_alarm_no, cp.point_name, d.memo,fad.device_id,cp.building_id,
+            cp.building_floor_id, cp.id check_point_id, d.device_type_id,
+            fae.fireEvent fire_count,
+            fae.monitorEvent monitor_count,
+            fae.faultEvent fault_Count
+        FROM (SELECT
+                fad.id, fad.project_id, fad.trans_device_name, fad.trans_device_id, fad.fire_alarm_type,fad.device_id,
+                fad.code_type,fad.trans_device_type, IFNULL(fad.device_status,2) device_status,fad.fire_alarm_no
+              FROM f_fire_alarm_device fad
+             <include refid="fireAlarmWhere"></include>
+             GROUP BY fad.id
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) fad
+        LEFT JOIN (
+            SELECT
+                SUM(IF(fae.event_type = 1 and fae.recover_status = 2, 1, 0)) fireEvent,
+                SUM(IF(fae.event_type = 2 and fae.recover_status = 2, 1, 0)) monitorEvent,
+                SUM(IF(fae.event_type = 7 and fae.recover_status = 2, 1, 0)) faultEvent,
+                fae.fire_alarm_device_id
+            FROM f_fire_alarm_event fae
+            WHERE  fae.project_id = #{projectId}
+            AND fae.recover_status = 2
+
+            AND EXISTS (
+                SELECT fad.id
+                FROM f_fire_alarm_device fad
+                <include refid="fireAlarmWhere"/>
+                GROUP BY fad.id
+            )
+
+            GROUP BY fae.fire_alarm_device_id
+         )fae ON  fae.fire_alarm_device_id = fad.id
+        LEFT JOIN device_manage.d_device d ON d.id = fad.device_id AND fad.project_id = d.project_id AND d.status &lt;= 98
+        LEFT JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id AND cp.status &lt;= 98
+        GROUP BY fad.id
+    </select>
+
+    <!-- 查询火警主机设备数量 -->
+    <select id="findFireAlarmDeviceCount" parameterType="FireAlarmDevice" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT fad.id) totalCount
+        FROM f_fire_alarm_device fad
+        <include refid="fireAlarmWhere"></include>
+    </select>
+
+    <!-- 查询设备状态 1 在线，2 离线 -->
+    <select id="findFireAlarmIsLineCount" resultType="java.lang.Integer">
+        SELECT COUNT(fad.id) total
+        FROM f_fire_alarm_device fad
+        <where>
+            fad.status &lt;= 98
+            <if test="deviceStatus != null">
+                AND fad.device_status = #{deviceStatus}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND fad.project_id = #{projectId}
+            </if>
+        </where>
+    </select>
+
+    <!--根据传输装置id和火警主机编号查询火警主机设备-->
+    <select id="findFireAlarmDevice" parameterType="FireAlarmDevice" resultMap="fireAlarmDeviceResultMap">
+        SELECT fad.id, fad.project_id, fad.trans_device_name, fad.trans_device_id, fad.fire_alarm_type, fad.code_type,
+             fad.fire_alarm_type, fad.device_status, fad.fire_alarm_no,fad.device_id,cp.building_id,cp.building_floor_id,cp.qr_no check_point_qr_no
+        FROM f_fire_alarm_device fad
+        INNER JOIN device_manage.d_device d ON fad.device_id = d.id AND d.status &lt;= 98
+        INNER JOIN  device_manage.d_check_point cp ON d.check_point_id = cp.id AND cp.status &lt;= 98
+        <where>
+            fad.status &lt; 99
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND fad.trans_device_id = #{transDeviceId}
+            </if>
+            <if test="fireAlarmNo != null and fireAlarmNo != ''">
+                AND fad.fire_alarm_no = #{fireAlarmNo}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+    <!--更新火警主机设备状态和心跳时间-->
+    <update id="modifyHeartTime" parameterType="java.lang.String">
+        UPDATE f_fire_alarm_device
+            SET device_status = 1,
+            end_heartbeat_time = NOW(),
+            status_update_time = NOW(),
+            send_message = 0
+        <if test="fireAlarmStatus != null and fireAlarmStatus != 0">
+            ,fire_alarm_status = #{fireAlarmStatus}
+        </if>
+        <if test="faultStatus != null and faultStatus != 0">
+            ,fault_status = #{faultStatus}
+        </if>
+        WHERE trans_device_id = #{transDeviceId}
+    </update>
+
+    <!--更新火警主机设备状态-->
+    <update id="modifyDeviceStatusById" parameterType="FireAlarmDevice">
+        UPDATE f_fire_alarm_device
+        SET device_status = #{deviceStatus}, status_update_time = NOW(), send_message = #{sendMessage}
+        WHERE id = #{id}
+    </update>
+
+    <!--逻辑删除火警主机-->
+    <update id="deleteFireAlarmDevice" parameterType="java.util.List">
+        update f_fire_alarm_device
+        <trim prefix="set" suffixOverrides=",">
+            last_modify_time = NOW(),
+            device_id = 0,
+            status = 99,
+            update_user_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when id = #{item.id} then #{item.updateUserId}
+            </foreach>
+        </trim>
+        WHERE id IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!--查询所有火警主机设备-->
+    <select id="findAllFireAlarmDevice" resultType="FireAlarmDevice">
+        SELECT fad.id, fad.end_heartbeat_time endHeartbeatTime, fad.device_status deviceStatus, fad.device_id deviceId,fad.project_id projectId,
+            fad.send_message sendMessage, fad.fire_alarm_no fireAlarmNo, fad.trans_device_id transDeviceId, fad.trans_device_name transDeviceName,
+            fad.trans_device_type transDeviceType,
+            cp.building_id buildingId, cp.building_floor_id buildingFloorId, cp.qr_no checkPointQrNo
+        FROM f_fire_alarm_device fad
+        INNER JOIN device_manage.d_device d ON  fad.device_id = d.id AND d.status &lt;= 98
+        INNER JOIN  device_manage.d_check_point cp ON  d.check_point_id = cp.id AND cp.status &lt;= 98
+        WHERE fad.status &lt; 99 AND fad.device_status = 1
+        GROUP BY fad.id
+    </select>
+
+    <!-- 根据id查询火警主机设备 -->
+    <select id="findFireDeviceById" resultType="FireAlarmDevice">
+         SELECT fad.id,fad.end_heartbeat_time endHeartbeatTime, fad.device_status deviceStatus, fad.device_id deviceId, fad.project_id projectId,
+            fad.fire_alarm_no fireAlarmNo, fad.trans_device_id transDeviceId, fad.trans_device_name transDeviceName, fad.trans_device_type transDeviceType
+        FROM f_fire_alarm_device fad
+        WHERE fad.id = #{id} AND fad.status &lt; 99
+        LIMIT 1
+    </select>
+
+    <!--根据id查询火警主机-->
+    <select id="findFireAlarmDeviceById" parameterType="FireAlarmDevice" resultType="FireAlarmDevice">
+        SELECT fad.id, fad.device_id deviceId, fad.trans_device_id transDeviceId, fad.trans_device_type transDeviceType, fad.fire_alarm_no fireAlarmNo
+        FROM f_fire_alarm_device fad
+        <where>
+            fad.status &lt; 99
+            <if test="id != null and id != 0">
+                AND fad.id = #{id}
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND fad.id IN
+                <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询大屏设备状态 1 在线，2 离线 -->
+    <select id="findFireAlarmIsLineCountScreen" parameterType="FireAlarmDevice" resultType="java.lang.Integer">
+        SELECT COUNT(fad.id) total
+        FROM f_fire_alarm_device fad
+        <where>
+            fad.status &lt; 99
+            <if test="deviceStatus != null">
+                AND fad.device_status = #{deviceStatus}
+            </if>
+            <if test="projectIds != null and projectIds.length > 0">
+                AND fad.project_id IN
+                <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <sql id="fireAlarmWhere">
+        <where>
+            AND fad.status &lt;= 98
+            <if test="projectId != null and projectId != 0">
+                AND fad.project_id = #{projectId}
+            </if>
+            <if test="brand != null and brand != ''">
+                AND d.brand  LIKE  CONCAT('%',#{brand},'%')
+                OR d.model  LIKE  CONCAT('%',#{brand},'%')
+            </if>
+            <if test="transDeviceName != null and transDeviceName != ''">
+                AND fad.trans_device_name LIKE CONCAT('%',#{transDeviceName},'%')
+            </if>
+            <if test="devicePosition != null and devicePosition != ''">
+                AND cp.point_location LIKE CONCAT('%',#{devicePosition},'%')
+            </if>
+            <if test="transDeviceId != null and transDeviceId != ''">
+                AND fad.trans_device_id LIKE CONCAT('%',#{transDeviceId},'%')
+            </if>
+            <if test="checkPointQrNo != null and checkPointQrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{checkPointQrNo},'%')
+            </if>
+            <if test="deviceQrNo != null and deviceQrNo != ''">
+                AND d.qr_no LIKE CONCAT('%',#{deviceQrNo},'%')
+            </if>
+            <if test="checkPointId != null and checkPointId != 0">
+                AND cp.check_point_id = #{checkPointId}
+            </if>
+            <if test="transDeviceType != null and transDeviceType != 0">
+                AND fad.trans_device_type = #{transDeviceType}
+            </if>
+            <if test="deviceStatus != null and deviceStatus != 0">
+                AND fad.device_status = #{deviceStatus}
+            </if>
+            <if test="devicePosition != null and devicePosition != ''">
+                AND  cp.point_location LIKE CONCAT('%',#{devicePosition},'%')
+            </if>
+            <if test="fireAlarmNo != null and fireAlarmNo != 0">
+                AND fad.fire_alarm_no LIKE CONCAT('%',#{fireAlarmNo},'%')
+            </if>
+            <if test="recoverStatus != null and recoverStatus != 0">
+                AND fae.recover_status = #{recoverStatus}
+            </if>
+            <if test="deviceStatusArr != null and deviceStatusArr.length > 0">
+                AND fad.device_status IN
+                <foreach item="item" collection="deviceStatusArr" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND fad.id IN
+                <foreach item="item" collection="ids" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="buildingFloorIds != null and buildingFloorIds.length > 0">
+                pbf.id IN
+                <foreach item="item" collection="buildingFloorIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="buildingIds != null and buildingIds.length > 0">
+                pb.id IN
+                <foreach item="item" collection="buildingIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </sql>
+
+</mapper>

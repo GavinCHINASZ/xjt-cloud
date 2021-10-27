@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.maintenance.core.dao.device.DeviceDao">
+    <resultMap id="deviceResultMap" type="com.xjt.cloud.maintenance.core.entity.device.Device">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_info_id" property="projectInfoId" jdbcType="BIGINT"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <result column="num" property="num" jdbcType="INTEGER"/>
+        <result column="product_model" property="productModel" jdbcType="VARCHAR"/>
+        <result column="document" property="document" jdbcType="VARCHAR"/>
+        <result column="certificate" property="certificate" jdbcType="INTEGER"/>
+        <result column="factory_date" property="factoryDate" jdbcType="DATE"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="floor_id" property="floorId" jdbcType="BIGINT"/>
+        <result column="relevant_file_path" property="relevantFilePath" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        d.id, d.device_type_id, d.project_info_id, d.device_id, d.device_name, d.device_sys_name, d.status,  d.num,
+        d.product_model, d.document, d.certificate, d.factory_date, d.remark,d.status, d.create_time,
+        d.building_id, d.floor_id, d.relevant_file_path, d.manufacturer, d.address
+    </sql>
+
+    <sql id="findCheckWhere">
+        WHERE d.status &lt;= 98
+        <if test="id != null and id != 0">
+            AND d.id = #{id}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND d.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="projectInfoId != null and projectInfoId != 0">
+            AND d.project_info_id = #{projectInfoId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND d.device_id = #{deviceId}
+        </if>
+        <if test="buildingId != null and buildingId != 0">
+            AND d.building_id = #{buildingId}
+        </if>
+        <if test="floorId != null and floorId != 0">
+            AND d.floor_id = #{floorId}
+        </if>
+        <!--<if test="deviceTypeIds != null">
+            AND d.device_type_id IN
+            <foreach collection="deviceTypeIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>-->
+    </sql>
+
+    <!-- 查询设备列表总行数-->
+    <select id="findDeviceListTotalCount" parameterType="Device" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM d_device d
+        <include refid="findCheckWhere"/>
+    </select>
+
+    <!-- 查询设备列表-->
+    <select id="findDeviceList" parameterType="Device" resultMap="deviceResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_device d
+        <include refid="findCheckWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备-->
+    <select id="findDevice" parameterType="Device" resultMap="deviceResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_device d
+        <include refid="findCheckWhere"/>
+        LIMIT 1
+    </select>
+
+    <!--添加设备-->
+    <insert id="saveDevice" parameterType="Device" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_device (device_type_id, project_info_id, device_id, device_name, device_sys_name, num, product_model, document,
+            certificate, factory_date, remark, status, create_time,
+            building_id,floor_id,relevant_file_path,manufacturer,address)
+        VALUES (#{deviceTypeId}, #{projectInfoId}, #{deviceId}, #{deviceName}, #{deviceSysName}, #{num}, #{productModel}, #{document},
+            #{certificate}, #{factoryDate},#{remark}, 1, NOW(),
+            #{buildingId},#{floorId},#{relevantFilePath},#{manufacturer},#{address});
+    </insert>
+
+    <!--添加设备-->
+    <insert id="saveDevices" parameterType="Device" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO d_device (device_type_id, project_info_id, device_id, device_name, device_sys_name, num,
+            product_model, document,
+            certificate, factory_date, remark, status, create_time,
+            building_id,floor_id,relevant_file_path,manufacturer,address)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.deviceTypeId}, #{item.projectInfoId}, #{item.deviceId}, #{item.deviceName}, #{item.deviceSysName},
+            #{item.num}, #{item.productModel}, #{item.document},
+            #{item.certificate}, #{item.factoryDate}, #{item.remark}, 1, NOW(),
+            #{item.buildingId},#{item.floorId},#{item.relevantFilePath},#{item.manufacturer},#{item.address})
+        </foreach>
+    </insert>
+
+    <!--修改设备-->
+    <update id="modifyDevice" parameterType="Device">
+        UPDATE d_device
+        <set>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                device_type_id = #{deviceTypeId} ,
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                device_id = #{deviceId} ,
+            </if>
+            <if test="num != null and num != 0">
+                num = #{num} ,
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                device_name = #{deviceName} ,
+            </if>
+            <if test="deviceSysName != null and deviceSysName != ''">
+                device_sys_name = #{deviceSysName} ,
+            </if>
+            <if test="productModel != null and productModel != ''">
+                product_model = #{productModel} ,
+            </if>
+            <if test="document != null and document != ''">
+                document = #{document} ,
+            </if>
+            <if test="certificate != null">
+                certificate = #{certificate} ,
+            </if>
+            <if test="factoryDate != null">
+                factory_date = #{factoryDate} ,
+            </if>
+            <if test="remark != null and remark != ''">
+                remark = #{remark} ,
+            </if>
+            <if test="status != null ">
+                status = #{status} ,
+            </if>
+            <if test="buildingId != null ">
+                building_id = #{buildingId} ,
+            </if>
+            <if test="floorId != null ">
+                floor_id = #{floorId} ,
+            </if>
+            <if test="relevantFilePath != null ">
+                relevant_file_path = #{relevantFilePath} ,
+            </if>
+            <if test="manufacturer != null ">
+                manufacturer = #{manufacturer} ,
+            </if>
+            <if test="address != null ">
+                address = #{address} ,
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <select id="findAllDeviceListByProjectInfoId" parameterType="Device" resultMap="deviceResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM d_device d
+        <include refid="findCheckWhere"/>
+        GROUP BY d.device_type_id,d.id
+        ORDER BY d.device_type_id,d.id ASC
+    </select>
+
+</mapper>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.TaskReviewDao" >
+    <resultMap id="taskReviewResultMap" type="com.xjt.cloud.task.core.entity.TaskReview" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="task_id" property="taskId" jdbcType="BIGINT" />
+        <result column="task_parent_id" property="taskParentId" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="review_id" property="reviewId" jdbcType="BIGINT" />
+        <result column="review_name" property="reviewName" jdbcType="VARCHAR"/>
+        <result column="review_opinion" property="reviewOpinion" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="review_result" property="reviewResult" jdbcType="VARCHAR" />
+        <result column="task_time" property="taskTime" jdbcType="VARCHAR" />
+        <result column="task_executors" property="taskExecutors" jdbcType="VARCHAR" />
+        <result column="review_status" property="reviewStatus" jdbcType="INTEGER" />
+    </resultMap>
+
+    <!-- 查询任务审核列表-->
+    <select id="findTaskReviewList" parameterType="TaskReview" resultMap="taskReviewResultMap">
+        SELECT id, task_id, project_id, review_id, review_name, review_opinion, review_result, create_time, task_time, task_executors, review_status
+        FROM t_task_review
+        <where>
+            1 = 1
+            <if test="id != null">
+                id = #{id}
+            </if>
+            <if test="taskId != null">
+                task_id = #{taskId}
+            </if>
+            <if test="projectId != null">
+                project_id = #{projectId}
+            </if>
+            <if test="reviewId != null">
+                review_Id = #{reviewId}
+            </if>
+        </where>
+    </select>
+
+    <!--保存任务审核结果-->
+    <insert id="saveTaskReview" parameterType="TaskReview" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_task_review
+            (task_id, task_parent_id,  project_id, review_id, review_name, review_opinion, create_time, review_result, task_time, task_executors,review_status)
+        VALUES
+            (#{taskId}, #{taskParentId}, #{projectId}, #{reviewId}, #{reviewName}, #{reviewOpinion}, NOW(), #{reviewResult}, #{taskTime}, #{taskExecutors}, #{reviewStatus});
+    </insert>
+
+    <!--修改任务巡更点-->
+    <update id="modifyTaskReview" parameterType="TaskReview">
+        UPDATE t_task_review
+        <set>
+            <if test="reviewId != null">
+                review_id = #{reviewId} ,
+            </if>
+            <if test="reviewName != null and reviewName != ''">
+                review_name = #{reviewName} ,
+            </if>
+            <if test="reviewOpinion != null and reviewOpinion != ''">
+                review_opinion = #{reviewOpinion} ,
+            </if>
+            <if test="reviewResult != null and reviewResult != ''">
+                review_result = #{reviewResult} ,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByTaskId" parameterType="java.lang.Long">
+        DELETE FROM t_task_review
+        WHERE task_id = #{taskId}
+    </delete>
+
+    <!-- 查询任务审核列表-->
+    <select id="findTaskReviewNameByTaskId" resultType="java.lang.String">
+        SELECT review_name reviewName
+        FROM t_task_review
+        WHERE task_id = #{taskId} AND project_id = #{projectId}
+    </select>
+
+    <!-- 查询任务审核记录状态-->
+    <select id="findReviewStatusById" resultType="java.lang.Integer">
+        SELECT review_status reviewStatus
+        FROM t_task_review
+        WHERE id = #{id}
+    </select>
+
+    <select id="findTaskReviewByTaskId" resultMap="taskReviewResultMap">
+        SELECT id, task_id, project_id, review_id, review_name, review_opinion, review_result, create_time, task_time, task_executors, review_status
+        FROM t_task_review
+        WHERE task_id = #{taskId}
+    </select>
+
+</mapper>

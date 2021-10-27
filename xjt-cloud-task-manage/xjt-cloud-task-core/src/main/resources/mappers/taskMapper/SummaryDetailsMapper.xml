@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.SummaryDetailsDao" >
+    <resultMap id="summaryDetailsResultMap" type="com.xjt.cloud.task.core.entity.SummaryDetails" >
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="task_id" property="taskId" jdbcType="INTEGER" />
+        <result column="check_point_id" property="checkPointId" jdbcType="INTEGER" />
+        <result column="check_point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="check_point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="device_id" property="deviceId" jdbcType="INTEGER" />
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="building_id" property="buildingId" jdbcType="INTEGER" />
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR" />
+        <result column="floor_id" property="floorId" jdbcType="INTEGER" />
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR" />
+        <result column="floor" property="floor" jdbcType="INTEGER" />
+        <result column="check_status" property="checkStatus" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="summaryDetailsSql">
+        sd.id, sd.task_id, sd.check_point_id, sd.check_point_qr_no, sd.check_point_name, sd.device_id, sd.device_qr_no, sd.device_name,
+        sd.building_id, sd.building_name, sd.floor_id, sd.floor_name, sd.floor, sd.check_status, sd.create_time
+    </sql>
+
+    <sql id="findSummaryDetailsSql">
+        <where>
+            1 = 1
+            <if test="deviceName != null and deviceName != ''">
+                AND sd.device_name LIKE CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test="id != null">
+                AND sd.id = #{id}
+            </if>
+            <if test="taskId != null and taskId > 0">
+                AND sd.task_id = #{taskId}
+            </if>
+            <if test="projectId != null">
+                AND ts.project_id = #{projectId}
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND sd.id IN
+                <foreach item="item" collection="ids" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="deviceNameArr != null and deviceNameArr.length > 0">
+                AND sd.device_name IN
+                <foreach item="item" collection="deviceNameArr" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="periodEndTime != null and periodStartTime != null">
+                AND ts.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 批量新增 任务汇总详情 -->
+    <insert id="saveSummaryDetailsList" parameterType="SummaryDetails" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_summary_details (task_id, check_point_id, check_point_qr_no, check_point_name, device_id, device_qr_no,
+            device_name, building_id, building_name, floor_id, floor_name, floor,
+            check_status, create_time)
+        VALUES
+            <foreach collection="list" item="item" separator="," close=";">
+                (#{item.taskId}, #{item.checkPointId}, #{item.checkPointQrNo}, #{item.checkPointName}, #{item.deviceId},  #{item.deviceQrNo},
+                #{item.deviceName}, #{item.buildingId}, #{item.buildingName}, #{item.floorId}, #{item.floorName}, #{item.floor},
+                #{item.checkStatus}, NOW())
+            </foreach>
+    </insert>
+
+    <!-- 根据任务id查询设备列表-->
+    <select id="findByTaskSummaryList" parameterType="TaskSummary" resultType="SummaryDetails">
+        SELECT
+            tcp.task_id taskId,
+            cp.id checkPointId, cp.qr_no checkPointQrNo, cp.point_name checkPointName,
+            d.id deviceId, d.qr_no deviceQrNo, dt.device_sys_name deviceName,
+            b.building_name buildingName, b.id buildingId,
+            f.floor_name floorName, f.id floorId, f.floor,
+            tcp.task_check_point_status checkStatus
+        FROM t_task_check_point tcp
+        LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+        LEFT JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt; 99
+        LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        LEFT JOIN project_manage.p_building b ON cp.building_id = b.id
+        LEFT JOIN project_manage.p_building_floor f ON cp.building_floor_id = f.id
+        WHERE tcp.task_id IN
+            <foreach item="item" collection="list" index="index" open="(" separator="," close=")">
+                #{item.taskId}
+            </foreach>
+        AND cp.status &lt; 99
+        GROUP BY d.id;
+    </select>
+
+    <!-- 巡查点概览表 设备点检概览表 列表总数 -->
+    <select id="findCheckOverviewTableTotalCount" parameterType="SummaryDetails" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT sd.device_name)
+        FROM t_summary_details sd
+        LEFT JOIN t_task_summary ts ON sd.task_id = ts.task_id
+        <include refid="findSummaryDetailsSql"/>
+    </select>
+
+    <!-- 巡查点概览表 设备点检概览表 -->
+    <select id="findCheckOverviewTable" parameterType="SummaryDetails" resultType="SummaryDetails">
+        SELECT sd.device_name deviceName, COUNT(sd.id) checkPointNum,
+            SUM(if(sd.check_status = 2, 1, 0)) checkPointNormalNum,
+            SUM(if(sd.check_status = 1, 1, 0)) checkPointFaultNum
+        FROM t_summary_details sd
+        LEFT JOIN t_task_summary ts ON sd.task_id = ts.task_id
+        <include refid="findSummaryDetailsSql"/>
+        GROUP BY sd.device_name
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 巡查点概览表 设备点检概览表 导出列表 -->
+    <select id="findCheckOverviewTableDown" parameterType="SummaryDetails" resultType="SummaryDetails">
+        SELECT sd.device_name deviceName, COUNT(sd.id) checkPointNum,
+            SUM(if(sd.check_status = 2, 1, 0)) checkPointNormalNum,
+            SUM(if(sd.check_status = 1, 1, 0)) checkPointFaultNum
+        FROM t_summary_details sd
+        LEFT JOIN t_task_summary ts on sd.task_id = ts.task_id
+        <include refid="findSummaryDetailsSql"/>
+        GROUP BY sd.device_name
+    </select>
+
+    <!-- 查询 -->
+    <select id="findSummaryDetailsList" parameterType="SummaryDetails" resultMap="summaryDetailsResultMap">
+        SELECT <include refid="summaryDetailsSql"/>
+        FROM t_summary_details sd
+        <include refid="findSummaryDetailsSql"/>
+    </select>
+
+    <!-- 月任务汇总 设备点检概览图 -->
+    <select id="findCheckOverviewChart" parameterType="SummaryDetails" resultType="SummaryDetails">
+        SELECT sd.device_name deviceName, COUNT(sd.id) checkPointNum,
+            SUM(if(sd.check_status = 2, 1, 0)) checkPointNormalNum,
+            SUM(if(sd.check_status = 1, 1, 0)) checkPointFaultNum
+        FROM t_summary_details sd
+        INNER JOIN t_task_summary ts ON sd.task_id = ts.task_id
+        <include refid="findSummaryDetailsSql"/>
+        GROUP BY sd.device_name;
+    </select>
+
+    <!-- 根据任务id查询设备列表 -->
+    <select id="findTaskDeviceList" parameterType="SummaryDetails" resultType="SummaryDetails">
+        SELECT
+            d.id deviceId, d.qr_no deviceQrNo, dt.device_sys_name deviceName, b.building_name buildingName, f.floor_name floorName, cp.id checkPointId,
+            cp.qr_no checkPointQrNo, tcp.task_check_point_status checkStatus
+        FROM t_task_check_point tcp
+        LEFT JOIN device_manage.d_check_point cp ON tcp.check_point_id = cp.id
+        LEFT JOIN device_manage.d_device d ON cp.id = d.check_point_id AND d.status &lt; 99
+        LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        LEFT JOIN project_manage.p_building b ON cp.building_id = b.id
+        LEFT JOIN project_manage.p_building_floor f ON cp.building_floor_id = f.id
+        WHERE tcp.task_id = #{taskId}
+        AND cp.status &lt; 99
+    </select>
+
+</mapper>

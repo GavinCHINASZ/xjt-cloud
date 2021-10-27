@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.fault.core.dao.project.OrgUserDao">
+    <resultMap id="orgUserResultMap" type="com.xjt.cloud.fault.core.entity.project.OrgUser">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="org_id" property="orgId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="login_name" property="loginName" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="BIGINT"/>
+        <result column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <result column="department_name" property="departmentName" jdbcType="VARCHAR"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
+        <result column="is_owner" property="isOwner" jdbcType="VARCHAR"/>
+        <result column="role_id" property="roleId" jdbcType="BIGINT"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="orgUserSql">
+        ou.id id, ou.user_id, ou.user_name userName, ou.org_id orgId, ou.project_id projectId, r.role_name roleName, r.id roleId
+    </sql>
+
+    <sql id="findWhere">
+        where 1 = 1
+        <if test="id != null and id != 0">
+            AND ou.id = #{id}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND ou.project_id = #{projectId}
+        </if>
+        <if test="userId != null and userId != 0">
+            AND ou.user_id = #{userId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND ou.user_name LIKE CONCAT('%',#{userName},'%')
+            AND org.org_type = 2
+            AND org.org_name LIKE CONCAT('%',#{userName},'%')
+            AND org.phone LIKE CONCAT('%',#{userName},'%')
+        </if>
+    </sql>
+
+    <!-- 根据 项目ID 查询 成员 -->
+    <select id="findByProject" parameterType="OrgUser" resultType="OrgUser">
+        SELECT <include refid="orgUserSql"/>
+        FROM project_manage.p_org_user ou
+        LEFT JOIN project_manage.p_org_user_role our ON our.org_user_id = ou.id
+        LEFT JOIN project_manage.p_role r ON r.id = our.role_id
+        LEFT JOIN project_manage.p_organization org ON ou.org_id = org.id
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 根据 项目ID 查询 成员 -->
+    <select id="getOrgUser" parameterType="OrgUser" resultType="OrgUser">
+        SELECT ou.id id, ou.user_name userName, ou.org_id orgId, ou.project_id projectId
+        FROM project_manage.p_org_user ou
+        <include refid="findWhere"/> limit 1;
+    </select>
+
+</mapper>

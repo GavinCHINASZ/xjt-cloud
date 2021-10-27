@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.device.AssessmentTestRecordDao">
+    <resultMap id="assessmentTestRecordResultMap" type="com.xjt.cloud.safety.core.entity.device.AssessmentTestRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="device_sys_id" property="deviceSysId" jdbcType="BIGINT"/>
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="floor_id" property="floorId" jdbcType="BIGINT"/>
+        <result column="scene_image_url" property="sceneImageUrl" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="assessmentTestRecordSelColumns">
+        atr.id, atr.project_id, atr.check_project_id, atr.device_type_id, atr.device_id, atr.device_name, atr.device_sys_id, atr.device_sys_name, 
+        atr.num, atr.remark, atr.status, atr.building_id, atr.floor_id, atr.address, atr.scene_image_url, atr.create_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE status &lt;= 98
+        <if test="id != null and id > 0">
+            AND atr.id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            AND atr.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="projectId != null and projectId > 0">
+            AND atr.project_id = #{projectId}
+        </if>
+        <if test="checkProjectId != null and checkProjectId > 0">
+            AND atr.check_project_id = #{checkProjectId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND atr.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND atr.device_id = #{deviceId}
+        </if>
+        <if test="deviceName != null and deviceName != ''">
+            AND atr.device_name LIKE CONCAT('%',#{deviceName},'%')
+        </if>
+        <if test="deviceSysId != null and deviceSysId != 0">
+            AND atr.device_sys_id = #{deviceSysId}
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND atr.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="buildingId != null and buildingId != 0">
+            AND atr.building_id = #{buildingId}
+        </if>
+        <if test="floorId != null and floorId != 0">
+            AND atr.floor_id = #{floorId}
+        </if>
+        <if test="num != null and num != 0">
+            AND atr.num = #{num}
+        </if>
+        <if test="remark != null and remark != ''">
+            AND atr.remark LIKE CONCAT('%',#{remark},'%')
+        </if>
+        <if test="address != null and address != ''">
+            AND atr.address LIKE CONCAT('%',#{address},'%')
+        </if>
+        <if test="createTime != null and endTime != null">
+            AND atr.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+    </sql>
+
+    <!-- 查询设备列表总行数-->
+    <select id="findAssessmentTestRecordCount" parameterType="AssessmentTestRecord" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM safety_manage.d_assessment_test_record
+        <include refid="findWhere"/>
+    </select>
+
+    <!-- 查询设备列表 -->
+    <select id="findAssessmentTestRecordList" parameterType="AssessmentTestRecord" resultMap="assessmentTestRecordResultMap">
+        SELECT <include refid="assessmentTestRecordSelColumns"/>
+        FROM safety_manage.d_assessment_test_record
+        <include refid="findWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备 -->
+    <select id="findAssessmentTestRecord" parameterType="AssessmentTestRecord" resultMap="assessmentTestRecordResultMap">
+        SELECT <include refid="assessmentTestRecordSelColumns"/>
+        FROM safety_manage.d_assessment_test_record
+        <include refid="findWhere"/>
+        LIMIT 1
+    </select>
+
+    <!-- 添加设备 -->
+    <insert id="saveAssessmentTestRecord" parameterType="AssessmentTestRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO safety_manage.d_assessment_test_record(project_id, check_project_id, device_type_id, device_id, device_name,
+            device_sys_id, device_sys_name, num, remark, status, building_id, floor_id, address, scene_image_url, create_time)
+        VALUES (495, 320, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, scene_image_url,NOW());
+    </insert>
+
+</mapper>

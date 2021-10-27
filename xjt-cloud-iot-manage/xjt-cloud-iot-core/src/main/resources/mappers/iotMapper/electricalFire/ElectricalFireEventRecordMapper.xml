@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.electricalFire.ElectricalFireEventRecordDao" >
+
+    <resultMap id="electricalFireEventRecordResultMap" type="com.xjt.cloud.iot.core.entity.electrical.ElectricalFireEventRecord" >
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="raw_data" property="rawData" jdbcType="VARCHAR"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <result column="channel" property="channel" jdbcType="VARCHAR"/>
+        <result column="temp_alarm_value" property="tempAlarmValue" jdbcType="VARCHAR"/>
+        <result column="alarm_device_id" property="alarmDeviceId" jdbcType="BIGINT"/>
+        <result column="fault_state" property="faultState" jdbcType="INTEGER"/>
+
+        <result column="flow_state1" property="flowState1" jdbcType="INTEGER"/>
+        <result column="flow_state2" property="flowState2" jdbcType="INTEGER"/>
+        <result column="flow_state3" property="flowState3" jdbcType="INTEGER"/>
+
+        <result column="leakage_alarm_value" property="leakageAlarmValue" jdbcType="VARCHAR"/>
+        <result column="leakage_alarm_value2" property="leakageAlarmValue2" jdbcType="VARCHAR"/>
+        <result column="leakage_alarm_value3" property="leakageAlarmValue3" jdbcType="VARCHAR"/>
+        <result column="leakage_alarm_value4" property="leakageAlarmValue4" jdbcType="VARCHAR"/>
+
+        <result column="leakage_state1" property="leakageState1" jdbcType="INTEGER"/>
+        <result column="leakage_state2" property="leakageState2" jdbcType="INTEGER"/>
+        <result column="leakage_state3" property="leakageState3" jdbcType="INTEGER"/>
+        <result column="leakage_state4" property="leakageState4" jdbcType="INTEGER"/>
+
+        <result column="leakage_current1" property="leakageCurrent1" jdbcType="VARCHAR"/>
+        <result column="leakage_current2" property="leakageCurrent2" jdbcType="VARCHAR"/>
+        <result column="leakage_current3" property="leakageCurrent3" jdbcType="VARCHAR"/>
+        <result column="leakage_current4" property="leakageCurrent4" jdbcType="VARCHAR"/>
+        <result column="leakage_current5" property="leakageCurrent5" jdbcType="VARCHAR"/>
+        <result column="leakage_current6" property="leakageCurrent6" jdbcType="VARCHAR"/>
+        <result column="leakage_current7" property="leakageCurrent7" jdbcType="VARCHAR"/>
+        <result column="leakage_current8" property="leakageCurrent8" jdbcType="VARCHAR"/>
+
+        <result column="temperature_state1" property="temperatureState1" jdbcType="VARCHAR"/>
+        <result column="temperature_state2" property="temperatureState2" jdbcType="VARCHAR"/>
+        <result column="temperature_state3" property="temperatureState3" jdbcType="VARCHAR"/>
+        <result column="temperature_state4" property="temperatureState4" jdbcType="VARCHAR"/>
+
+        <result column="voltage_state1" property="voltageState1" jdbcType="INTEGER"/>
+        <result column="voltage_state2" property="voltageState2" jdbcType="INTEGER"/>
+        <result column="voltage_state3" property="voltageState3" jdbcType="INTEGER"/>
+
+        <result column="voltage_value1" property="voltageValue1" jdbcType="VARCHAR"/>
+        <result column="voltage_value2" property="voltageValue2" jdbcType="VARCHAR"/>
+        <result column="voltage_value3" property="voltageValue3" jdbcType="VARCHAR"/>
+
+        <result column="meritorious_power_value1" property="meritoriousPowerValue1" jdbcType="VARCHAR"/>
+        <result column="meritorious_power_value2" property="meritoriousPowerValue2" jdbcType="VARCHAR"/>
+        <result column="meritorious_power_value3" property="meritoriousPowerValue3" jdbcType="VARCHAR"/>
+
+        <result column="power_factor_value1" property="powerFactorValue1" jdbcType="VARCHAR"/>
+        <result column="power_factor_value2" property="powerFactorValue2" jdbcType="VARCHAR"/>
+        <result column="power_factor_value3" property="powerFactorValue3" jdbcType="VARCHAR"/>
+
+        <result column="frequency_value1" property="frequencyValue1" jdbcType="VARCHAR"/>
+        <result column="frequency_value2" property="frequencyValue2" jdbcType="VARCHAR"/>
+        <result column="frequency_value3" property="frequencyValue3" jdbcType="VARCHAR"/>
+
+        <result column="electric_value1" property="electricValue1" jdbcType="VARCHAR"/>
+        <result column="electric_value2" property="electricValue2" jdbcType="VARCHAR"/>
+        <result column="electric_value3" property="electricValue3" jdbcType="VARCHAR"/>
+    </resultMap>
+    
+    <sql id="electricalFireEventRecordSql">
+        efr.id, efr.raw_data, efr.project_id, efr.device_id, efr.fault_state,
+        efr.leakage_state1, efr.leakage_state2, efr.leakage_state3, efr.leakage_state4,
+        efr.leakage_alarm_value, efr.leakage_alarm_value2, efr.leakage_alarm_value3, efr.leakage_alarm_value4,
+        efr.temp_alarm_value, efr.sensor_no, efr.create_time, efr.channel, efr.alarm_device_id,
+        efr.flow_state1, efr.flow_state2, efr.flow_state3,
+        efr.leakage_current1, efr.leakage_current2, efr.leakage_current3, efr.leakage_current4, efr.leakage_current5, efr.leakage_current6,
+        efr.leakage_current7, efr.leakage_current8,
+        efr.temperature_state1, efr.temperature_state2, efr.temperature_state3, efr.temperature_state4,
+        efr.temperature1, efr.temperature2, efr.temperature3, efr.temperature4, efr.temperature5, efr.temperature6, efr.temperature7, efr.temperature8,
+        efr.voltage_state1, efr.voltage_state2, efr.voltage_state3, efr.voltage_value1, efr.voltage_value2, efr.voltage_value3,
+        efr.meritorious_power_value1, efr.meritorious_power_value2, efr.meritorious_power_value3,
+        efr.power_factor_value1, efr.power_factor_value2, efr.power_factor_value3,
+        efr.frequency_value1, efr.frequency_value2, efr.frequency_value3, efr.electric_value1, efr.electric_value2, efr.electric_value3
+    </sql>
+    
+    <sql id="sqlWhere">
+        <where>
+            <if test="projectId != null and projectId != 0">
+                AND efr.project_id = #{projectId}
+            </if>
+            <if test="sensorNo != null and sensorNo != ''">
+                AND efr.sensor_no = #{sensorNo}
+            </if>
+            <if test="channel != null and channel != ''">
+                AND efr.channel = #{channel}
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                AND efr.device_id = #{deviceId}
+            </if>
+            <if test="alarmDeviceId != null and alarmDeviceId != 0">
+                AND efr.alarm_device_id = #{alarmDeviceId}
+            </if>
+            <if test="startTime != null">
+                AND efr.create_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND efr.create_time &lt; #{endTime}
+            </if>
+        </where>
+    </sql>
+    
+    <!--根据条件查询电气火灾设备事件记录-->
+    <select id="findElectricalFireEventRecord" parameterType="ElectricalFireEventRecord" resultType="ElectricalFireEventRecord">
+        SELECT <include refid="electricalFireEventRecordSql"/>
+        FROM e_electrical_fire_event_record efr
+        <include refid="sqlWhere"/>
+        GROUP BY efr.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--插入电气火灾设备信息-->
+    <insert id="saveElectricalFireEventRecord" parameterType="ElectricalFireEventRecord" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO iot_manage.e_electrical_fire_event_record(
+            raw_data, project_id, device_id, fault_state,
+            leakage_state1, leakage_state2, leakage_state3, leakage_state4,
+            leakage_alarm_value, leakage_alarm_value2, leakage_alarm_value3, leakage_alarm_value4,
+            temp_alarm_value, sensor_no, create_time, channel, alarm_device_id,
+            flow_state1, flow_state2, flow_state3,
+            leakage_current1, leakage_current2, leakage_current3, leakage_current4, leakage_current5, leakage_current6,
+            leakage_current7, leakage_current8,
+            temperature_state1, temperature_state2, temperature_state3, temperature_state4,
+            temperature1, temperature2, temperature3, temperature4, temperature5, temperature6, temperature7, temperature8,
+            voltage_state1, voltage_state2, voltage_state3,
+            voltage_value1, voltage_value2, voltage_value3,
+            meritorious_power_value1, meritorious_power_value2, meritorious_power_value3,
+            power_factor_value1, power_factor_value2, power_factor_value3,
+            frequency_value1, frequency_value2, frequency_value3,
+            electric_value1, electric_value2, electric_value3)
+        VALUES (#{rawData}, #{projectId}, #{deviceId}, #{faultState},
+            #{leakageState1}, #{leakageState2}, #{leakageState3}, #{leakageState4},
+            #{leakageAlarmValue}, #{leakageAlarmValue2}, #{leakageAlarmValue3}, #{leakageAlarmValue4},
+            #{tempAlarmValue}, #{sensorNo}, NOW(), #{channel}, #{alarmDeviceId},
+            #{flowState1}, #{flowState2}, #{flowState3},
+            #{leakageCurrent1}, #{leakageCurrent2}, #{leakageCurrent3}, #{leakageCurrent4}, #{leakageCurrent5}, #{leakageCurrent6},
+            #{leakageCurrent7}, #{leakageCurrent8},
+            #{temperatureState1}, #{temperatureState2}, #{temperatureState3}, #{temperatureState4},
+            #{temperature1}, #{temperature2}, #{temperature3}, #{temperature4}, #{temperature5}, #{temperature6}, #{temperature7}, #{temperature8},
+            #{voltageState1}, #{voltageState2}, #{voltageState3},
+            #{voltageValue1}, #{voltageValue2}, #{voltageValue3},
+            #{meritoriousPowerValue1}, #{meritoriousPowerValue2}, #{meritoriousPowerValue3},
+            #{powerFactorValue1}, #{powerFactorValue2}, #{powerFactorValue3},
+            #{frequencyValue1}, #{frequencyValue2}, #{frequencyValue3},
+            #{electricValue1}, #{electricValue2}, #{electricValue3});
+    </insert>
+    
+    <select id="findNewestEventRecord" parameterType="ElectricalFireEventRecord" resultType="ElectricalFireEventRecord">
+        SELECT <include refid="electricalFireEventRecordSql"/>
+        FROM e_electrical_fire_event_record efr
+        <include refid="sqlWhere"/>
+        ORDER BY efr.create_time DESC
+        LIMIT 1
+    </select>
+    
+    <select id="findDeviceEventRecordList" parameterType="ElectricalFireEventRecord" resultType="ElectricalFireEventRecord">
+        SELECT <include refid="electricalFireEventRecordSql"/>
+        FROM e_electrical_fire_event_record efr
+        <include refid="sqlWhere"/>
+        GROUP BY efr.id
+        ORDER BY efr.create_time ASC
+    </select>
+</mapper>

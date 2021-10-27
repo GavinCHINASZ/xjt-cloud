@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.device.DeviceDao" >
+    <resultMap id="deviceResultMap" type="com.xjt.cloud.iot.core.entity.device.Device" >
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="INTEGER" />
+        <result column="project_id" property="projectId" jdbcType="INTEGER" />
+        <result column="check_point_id" property="checkPointId" jdbcType="INTEGER" />
+
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR" />
+        <result column="iot_id" property="iotId" jdbcType="INTEGER" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="old_device_qr_no" property="oldDeviceQrNo" jdbcType="VARCHAR" />
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <result column="num" property="num" jdbcType="INTEGER" />
+        <result column="brand" property="brand" jdbcType="VARCHAR" />
+        <result column="model" property="model" jdbcType="VARCHAR" />
+        <result column="spec" property="spec" jdbcType="VARCHAR" />
+        <result column="production_date" property="productionDate" jdbcType="DATE" />
+        <result column="expiry_date" property="expiryDate" jdbcType="DATE" />
+        <result column="expiry_date_end" property="expiryDateEnd" jdbcType="DATE" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="DATE" />
+        <result column="send_modify_time" property="sendModifyTime" jdbcType="DATE" />
+        <result column="send_modify_time_end" property="sendModifyTimeEnd" jdbcType="DATE" />
+        <result column="status_update_time" property="statusUpdateTime" jdbcType="DATE" />
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER" />
+        <result column="memo" property="memo" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="pointQrNo" property="pointQrNo" jdbcType="VARCHAR" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="VARCHAR" />
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findCheckWhere">
+        WHERE  d.status &lt;= 98
+        <if test="id != null and id != 0">
+            AND d.id = #{id}
+        </if>
+        <if test="nullQrNo">
+            AND d.num IS NULL
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND d.project_id = #{projectId}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND d.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="checkPointId != null and checkPointId != 0">
+            AND d.check_point_id = #{checkPointId}
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND d.qr_no = #{qrNo}
+        </if>
+        <if test="deviceName != null and deviceName != ''">
+            AND d.device_name LIKE CONCAT('%', #{deviceName}, '%')
+        </if>
+        <if test="statusUpdateTime != null">
+            AND d.status_update_time = #{statusUpdateTime}
+        </if>
+        <if test="deviceStatus != null ">
+            AND d.device_status = #{deviceStatus}
+        </if>
+    </sql>
+
+    <!-- 查询设备名称 -->
+    <select id="findDeviceName" parameterType="Device" resultType="java.lang.String">
+        SELECT distinct dt.device_sys_name deviceName
+        FROM device_manage.d_device d
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        <include refid="findCheckWhere"/>
+    </select>
+
+    <!-- 修改设备 -->
+    <update id="modifyDevice" parameterType="Device">
+        UPDATE device_manage.d_device
+        SET last_modify_time = NOW(), iot_id = #{iotId}, sensor_no = #{sensorNo}
+        <if test="iotStatus != null">
+            ,iot_status = #{iotStatus}
+        </if>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量 修改设备 -->
+    <update id="modifyDeviceBySmokeDevice" parameterType="java.util.List">
+        UPDATE device_manage.d_device
+        <trim prefix="set" suffixOverrides=",">
+            last_modify_time = NOW(),
+            iot_id =
+            <foreach collection="list" item="item" open="case " close=" end,">
+                when id = #{item.deviceId} then #{item.id}
+            </foreach>
+        </trim>
+
+        WHERE id in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.deviceId}
+        </foreach>
+    </update>
+
+    <!-- 修改设备 -->
+    <update id="modifyDeviceIotStatus" parameterType="Device">
+        UPDATE device_manage.d_device
+        SET iot_status = #{iotStatus}
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="ids != null">
+            id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="iotId != null">
+            iot_id = #{iotId}
+            AND device_type = #{deviceType}
+        </if>
+        <if test="iotIds != null">
+            iot_id IN
+            <foreach item="item" collection="iotIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            AND device_type = #{deviceType}
+        </if>
+    </update>
+
+    <!--修改设备-->
+    <update id="modifyDeviceClearIot" parameterType="Device">
+        UPDATE device_manage.d_device
+        SET last_modify_time = NOW(), iot_id = 0 , sensor_no = '', iot_status = 0
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="ids != null">
+            id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 修改火警主机绑定设备 -->
+    <update id="modifyFireAlarmDeviceClearIot" parameterType="java.util.List">
+        UPDATE device_manage.d_device
+        SET last_modify_time = NOW(), iot_id = 0, sensor_no = ''
+        WHERE iot_id in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 查询巡检点id -->
+    <select id="findCheckPointId" parameterType="java.lang.String" resultType="java.lang.Long">
+        SELECT id FROM device_manage.d_check_point
+        WHERE qr_no = #{pointQrNo}
+        LIMIT 1
+    </select>
+
+    <!-- 根据 设备ID 查询设备实体 -->
+    <select id="findPointLocationById" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT point_location pointLocation
+        FROM device_manage.d_check_point
+        WHERE id = #{checkPointId}
+        LIMIT 1
+    </select>
+
+    <!-- 查询设备系统名称是否存-->
+    <select id="findDeviceListBySql" parameterType="java.lang.String" resultType="PointDevice">
+        SELECT d.id deviceId, d.qr_no deviceQrNo,
+            cp.id checkPointId, cp.qr_no checkPointQrNo, cp.point_name pointLocation,
+            dt.id deviceTypeId,
+            b.id buildingId, b.building_name buildingName,
+            bf.id buildingFloorId, bf.floor_name floorName
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        INNER JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        INNER JOIN project_manage.p_building b ON cp.building_id = b.id
+        INNER JOIN project_manage.p_building_floor bf ON bf.id = cp.building_floor_id
+        INNER JOIN ( ${_parameter}) t ON d.qr_no = t.qr_no
+    </select>
+
+</mapper>

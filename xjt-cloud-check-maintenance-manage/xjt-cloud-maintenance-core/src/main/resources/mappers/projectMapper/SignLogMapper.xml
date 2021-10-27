@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.maintenance.core.dao.project.SignLogDao">
+
+    <resultMap id="signLogResultMap" type="com.xjt.cloud.maintenance.core.entity.project.SignLog">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="img_path" property="imgPath" jdbcType="VARCHAR"/>
+        <result column="sign_succeed" property="signSucceed" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        psl.id, psl.user_id, psl.user_name, psl.project_id, psl.check_project_id, psl.company_name, psl.create_time, psl.location,
+        psl.lng, psl.lat, psl.img_path, psl.sign_succeed
+    </sql>
+
+    <sql id="findSignLogWhere">
+        WHERE 1 = 1
+        <if test="signSucceedArr != null and signSucceedArr.length > 0">
+            AND psl.sign_succeed IN
+            <foreach item="item" collection="signSucceedArr" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="id != null and id != 0">
+            AND psl.id = #{id}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND psl.project_id = #{projectId}
+        </if>
+        <if test="checkProjectId != null and checkProjectId != 0">
+            AND psl.check_project_id = #{checkProjectId}
+        </if>
+    </sql>
+
+    <!--保存检测项目信息-->
+    <insert id="saveSignLog" parameterType="SignLog" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO p_sign_log (user_id, user_name, project_id, check_project_id,company_name, location, create_time, lng,lat, img_path, sign_succeed)
+        VALUES (#{userId}, #{userName}, #{projectId}, #{checkProjectId}, #{companyName}, #{location}, NOW(), #{lng}, #{lat}, #{imgPath}, #{signSucceed});
+    </insert>
+
+    <select id="findSignLogByProjectId" parameterType="SignLog" resultMap="signLogResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM p_sign_log psl
+        RIGHT JOIN p_check_user pcu ON psl.user_id = pcu.user_id
+        <include refid="findSignLogWhere"/>
+        GROUP BY id, user_id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findSignLogCountByProjectId" parameterType="SignLog" resultType="java.lang.Long">
+        SELECT COUNT(psl.id)
+        FROM p_sign_log psl
+        RIGHT JOIN p_check_user pcu ON psl.user_id = pcu.user_id
+        <include refid="findSignLogWhere"/>
+    </select>
+
+    <!-- 查询检测员签到日志 -->
+    <select id="findCheckUserSignLog" parameterType="SignLog" resultType="SignLog">
+        SELECT <include refid="selColumns"/>
+        FROM p_sign_log psl
+        RIGHT JOIN p_check_user pcu
+        ON pcu.user_id = psl.user_id AND  psl.check_project_id = pcu.check_project_id
+        LEFT JOIN p_org_user ou ON pcu.user_id = ou.user_id
+        RIGHT JOIN(
+            SELECT psl.user_id, MAX(psl.create_time) create_time
+            FROM p_sign_log psl
+            WHERE psl.check_project_id = #{checkProjectId}
+            GROUP BY psl.user_id
+        ) pt ON pt.create_time = psl.create_time
+        WHERE pcu.check_project_id = #{checkProjectId}
+    </select>
+
+</mapper>

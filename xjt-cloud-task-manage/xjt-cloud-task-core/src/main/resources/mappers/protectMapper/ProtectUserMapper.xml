@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.protect.ProtectUserDao">
+
+    <resultMap id="protectUserResultMap" type="com.xjt.cloud.task.core.entity.protect.ProtectUser">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="protect_id" property="protectId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <sql id="protectUserSql">
+        pu.id, pu.protect_id, pu.user_id, pu.create_time
+    </sql>
+
+    <sql id="findProtectUserSql">
+        <where>
+            1 = 1
+            <if test="id != null and id > 0">
+                AND pu.id = #{id}
+            </if>
+            <if test="protectId != null and protectId > 0">
+                AND pu.protect_id = #{protectId}
+            </if>
+            <if test="createTime != null and lastModifyTime != null">
+                AND pu.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询 班前防护用户 -->
+    <select id="findProtectUserList" parameterType="ProtectUser" resultMap="protectUserResultMap">
+        SELECT <include refid="protectUserSql"/>
+        FROM task_manage.t_protect_user pu
+        <include refid="findProtectUserSql"/>
+    </select>
+
+    <!-- 查询 班前防护用户id -->
+    <select id="findProtectUserIdList" parameterType="ProtectUser" resultType="java.lang.Long">
+        SELECT pu.user_id
+        FROM task_manage.t_protect_user pu
+        <include refid="findProtectUserSql"/>
+    </select>
+
+    <!-- 添加 班前防护 用户 -->
+    <insert id="saveProtectUser" parameterType="ProtectUser">
+        INSERT INTO task_manage.t_protect_user(protect_id, user_id)
+        VALUES (#{protectId}, #{userId});
+    </insert>
+
+    <!-- 添加 班前防护 用户 -->
+    <insert id="saveProtectUsers" parameterType="ProtectUser">
+        INSERT INTO task_manage.t_protect_user(protect_id, user_id)
+        VALUES
+        <foreach item="item" collection="userIds" index="index" separator=",">
+            (#{protectId}, #{item})
+        </foreach>
+    </insert>
+
+    <!-- 删除 班前防护 用户 -->
+    <delete id="deleteProtectUser" parameterType="ProtectUser">
+        DELETE FROM task_manage.t_protect_user
+        <where>
+            1 = 1
+            <if test="id != null and id != 0">
+                AND id = #{id}
+            </if>
+            <if test="protectId != null and protectId > 0">
+                AND protect_id = #{protectId}
+            </if>
+            <if test="userIds != null and userIds.length > 0">
+                AND userIds IN
+                <foreach collection="userIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </delete>
+
+    <!-- 删除 班前防护 用户 -->
+    <delete id="deleteProtectUserByProtect" parameterType="Protect">
+        DELETE FROM task_manage.t_protect_user
+        <where>
+            1 = 1
+            <if test="id != null and id != 0">
+                AND protect_id = #{id}
+            </if>
+
+            <if test="ids != null and ids.length > 0">
+                AND protect_id IN
+                <foreach collection="ids" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </delete>
+
+</mapper>

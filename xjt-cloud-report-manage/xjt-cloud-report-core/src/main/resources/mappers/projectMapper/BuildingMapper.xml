@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.project.BuildingDao">
+
+    <resultMap id="buildingResultMap" type="com.xjt.cloud.report.core.entity.project.Building">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <id column="height" property="height" jdbcType="BIGINT"/>
+        <id column="acreage" property="acreage" jdbcType="DOUBLE"/>
+        <id column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <id column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <id column="upstairs_floor" property="upstairsFloor" jdbcType="BIGINT"/>
+        <id column="underground_floor" property="undergroundFloor" jdbcType="BIGINT"/>
+        <id column="province" property="province" jdbcType="VARCHAR"/>
+        <id column="city" property="city" jdbcType="VARCHAR"/>
+        <id column="district" property="district" jdbcType="VARCHAR"/>
+        <id column="road_no" property="roadNo" jdbcType="VARCHAR"/>
+        <id column="lng" property="lng" jdbcType="VARCHAR"/>
+        <id column="lat" property="lat" jdbcType="VARCHAR"/>
+        <id column="device_count" property="deviceCount" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        pb.id, pb.building_name, pb.height, pb.acreage, pb.upstairs_floor, pb.underground_floor, pb.province,pb.city,
+        pb.district, pb.road_no, pb.lng, pb.lat, pb.project_id, pb.address
+    </sql>
+
+    <select id="findByDeviceId" parameterType="java.lang.Long" resultMap="buildingResultMap">
+      SELECT <include refid="selColumns"/>
+      from project_manage.p_building bp
+      left join device_manage.d_check_point cp on cp.building_id = bp.id
+      left join device_manage.d_device d on d.check_point_id = cp.id
+      where d.id = #{deviceId}
+    </select>
+
+</mapper>

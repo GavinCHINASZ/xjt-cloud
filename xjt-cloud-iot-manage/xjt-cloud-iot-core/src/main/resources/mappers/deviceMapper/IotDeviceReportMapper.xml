@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.device.IotDeviceReportDao" >
+
+    <select id="iotDeviceFaultStatistics" resultType="IotDeviceReport" parameterType="IotDeviceReport">
+        SELECT project_id  projectId, p.project_name projectName,
+
+            SUM(IF(type = 'task', totalCount, 0)) taskTotalCount,
+            SUM(IF(type = 'task', onLineCount, 0)) taskCompleteCount, SUM(IF(type = 'task', offLineCount, 0)) taskImplementCount,
+            SUM(IF(type = 'task', colA, 0)) taskNoCount,
+
+            SUM(IF(type = 'faultRepair', totalCount, 0)) faultRepairTotalCount,
+            SUM(IF(type = 'faultRepair', onLineCount, 0)) faultRepairCount, SUM(IF(type = 'faultRepair', offLineCount, 0)) faultRepairUnderRepairCount,
+            SUM(IF(type = 'faultRepair', colA, 0)) faultRepairNoCount,
+
+            SUM(IF(type = 'waterGage', totalCount, 0)) waterGageTotalCount,
+            SUM(IF(type = 'waterGage', onLineCount, 0)) waterGageOnLineCount, SUM(IF(type = 'waterGage', offLineCount, 0)) waterGageOffLineCount,
+            SUM(IF(type = 'waterGage', colA + colB + colC + colD, 0)) waterGageEventCount,
+            SUM(IF(type = 'waterGage', colA, 0)) waterSuperelevationEventCount, SUM(IF(type = 'waterGage', colB, 0)) waterUltralowEventCount,
+            SUM(IF(type = 'waterGage', colC, 0)) waterLowPowerEventCount, SUM(IF(type = 'waterGage', colD, 0)) waterOffLineEventCount,
+
+            SUM(IF(type = 'waterLeaching', totalCount, 0)) waterLeachingTotalCount,
+            SUM(IF(type = 'waterLeaching', onLineCount, 0)) waterLeachingOnLineCount, SUM(IF(type = 'waterLeaching', offLineCount, 0)) waterLeachingOffLineCount,
+            SUM(IF(type = 'waterLeaching', colA + colB + colC, 0)) waterLeachingEventCount,
+            SUM(IF(type = 'waterLeaching', colA,0))  waterLeachingLeakageEventCount, SUM(IF(type = 'waterLeaching', colB, 0)) waterLeachingPowerEventCount,
+            SUM(IF(type = 'waterLeaching', colC, 0))  waterLeachingOffLineEventCount,
+
+            SUM(IF(type = 'smoke', totalCount, 0)) smokeTotalCount,
+            SUM(IF(type = 'smoke', onLineCount, 0)) smokeOnLineCount, SUM(IF(type = 'smoke', offLineCount, 0)) smokeOffLineCount,
+            SUM(IF(type = 'smoke', colA + colB + colC + colD, 0)) smokeEventCount,
+            SUM(IF(type = 'smoke', colA, 0)) smokeFireEventCount, SUM(IF(type = 'smoke', colB, 0)) smokeOffLineEventCount,
+            SUM(IF(type = 'smoke', colC, 0)) smokeLowPowerEventCount, SUM(IF(type = 'smoke', colD, 0)) smokeFaultEventCount,
+
+            SUM(IF(type = 'fireAlarm', totalCount, 0)) fireAlarmTotalCount,
+            SUM(IF(type = 'fireAlarm', onLineCount, 0)) fireAlarmOnLineCount, SUM(IF(type = 'fireAlarm', offLineCount, 0)) fireAlarmOffLineCount,
+            SUM(IF(type = 'fireAlarm', colA + colB + colC + colD, 0)) fireAlarmEventCount,
+            SUM(IF(type = 'fireAlarm', colA, 0)) fireAlarmFireEventCount, SUM(IF(type = 'fireAlarm', colB, 0)) fireAlarmFaultEventCount,
+            SUM(IF(type = 'fireAlarm', colC, 0)) fireAlarmMonitorEventCount, SUM(IF(type = 'fireAlarm', colD, 0)) fireAlarmOffLineEventCount,
+
+            SUM(IF(type = 'vesa', totalCount, 0)) vesaTotalCount,
+            SUM(IF(type = 'vesa', onLineCount, 0)) vesaOnLineCount, SUM(IF(type = 'vesa', offLineCount, 0)) vesaOffLineCount,
+            SUM(IF(type = 'vesa', colA + colB + colC + colD + colE + colF, 0)) vesaEventCount,
+            SUM(IF(type = 'vesa', colA, 0)) vesaFire1EventCount, SUM(IF(type = 'vesa', colB, 0)) vesaFire2EventCount,
+            SUM(IF(type = 'vesa', colC, 0)) vesaActionEventCount, SUM(IF(type = 'vesa', colD, 0)) vesaWarningEventCount,
+            SUM(IF(type = 'vesa', colE, 0)) vesaFaultEventCount, SUM(IF(type = 'vesa', colF, 0)) vesaOffLineEventCount,
+
+            SUM(IF(type = 'fireHydrant', totalCount, 0)) fireHydrantTotalCount,
+            SUM(IF(type = 'fireHydrant', onLineCount, 0)) fireHydrantOnLineCount, SUM(IF(type = 'fireHydrant', offLineCount, 0)) fireHydrantOffLineCount,
+            SUM(IF(type = 'fireHydrant', colA + colB + colC + colD + colE, 0)) fireHydrantFaultCount,
+            SUM(IF(type = 'fireHydrant', colA, 0)) fireHydrantSuperelevationCount, SUM(IF(type = 'fireHydrant', colB, 0)) fireHydrantUltralowCount,
+            SUM(IF(type = 'fireHydrant', colC, 0)) fireHydrantFaultEventCount, SUM(IF(type = 'fireHydrant', colD, 0)) fireHydrantLowPowerCount,
+            SUM(IF(type = 'fireHydrant', colE, 0)) fireHydrantOffLineEventCount,
+
+            SUM(IF(type = 'linkage', totalCount, 0)) linkageTotalCount,
+            SUM(IF(type = 'linkage', onLineCount, 0)) linkageOnLineCount, SUM(IF(type = 'linkage', offLineCount, 0)) linkageOffLineCount,
+            SUM(IF(type = 'linkage', colA + colB, 0)) linkageEventCount,
+            SUM(IF(type = 'linkage', colA, 0)) linkageOffLineEventCount, SUM(IF(type = 'linkage', colB, 0)) linkageFaultEventCount
+        FROM (
+            SELECT 'task' type, project_id, COUNT(*) totalCount,
+            SUM(IF(task_Status = 3, 1, 0)) onLineCount, SUM(IF(task_Status = 1, 1, 0)) offLineCount,
+            SUM(IF(task_Status = 3, 1, 0)) colA, null colB, null colC, null colD, null colE, null colF
+            FROM task_manage.t_task
+            WHERE 1 = 1
+            <if test="createTime != null and lastModifyTime != null">
+                AND create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY project_id
+
+            UNION ALL
+            SELECT 'faultRepair' type, project_id, COUNT(*) totalCount,
+            SUM(IF(work_order_status = 4 || work_order_status = 5, 1, 0)) onLineCount, SUM(IF(work_order_status = 2, 1, 0)) offLineCount,
+            SUM(IF(work_order_status = 1 || work_order_status = 2 || work_order_status = 3, 1, 0)) colA,
+            null colB, null colC, null colD, null colE, null colF
+            FROM fault_repair_manage.f_fault_repair_record
+            WHERE 1 = 1
+            <if test="createTime != null and lastModifyTime != null">
+                AND create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY project_id
+
+            UNION ALL
+            SELECT 'waterGage' type, d.project_id, COUNT(DISTINCT d.id) totalCount,
+            COUNT(DISTINCT IF(d.device_status = 1, d.id, NULL)) onLineCount, COUNT(DISTINCT IF(d.device_status = 2, d.id, NULL)) offLineCount,
+            COUNT(DISTINCT IF(e.type = 1 AND e.device_status = 2, e.id, NULL)) colA, COUNT(DISTINCT IF(e.type = 1 AND e.device_status = 3, e.id, NULL)) colB,
+            COUNT(DISTINCT IF(e.type = 3 AND e.device_status = 2, e.id, NULL)) colC, COUNT(DISTINCT IF(e.type = 4 AND e.device_status = 2, e.id, NULL)) colD,
+                null colE, null colF
+            FROM iot_manage.w_water_device d
+            LEFT JOIN iot_manage.w_water_event e ON d.id = e.water_id
+            WHERE d.status &lt;= 98 AND d.type IN (2, 13, 14) AND d.sensor_no IS NOT NULL AND d.sensor_no != ''
+            <if test="createTime != null and lastModifyTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY d.project_id
+
+            UNION ALL
+            SELECT 'waterLeaching' type, d.project_id , COUNT(DISTINCT d.id) totalCount,
+            COUNT(DISTINCT IF(d.device_status = 1, d.id, NULL)) onLineCount, COUNT(DISTINCT IF(d.device_status = 2, d.id, NULL)) offLineCount,
+            COUNT(DISTINCT IF(e.type = 5 AND e.device_status = 2, e.id, NULL)) colA, COUNT(DISTINCT IF(e.type = 1 AND e.device_status = 3, e.id, NULL)) colB,
+            COUNT(DISTINCT IF(e.type = 3 AND e.device_status = 2, e.id, NULL)) colC, null colD, null colE, null colF
+            FROM iot_manage.w_water_device d
+            LEFT JOIN iot_manage.w_water_event e ON d.id = e.water_id
+            WHERE d.status &lt;= 98 AND d.type =3
+            <if test="createTime != null and lastModifyTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY d.project_id
+
+            UNION ALL
+            SELECT 'smoke' type, d.project_id, COUNT(DISTINCT d.id) totalCount,
+            COUNT(DISTINCT IF(d.device_status = 1, d.id, NULL)) onLineCount, COUNT(DISTINCT IF(d.device_status = 2, d.id, NULL)) offLineCount,
+            COUNT(DISTINCT IF(e.event_type = 1, e.id, NULL)) colA, COUNT(DISTINCT IF(e.event_type = 21, e.id, NULL)) colB,
+            COUNT(DISTINCT IF(e.event_type = 4, e.id, NULL)) colC, COUNT(DISTINCT IF(e.event_type = 5, e.id, NULL)) colD, null colE, null colF
+            FROM iot_manage.s_smoke_device d
+            LEFT JOIN iot_manage.s_smoke_event e ON d.id = e.smoke_device_id
+            WHERE d.deleted= false
+            <if test="createTime != null and lastModifyTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY d.project_id
+
+            UNION ALL
+            SELECT 'fireAlarm' type, d.project_id , COUNT(DISTINCT d.id) totalCount,
+            COUNT(DISTINCT IF(d.device_status = 1, d.id, NULL)) onLineCount, COUNT(DISTINCT IF(d.device_status = 2, d.id, NULL)) offLineCount,
+            COUNT(DISTINCT IF(e.event_type = 1, e.id, NULL)) colA, COUNT(DISTINCT IF(e.event_type = 7, e.id, NULL)) colB,
+            COUNT(DISTINCT IF(e.event_type = 2, e.id, NULL)) colC, COUNT(DISTINCT IF(e.event_type = 21, e.id, NULL)) colD, null colE, null colF
+            FROM iot_manage.f_fire_alarm_device d
+            LEFT JOIN iot_manage.f_fire_alarm_event e ON d.id = e.fire_alarm_device_id
+            WHERE d.status &lt;= 98
+            <if test="createTime != null and lastModifyTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY d.project_id
+
+            UNION ALL
+            SELECT 'vesa' type, d.project_id , COUNT(DISTINCT d.id) totalCount,
+            COUNT(DISTINCT IF(d.device_status = 1, d.id, NULL)) onLineCount, COUNT(DISTINCT IF(d.device_status = 2, d.id, NULL)) offLineCount,
+            COUNT(DISTINCT IF(e.event_type = 3, e.id, NULL)) colA, COUNT(DISTINCT IF(e.event_type = 4, e.id, NULL)) colB,
+            COUNT(DISTINCT IF(e.event_type = 2, e.id, NULL)) colC, COUNT(DISTINCT IF(e.event_type = 1, e.id, NULL)) colD,
+            COUNT(DISTINCT IF(e.event_type = 0, e.id, NULL)) colE, COUNT(DISTINCT IF(e.event_type = 5, e.id, NULL)) colF
+            FROM iot_manage.v_vesa_device d
+            LEFT JOIN iot_manage.v_vesa_record e ON d.status = 1 AND e.device_id = d.device_id
+            WHERE d.status &lt;= 98
+            <if test="createTime != null and lastModifyTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY d.project_id
+
+            UNION ALL
+            SELECT 'fireHydrant' type, d.project_id, COUNT(DISTINCT d.id)  totalCount,
+            COUNT(DISTINCT IF(d.device_status = 1, d.id, NULL)) onLineCount, COUNT(DISTINCT IF(d.device_status = 2, d.id, NULL)) offLineCount,
+            COUNT(DISTINCT IF(e.type = 1 AND e.device_status = 2, e.id, NULL)) colA, COUNT(DISTINCT IF(e.type = 1 AND e.device_status = 3, e.id, NULL)) colB,
+            COUNT(DISTINCT IF((e.type = 5 AND e.device_status = 2) || (e.type = 6 AND e.device_status = 2) || (e.type = 5 AND e.device_status = 3)
+                || (e.type = 5 AND e.device_status = 4) || (e.type = 7 AND e.device_status = 2) || (e.type = 6 AND e.device_status = 4), e.id, NULL)) colC,
+            COUNT(DISTINCT IF(e.type = 3 AND e.device_status = 2, e.id, NULL)) colD, COUNT(DISTINCT IF(e.type = 4 AND e.device_status = 2, e.id, NULL)) colE, null colF
+            FROM iot_manage.w_water_device d
+            LEFT JOIN iot_manage.w_water_event e ON d.id = e.water_id
+            WHERE d.status &lt;= 98 AND d.type = 8
+            <if test="createTime != null and lastModifyTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY d.project_id
+
+            UNION ALL
+            SELECT 'linkage' type, d.project_id, COUNT(DISTINCT d.id) totalCount,
+            COUNT(DISTINCT IF(d.device_state = 1, d.id, NULL)) onLineCount, COUNT(DISTINCT IF(d.device_state = 2, d.id, NULL)) offLineCount,
+            COUNT(DISTINCT IF(e.event_type = 2, e.id, NULL)) colA, COUNT(DISTINCT IF(e.event_type = 3, e.id, NULL)) colB, null colC, null colD, null colE, null colF
+            FROM iot_manage.l_linkage_device d
+            LEFT JOIN iot_manage.l_linkage_event e ON d.id = e.linkage_device_id
+            WHERE d.deleted= false
+            <if test="createTime != null and lastModifyTime != null">
+                AND d.create_time BETWEEN #{createTime} AND #{lastModifyTime}
+            </if>
+            GROUP BY d.project_id
+        ) t
+        INNER JOIN project_manage.p_project p ON t.project_id = p.id AND p.deleted = false
+        GROUP BY projectId
+    </select>
+
+</mapper>

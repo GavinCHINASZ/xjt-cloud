@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.PublicityMapDao">
+
+    <resultMap id="publicityMapResultMap" type="com.xjt.cloud.project.core.entity.project.PublicityMap">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="source_id" property="sourceId" jdbcType="BIGINT"/>
+        <result column="source_type" property="sourceType" jdbcType="INTEGER"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+    </resultMap>
+
+
+
+    <!--添加宣传图-->
+    <insert id="savePublicityMapList" parameterType="PublicityMap" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO p_publicity_map( `source_id`, `source_type`, `image_url`) VALUES
+        <foreach collection="list" item="publicityMap" separator=",">
+            (#{publicityMap.sourceId}, #{publicityMap.sourceType}, #{publicityMap.imageUrl})
+        </foreach>
+    </insert>
+
+
+    <!-- 按条件查询宣传图-->
+    <select id="findByPublicityMapImageUrlList" parameterType="PublicityMap" resultType="java.lang.String">
+        SELECT pm.image_url from p_publicity_map pm where pm.source_id =#{sourceId}  and pm.source_type =#{sourceType}
+    </select>
+
+    <!--删除项目宣传图-->
+    <delete id="deleteProjectPublicityMap" parameterType="java.lang.Long">
+        DELETE from p_publicity_map where source_id = #{sourceId}
+    </delete>
+</mapper>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.TaskSpotCheckToolDao">
+
+    <resultMap id="taskSpotCheckToolResultMap" type="com.xjt.cloud.task.core.entity.TaskSpotCheckTool" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="task_id" property="taskId" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="serial_number" property="serialNumber" jdbcType="BIGINT" />
+        <result column="tool_name" property="toolName" jdbcType="VARCHAR"/>
+        <result column="specification_model" property="specificationModel" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="findCheckItemRecordSql">
+        <where>
+            1 = 1
+            <if test="id != null">
+                AND tsct.id = #{id}
+            </if>
+            <if test="taskId != null">
+                AND tsct.task_id = #{taskId}
+            </if>
+            <if test="taskIds != null and taskIds.length > 0">
+                AND tsct.task_id IN
+                <foreach item="item" collection="taskIds" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="projectId != null">
+                AND tsct.project_id = #{projectId}
+            </if>
+        </where>
+    </sql>
+
+    <!--查询任务工具-->
+    <select id="findTaskSpotCheckTools" resultMap="taskSpotCheckToolResultMap" parameterType="java.lang.Long">
+        SELECT tsct.id,tsct.task_id,tsct.project_id,tsct.tool_name,tsct.specification_model,tsct.serial_number
+        FROM t_task_spot_check_tool tsct
+        WHERE tsct.task_id = #{taskId}
+    </select>
+
+    <!--批量添加任务工具-->
+    <insert id="saveTaskSpotCheckTools"  parameterType="TaskSpotCheckTool" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `task_manage`.`t_task_spot_check_tool`
+        (`task_id`, `tool_name`, `specification_model`, `serial_number`, `project_id`, `create_time`, `create_user_id`)
+        VALUES
+        <foreach item="item" collection="list" index="index" separator=",">
+            (#{item.taskId}, #{item.toolName}, #{item.specificationModel}, #{item.serialNumber}, #{item.projectId}, now(), #{item.createUserId})
+        </foreach>
+    </insert>
+
+    <!--删除任务工具-->
+    <delete id="delTaskSpotCheckTools" parameterType="java.lang.Long">
+        DELETE FROM t_task_spot_check_tool
+        WHERE task_id = #{taskId}
+    </delete>
+
+    <!-- 根据 系统设备名称 查询工具 -->
+    <select id="findByDeviceTypeList" parameterType="TaskSpotCheckTool" resultMap="taskSpotCheckToolResultMap">
+        SELECT t.tool_name, t.specification_model, t.serial_number, t.id
+        FROM (
+            SELECT d.device_type_id, tsct.id, tsct.tool_name, tsct.specification_model, tsct.serial_number
+            FROM t_task_spot_check_tool tsct
+            LEFT JOIN t_task_check_point tcp ON tsct.task_id = tcp.task_id
+            LEFT JOIN device_manage.d_check_point cp ON cp.id = tcp.check_point_id
+            LEFT JOIN device_manage.d_device d ON d.check_point_id = cp.id
+            <include refid="findCheckItemRecordSql"/>
+            GROUP BY d.device_type_id
+        ) t
+        INNER JOIN device_manage.d_device_type dt ON dt.id = t.device_type_id
+        WHERE dt.device_sys_name = #{deviceSysName}
+    </select>
+
+    <!-- 查询工具 -->
+    <select id="findDateCheckRecordList" parameterType="TaskSpotCheckTool" resultType="CheckRecord">
+        SELECT tsct.tool_name deviceName, tsct.specification_model faultDescription, tsct.serial_number reportName
+        FROM t_task_spot_check_tool tsct
+        <include refid="findCheckItemRecordSql"/>
+    </select>
+
+    <!-- 查询工具 -->
+    <select id="findTaskSpotCheckToolList" parameterType="TaskSpotCheckTool" resultMap="taskSpotCheckToolResultMap">
+        SELECT tsct.tool_name, tsct.specification_model, tsct.serial_number
+        FROM t_task_spot_check_tool tsct
+        <include refid="findCheckItemRecordSql"/>
+        AND tsct.tool_name != ''
+    </select>
+
+</mapper>

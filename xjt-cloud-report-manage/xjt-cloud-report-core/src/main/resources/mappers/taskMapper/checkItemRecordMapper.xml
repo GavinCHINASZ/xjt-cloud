@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.report.core.dao.task.CheckItemRecordDao" >
+    <resultMap id="checkItemRecordResultMap" type="com.xjt.cloud.report.core.entity.task.CheckItemRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="check_record_id" property="checkRecordId" jdbcType="BIGINT" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="task_id" property="taskId" jdbcType="BIGINT" />
+        <id column="task_parent_id" property="taskParentId" jdbcType="BIGINT" />
+        <id column="is_num" property="isNum" jdbcType="INTEGER" />
+        <id column="remark" property="remark" jdbcType="VARCHAR" />
+        <id column="result_description" property="resultDescription" jdbcType="VARCHAR" />
+        <id column="check_result" property="checkResult" jdbcType="INTEGER" />
+        <id column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <id column="device_name" property="deviceName" jdbcType="BIGINT" />
+        <id column="check_max_value" property="checkMaxValue" jdbcType="DOUBLE" />
+        <id column="check_min_value" property="checkMinValue" jdbcType="DOUBLE" />
+        <id column="check_item_id" property="checkItemId" jdbcType="INTEGER" />
+        <id column="check_item_name" property="checkItemName" jdbcType="VARCHAR" />
+        <id column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <id column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <id column="check_value" property="checkValue" jdbcType="VARCHAR" />
+        <id column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+    </resultMap>
+
+    <!-- 查询 cr1.handle_status, -->
+    <select id="findMtCheckResultsBySql" parameterType="CheckItemRecord" resultType="CheckItemRecord">
+        SELECT t.id checkRecordId, cr.id checkItemId, cr.Id, cr.result_description resultDescription,
+                cr.check_max_value checkMaxValue,
+                cr.check_min_value checkMinValue,
+                cr.check_value checkValue,
+                cr.check_max_value maxValues,
+                cr.check_min_value minValues,
+                cr.is_num isNum
+			FROM (
+			    SELECT cr1.id, cr1.device_id, MAX(cr1.create_time)
+				FROM task_manage.t_check_record cr1
+				INNER JOIN task_manage.t_task t ON cr1.task_id = t.id
+				WHERE cr1.project_id = #{projectId} AND t.task_type = #{taskType} AND ( cr1.create_time BETWEEN #{createTime} AND #{lastModifyTime})
+				GROUP BY cr1.device_id
+            ) t
+        INNER JOIN task_manage.t_check_item_record cr ON t.id = cr.check_record_id
+        ORDER BY t.id
+    </select>
+
+</mapper>

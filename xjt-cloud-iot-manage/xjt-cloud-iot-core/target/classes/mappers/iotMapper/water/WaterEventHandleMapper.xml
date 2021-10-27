@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.water.WaterEventHandleDao" >
+
+    <resultMap id="waterEventHandleResultMap" type="com.xjt.cloud.iot.core.entity.water.WaterEventHandle" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_fault_type_id" property="deviceFaultTypeId" jdbcType="BIGINT" />
+        <result column="water_id" property="waterId" jdbcType="BIGINT" />
+        <result column="event_id" property="eventId" jdbcType="VARCHAR" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="img_urls" property="imgUrls" jdbcType="VARCHAR" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+        <result column="cause_analysis" property="causeAnalysis" jdbcType="VARCHAR" />
+        <result column="repair_method" property="repairMethod" jdbcType="VARCHAR" />
+        <result column="fault_level" property="faultLevel" jdbcType="INTEGER" />
+        <result column="repair_proposal" property="repairProposal" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findWaterEventHandleWhere">
+        WHERE 1=1
+        <if test="waterId != null and waterId != 0">
+            AND weh.water_id = #{waterId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND weh.device_id = #{deviceId}
+        </if>
+        <if test="eventId != null and eventId != 0">
+            AND weh.event_id = #{eventId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND weh.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND weh.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND weh.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND weh.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+    <!-- 查询水压水浸消火栓事件处理信息-->
+    <select id="findWaterEventHandleList" parameterType="WaterEventHandle" resultMap="waterEventHandleResultMap">
+        SELECT weh.*, dft.fault_type, dft.fault_level, dft.cause_analysis, dft.repair_method, dft.repair_proposal
+        FROM w_water_event_handle weh
+        INNER JOIN device_manage.d_device_fault_type dft ON weh.device_fault_type_id = dft.id
+        <include refid="findWaterEventHandleWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+    <!-- 查询水压水浸消火栓事件处理信息列表总记录数-->
+    <select id="findWaterEventHandleListCount" parameterType="WaterEventHandle" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT weh.id) FROM w_water_event_handle weh
+        INNER JOIN device_manage.d_device_fault_type dft ON weh.device_fault_type_id = dft.id
+        <include refid="findWaterEventHandleWhere"/>
+    </select>
+
+    <!--添加水压水浸消火栓事件处理信息-->
+    <insert id="saveWaterEventHandle" parameterType="WaterEventHandle" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO w_water_event_handle (project_id, device_id, device_fault_type_id, water_id, event_id, status,
+        device_type, description, img_urls, create_user_id, create_user_name, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.projectId}, #{item.deviceId}, #{item.deviceFaultTypeId}, #{item.waterId}, #{item.eventId}, 1,
+            #{item.deviceType}, #{item.description}, #{item.imgUrls}, #{item.createUserId}, #{item.createUserName}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 查询水压水浸消火栓事件处理信息-->
+    <select id="findWaterEventFaultTypeColumnChart" parameterType="WaterEventHandle" resultType="EventFaultReport">
+        SELECT COUNT(DISTINCT weh.id) faultCount, dft.fault_event_type faultEventType, dft.fault_type  faultType, dft.device_type deviceType, dft.fault_color faultColor
+        FROM (
+            SELECT weh.*
+            FROM w_water_event_handle weh
+            INNER JOIN (
+                SELECT MAX(weh.id) id
+                FROM w_water_event_handle weh
+                INNER JOIN w_water_event we ON we.id = weh.event_id
+                <include refid="findWaterEventFaultTypeColumnChartWhere"/>
+                GROUP BY event_id
+            ) t ON t.id = weh.id
+        ) weh
+        INNER JOIN device_manage.d_device_fault_type dft ON weh.device_fault_type_id = dft.id
+        GROUP BY dft.id ORDER BY dft.fault_event_type, dft.sort
+    </select>
+
+    <sql id="findWaterEventFaultTypeColumnChartWhere">
+        WHERE 1=1
+        <if test="waterId != null and waterId != 0">
+            AND weh.water_id = #{waterId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND weh.device_id = #{deviceId}
+        </if>
+        <if test="eventId != null and eventId != 0">
+            AND weh.event_id = #{eventId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND weh.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND we.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND weh.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND weh.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+</mapper>

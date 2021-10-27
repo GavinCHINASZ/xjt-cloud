@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.device.core.dao.device.DeviceFaultTypeDao" >
+
+    <resultMap id="deviceFaultTypeResultMap" type="com.xjt.cloud.device.core.entity.DeviceFaultType" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="device_sys_id" property="parentId" jdbcType="BIGINT" />
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+        <result column="fault_level" property="faultLevel" jdbcType="INTEGER" />
+        <result column="cause_analysis" property="causeAnalysis" jdbcType="VARCHAR" />
+        <result column="repair_method" property="repairMethod" jdbcType="VARCHAR" />
+        <result column="repair_proposal" property="repairProposal" jdbcType="VARCHAR" />
+        <result column="fault_color" property="faultColor" jdbcType="VARCHAR" />
+        <result column="fault_event_type" property="faultEventType" jdbcType="INTEGER" />
+        <result column="sort" property="sort" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="selColumns">
+        dft.id, dft.device_type_id, dft.device_sys_id, dft.fault_type, dft.fault_level, dft.cause_analysis, dft.repair_method, dft.repair_proposal,
+        dft.device_type, dft.fault_color, dft.fault_event_type, dft.sort, dft.create_time
+    </sql>
+
+    <sql id="findDeviceFaultTypeWhere">
+        WHERE 1 = 1
+        <if test="deleted != null">
+            AND dft.deleted = #{deleted}
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND dft.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="parentId != null and parentId != 0">
+            AND dft.device_sys_id = #{parentId}
+        </if>
+        <if test="faultLevel != null and faultLevel > 0">
+            AND dft.fault_level = #{faultLevel}
+        </if>
+        <if test="faultType != null and faultType != ''">
+            AND dft.fault_type LIKE CONCAT('%',#{faultType},'%')
+        </if>
+        <if test="repairMethod != null and repairMethod != ''">
+            AND dft.repair_method LIKE CONCAT('%',#{repairMethod},'%')
+        </if>
+        <if test="causeAnalysis != null and causeAnalysis != ''">
+            AND dft.cause_analysis LIKE CONCAT('%',#{causeAnalysis},'%')
+        </if>
+        <if test="repairProposal != null and repairProposal != ''">
+            AND dft.repair_proposal LIKE CONCAT('%',#{repairProposal},'%')
+        </if>
+
+        <if test="deviceType != null">
+            AND dft.device_type = #{deviceType}
+        </if>
+        <if test="faultEventType != null">
+            AND dft.fault_event_type = #{faultEventType}
+        </if>
+        <if test="faultColor != null and faultColor != ''">
+            AND dft.fault_color LIKE CONCAT('%',#{faultColor},'%')
+        </if>
+    </sql>
+
+    <!-- 查询设备故障类型 -->
+    <select id="findDeviceFaultTypeList" parameterType="DeviceFaultType" resultMap="deviceFaultTypeResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM device_manage.d_device_fault_type dft
+        <include refid="findDeviceFaultTypeWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询设备故障类型数量 -->
+    <select id="findDeviceFaultTypeListTotalCount" parameterType="DeviceFaultType" resultType="java.lang.Integer">
+        SELECT COUNT(dft.id) totalCount
+        FROM device_manage.d_device_fault_type dft
+        <include refid="findDeviceFaultTypeWhere"/>
+    </select>
+
+    <!-- 添加设备故障类型信息 -->
+    <insert id="saveDeviceFaultType" parameterType="DeviceFaultType" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO device_manage.d_device_fault_type(device_type_id, device_sys_id, fault_type, fault_level, cause_analysis, repair_method, repair_proposal,
+            device_type, fault_color, fault_event_type, sort, create_time)
+        VALUES (#{deviceTypeId}, #{parentId}, #{faultType}, #{faultLevel}, #{causeAnalysis}, #{repairMethod}, #{repairProposal},
+            #{deviceType}, #{faultEventType}, #{faultColor}, #{sort}, NOW());
+    </insert>
+
+    <!-- 修改设备故障类型信息 -->
+    <update id="updateDeviceFaultType" parameterType="DeviceFaultType">
+        UPDATE device_manage.d_device_fault_type
+        <set>
+            <if test="deleted != null and deleted">
+                deleted = #{deleted},
+            </if>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                device_type_id = #{deviceTypeId},
+            </if>
+            <if test="parentId != null and parentId != 0">
+                device_sys_id = #{parentId},
+            </if>
+            <if test="faultType != null">
+                fault_type = #{faultType},
+            </if>
+            <if test="faultLevel != null">
+                fault_level = #{faultLevel},
+            </if>
+            <if test="causeAnalysis != null and causeAnalysis != ''">
+                cause_analysis = #{causeAnalysis},
+            </if>
+            <if test="repairMethod != null">
+                repair_method = #{repairMethod},
+            </if>
+            <if test="repairProposal != null and repairProposal != ''">
+                repair_proposal = #{repairProposal},
+            </if>
+        </set>
+        <if test="deviceType != null">
+            device_type = #{deviceType},
+        </if>
+        <if test="faultEventType != null">
+            fault_event_type = #{faultEventType},
+        </if>
+        <if test="faultColor != null and faultColor != ''">
+            fault_color = #{faultColor},
+        </if>
+        <if test="sort != null and sort > 0">
+            sort = #{sort}
+        </if>
+        <where>
+            <if test="id != null and id != 0">
+                id = #{id}
+            </if>
+        </where>
+    </update>
+
+    <!-- 查询 异常类型(告警类型) -->
+    <select id="findFireFaultTypeList" parameterType="DeviceFaultType" resultMap="deviceFaultTypeResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM device_manage.d_device_fault_type dft
+        <include refid="findDeviceFaultTypeWhere"/>
+        GROUP BY dft.fault_type ORDER BY dft.sort
+    </select>
+
+</mapper>

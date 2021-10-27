@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.device.DeviceCheckPointDao" >
+
+    <!-- 根据条件查询巡检点列表 -->
+    <select id="findCheckPointList" parameterType="DeviceCheckPoint" resultType="TaskDeviceCheckPoint">
+        SELECT c.id, c.point_name pointName, c.point_location pointLocation,
+            COUNT(DISTINCT d.id) totalCount, c.qr_no qrNo,
+            c.building_floor_id floorId, c.building_id buildingId
+        FROM device_manage.d_check_point c
+        LEFT JOIN device_manage.d_device d ON c.id = d.check_point_id AND d.status &lt; 99
+        LEFT JOIN project_manage.p_organization o ON o.id = c.org_id
+        <where>
+            c.status &lt; 99
+            AND c.building_id >= 1
+            <if test="orgId != null and orgId != 0">
+                AND c.org_id = #{orgId}
+            </if>
+            <if test="floorId != null and floorId != 0">
+                AND c.building_floor_id = #{floorId}
+            </if>
+            <if test="buildingId != null and buildingId != 0">
+                AND c.building_id = #{buildingId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND c.project_id = #{projectId}
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND c.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+            <if test="orgName != null and orgName != ''">
+                AND o.org_name LIKE CONCAT('%',#{orgName},'%')
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND c.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                AND d.device_type_id = #{deviceTypeId}
+            </if>
+        </where>
+        GROUP BY c.id
+    </select>
+
+    <select id="findCheckPointCount" parameterType="DeviceCheckPoint" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT c.id)
+        FROM device_manage.d_check_point c
+        LEFT JOIN device_manage.d_device d ON c.id = d.check_point_id AND d.status &lt; 99
+        LEFT JOIN project_manage.p_organization o ON o.id = c.org_id
+        <where>
+            c.status &lt; 99
+            <if test="orgId != null and orgId != 0">
+                AND c.org_id = #{orgId}
+            </if>
+            <if test="floorId != null and floorId != 0">
+                AND c.building_floor_id = #{floorId}
+            </if>
+            <if test="buildingId != null and buildingId != 0">
+                AND c.building_id = #{buildingId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND c.project_id = #{projectId}
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND c.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+            <if test="orgName != null and orgName != ''">
+                AND o.org_name LIKE CONCAT('%',#{orgName},'%')
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND c.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据条件筛选巡更点 -->
+    <select id="findCheckPoint" parameterType="TaskDevice" resultType="TaskDeviceCheckPoint">
+        SELECT DISTINCT p.id, p.point_name pointName, p.qr_no qrNo, p.building_id buildingId, p.building_floor_id floorId
+        FROM device_manage.d_check_point p
+        LEFT JOIN device_manage.d_device d ON p.id = d.check_point_id
+        <where>
+            p.status &lt; 99
+            AND d.status &lt; 99
+            <if test="checkPointId != null and checkPointId != 0">
+                AND p.id = #{checkPointId}
+            </if>
+
+            <if test="qrNo != null and qrNo != ''">
+                AND p.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+
+            <if test="projectId != null and projectId != 0">
+                AND p.project_id = #{projectId}
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND p.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据设备类型id查询巡更点列表 -->
+    <select id="findCheckPointByDeviceTypeId" parameterType="TaskDevice" resultType="TaskDeviceCheckPoint">
+        SELECT cp.id, cp.point_name pointName, cp.qr_no qrNo, d.qr_no deviceQrNo,
+            cp.building_id buildingId, cp.building_floor_id floorId
+        FROM device_manage.d_check_point cp
+        INNER JOIN device_manage.d_device d ON cp.id = d.check_point_id
+        <where>
+            cp.status &lt;= 98
+            AND d.status &lt;= 98
+            <if test="projectId != null and projectId != 0">
+                AND cp.project_id = #{projectId}
+            </if>
+            <if test="id != null and id != 0">
+                AND d.device_type_id = #{id}
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+        </where>
+        GROUP BY deviceQrNo
+    </select>
+
+    <select id="findCheckPointCountByDeviceTypeId" parameterType="TaskDevice" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT  cp.id)
+        FROM device_manage.d_check_point cp
+        INNER JOIN device_manage.d_device d ON cp.id = d.check_point_id
+        <where>
+            cp.status &lt;= 98
+            AND d.status &lt;= 98
+            <if test="projectId != null and projectId != 0">
+                AND cp.project_id = #{projectId}
+            </if>
+            <if test="id != null and id != 0">
+                AND d.device_type_id = #{id}
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="findCheckPointName" resultType="java.lang.String">
+        SELECT p.point_name pointName
+        FROM device_manage.d_check_point p
+        WHERE p.id = #{id}
+    </select>
+
+    <select id="deviceCountByCheckPointId" resultType="java.lang.Integer">
+        SELECT COUNT(d.id) totalCount
+        FROM device_manage.d_device d
+        LEFT JOIN device_manage.d_check_point p ON d.check_point_id = p.id
+        <where>
+            d.status &lt; 99
+            AND p.status &lt; 99
+            <if test="projectId != null and projectId != 0">
+                AND d.project_id = #{projectId}
+            </if>
+            <if test="id != null and id != 0">
+                AND p.id = #{id}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据条件筛选巡检点列表-->
+    <select id="findCheckPointListByTaskDevice" parameterType="TaskDevice" resultType="TaskDeviceCheckPoint">
+        SELECT c.id, c.point_name pointName, COUNT(d.id) checkPointCount, c.qr_no qrNo, c.point_location pointLocation,
+            c.building_id buildingId,
+            c.building_floor_id floorId
+        FROM device_manage.d_check_point  c
+        LEFT JOIN device_manage.d_device d ON c.id = d.check_point_id AND d.status &lt; 99
+        LEFT JOIN project_manage.p_building_floor bf ON bf.id = c.building_floor_id
+        <where>
+            c.status &lt; 99
+            AND c.point_name != ''
+            <if test="floorId != null and floorId != 0">
+                AND c.building_floor_id = #{floorId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND c.project_id = #{projectId}
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND c.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND c.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+            <if test="floorName != null and floorName != ''">
+                AND bf.floor_name LIKE CONCAT('%',#{floorName},'%')
+            </if>
+        </where>
+        GROUP BY c.id
+    </select>
+
+    <!--根据巡更点名称筛选巡更点部门列表-->
+    <select id="findCheckPointByPointName" parameterType="TaskDevice" resultType="OrgCheckPoint">
+        SELECT cp.org_id orgId, COUNT(d.id) deviceNum, dt.device_sys_name deviceName, cp.id checkPointId,
+            cp.qr_no qrNo, cp.point_name pointName, o.ower_company companyId, o.parent_id parentId,
+            cp.building_id buildingId, cp.building_floor_id floorId
+        FROM device_manage.d_check_point cp
+        INNER JOIN device_manage.d_device d ON cp.id = d.check_point_id
+        INNER JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        INNER JOIN project_manage.p_organization o ON cp.org_id = o.id
+        <where>
+            cp.status &lt; 99
+            AND d.status &lt; 99
+            <if test="projectId != null and projectId != 0">
+                AND cp.project_id = #{projectId}
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+            <if test="orgId != null and orgId != 0">
+                AND o.id = #{orgId}
+            </if>
+            <if test="companyId != null and companyId != 0">
+                AND o.parent_id = #{companyId}
+            </if>
+        </where>
+        GROUP BY cp.id
+    </select>
+
+    <select id="findCheckPointByPointNameSelOrNotSel" parameterType="TaskDevice" resultType="OrgCheckPoint">
+        SELECT t.orgId, t.deviceNum, t.deviceName, t.checkPointId,
+            t.qrNo, t.pointName, t.companyId, t.parentId, MIN(sel) sel, MIN(notSel) notSel
+        FROM (
+            SELECT cp.org_id orgId, COUNT(d.id) deviceNum, dt.device_sys_name deviceName, cp.id checkPointId,
+                cp.qr_no qrNo, cp.point_name pointName, o.ower_company companyId, o.parent_id parentId
+                ,if(cp.id = t.id, -1, 0) sel,if(isnull(t.id), -2, 0) notSel
+            FROM device_manage.d_check_point cp
+            INNER JOIN device_manage.d_device d ON cp.id = d.check_point_id
+            INNER JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+            INNER JOIN project_manage.p_organization o ON cp.org_id = o.id
+            LEFT JOIN (
+                SELECT cp.id
+                FROM device_manage.d_check_point cp
+                WHERE cp.status &lt;= 98
+                AND cp.project_id = #{projectId}
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            ) t on cp.id = t.id
+            <where>
+                cp.status &lt;= 98
+                AND d.status &lt;= 98
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id = #{projectId}
+                </if>
+                <if test="pointName != null and pointName != ''">
+                    AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+                </if>
+                <if test="qrNo != null and qrNo != ''">
+                    AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+                </if>
+                <if test="orgId != null and orgId != 0">
+                    AND o.id = #{orgId}
+                </if>
+                <if test="companyId != null and companyId != 0">
+                    AND o.parent_id = #{companyId}
+                </if>
+            </where>
+            GROUP BY checkPointId,sel,notSel
+        ) t
+        GROUP BY t.checkPointId
+    </select>
+
+    <!-- 查询巡检点ID -->
+    <select id="findCheckPointId" parameterType="java.lang.Long" resultType="TaskCheckPoint">
+        SELECT dcp.id, dcp.project_id as projectId, dcp.building_id as buildingId,
+            dcp.building_floor_id as buildingFloorId, dcp.point_location as pointLocation,
+            dcp.qr_no as qrNo, dcp.point_name as checkPointName, dcp.org_id as orgId, if(dcp.status = 0,2,1) as taskCheckPointStatus
+        FROM d_check_point dcp
+        WHERE dcp.id = #{id};
+    </select>
+
+    <!--更新巡查点状态-->
+    <update id="updateDeviceCheckPointStatus" >
+        UPDATE device_manage.d_check_point dcp
+        SET dcp.status = #{status}, dcp.status_update_time = now()
+        WHERE id IN
+        <foreach item="item" collection="list" index="index" separator=","  open="(" close=")">
+            #{item.checkPointId}
+        </foreach>
+    </update>
+
+    <!-- 根据条件筛选巡检点列表-->
+    <select id="findBuildingFloorCheckPointByProjectId" parameterType="TaskDevice" resultType="TaskDeviceCheckPoint">
+        SELECT b.id buildingId, b.floorId, COUNT(DISTINCT c.id) totalCount
+        FROM(
+            SELECT b.id,f.id floorId
+            FROM project_manage.p_building b
+            LEFT JOIN project_manage.p_building_floor f
+            ON b.id = f.building_id AND f.deleted = 0
+            WHERE b.deleted = 0
+            AND b.project_id = #{projectId}
+            GROUP BY id,floorId
+        ) b
+        LEFT JOIN device_manage.d_check_point c ON b.id = c.building_id
+        AND c.status &lt; 99
+        AND c.building_floor_id = b.floorId
+        GROUP BY buildingId,floorId
+        ORDER BY buildingId,floorId
+    </select>
+
+    <!-- 根据条件筛选巡检点列表-->
+    <select id="findCheckPointListByFloorId" parameterType="TaskFloor" resultType="TaskDeviceCheckPoint">
+        SELECT c.id, c.point_name pointName, COUNT(DISTINCT d.id) checkPointCount, c.qr_no qrNo
+        FROM device_manage.d_check_point  c
+        LEFT JOIN device_manage.d_device d ON c.id = d.check_point_id AND d.status &lt; 99
+        WHERE c.status &lt; 99 AND c.building_floor_id = #{id}
+        GROUP BY c.id
+    </select>
+
+    <select id="findCheckPointLongList" parameterType="DeviceCheckPoint" resultType="java.lang.Long">
+        SELECT c.id
+        FROM device_manage.d_check_point  c
+        <if test="(deviceSysId != null and deviceSysId != 0) or (deviceTypeId != null and deviceTypeId != 0)">
+            INNER JOIN device_manage.d_device d ON c.id = d.check_point_id
+            INNER JOIN device_manage.d_device_type s ON d.device_type_id = s.id AND d.status &lt;= 98 AND s.type = 9
+        </if>
+
+        <if test="taskModelManageId != null and taskModelManageId != 0">
+            INNER JOIN task_manage.t_task_model_device tmd ON c.qr_no = tmd.point_qr_no
+        </if>
+
+        <where>
+            c.status &lt;= 98
+            AND c.building_id >= 1
+            <if test="orgId != null and orgId != 0">
+                AND c.org_id = #{orgId}
+            </if>
+            <if test="floorId != null and floorId != 0">
+                AND c.building_floor_id = #{floorId}
+            </if>
+            <if test="buildingId != null and buildingId != 0">
+                AND c.building_id = #{buildingId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND c.project_id = #{projectId}
+            </if>
+            <if test="companyId != null and companyId != 0">
+                AND c.org_id IN (
+                     SELECT o.id
+                     FROM project_manage.p_organization o
+                     WHERE o.deleted = 0
+                     AND o.org_type = 3
+                     AND o.ower_company = #{companyId}
+                     AND o.project_id = #{projectId}
+                     GROUP BY o.id
+                 )
+            </if>
+            <if test="deviceSysId != null and deviceSysId != 0">
+                AND s.parent_id = #{deviceSysId}
+            </if>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                AND s.id = #{deviceTypeId}
+            </if>
+
+            <if test="taskModelManageId != null and taskModelManageId != 0">
+                AND tmd.task_model_manage_id = #{taskModelManageId}
+            </if>
+        </where>
+        GROUP BY c.id
+    </select>
+
+    <!-- 根据 任务模板ID查询 -->
+    <select id="findCheckPointLongListByTaskModelManageId" parameterType="DeviceCheckPoint" resultType="java.lang.Long">
+        SELECT cp.id
+        FROM task_manage.t_task_model_manage tmm
+        INNER JOIN task_manage.t_task_model_device tmd ON tmd.task_model_manage_id = tmm.id
+        INNER JOIN device_manage.d_check_point cp ON cp.qr_no = tmd.point_qr_no
+        WHERE tmm.id = #{taskModelManageId}
+        GROUP BY cp.id
+    </select>
+
+    <select id="findOrgAndSonOrgCheckPoints" parameterType="DeviceCheckPoint" resultType="java.lang.Long">
+        SELECT cp.id
+        FROM device_manage.d_check_point cp
+        WHERE cp.status &lt;= 98
+        AND cp.org_id IN (
+            SELECT o.id
+            FROM project_manage.p_organization o
+            WHERE o.deleted = 0
+            AND o.org_type = 3
+            AND o.layer_order LIKE CONCAT('%',#{orgId},'%')
+         )
+    </select>
+
+    <select id="findCheckPointListBuildingAndSys" parameterType="DeviceCheckPoint" resultType="AppCheckPoint">
+        SELECT cp.building_id b, b.building_name bn, cp.building_floor_id f, pf.floor_name fn, cp.id c, cp.point_name pn, cp.qr_no q,
+            dtt.id t, dtt.device_sys_name tn, dts.id s, dts.device_sys_name sn
+        FROM device_manage.d_check_point cp
+        INNER JOIN device_manage.d_device d ON d.check_point_id = cp.id AND d.status &lt;= 98
+        INNER JOIN device_manage.d_device_type dtt ON dtt.id = d.device_type_id AND dtt.type = 9 AND dtt.status &lt;= 98
+        INNER JOIN device_manage.d_device_type  dts ON dts.id = dtt.parent_id AND dts.type = 1 AND dts.status &lt;= 98
+        INNER JOIN project_manage.p_building b ON cp.building_id = b.id AND b.deleted = 0
+        INNER JOIN project_manage.p_building_floor pf ON pf.id = cp.building_floor_id AND pf.deleted = 0
+        WHERE cp.`status` &lt;= 98
+        AND cp.project_id = #{projectId}
+        AND cp.building_floor_id > 0
+        AND cp.building_id > 0
+        AND dtt.id > 0
+        AND dts.id > 0
+        <if test="pointName != null and pointName != ''">
+            AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND dts.device_sys_name LIKE CONCAT('',#{deviceSysName},'%')
+        </if>
+        <if test="deviceTypeName != null and deviceTypeName != ''">
+            AND dtt.device_sys_name LIKE CONCAT('',#{deviceTypeName},'%')
+        </if>
+        GROUP BY cp.building_id, cp.building_floor_id, dts.id, dtt.id, cp.id
+        ORDER BY cp.building_id, dts.id, cp.building_floor_id, dtt.id, cp.id ASC
+    </select>
+
+    <!-- 查询 巡检点在项目中不存在 -->
+    <select id="findCheckPointNotIn" resultType="TaskModelDevice">
+        SELECT t.qrNo pointQrNo, cp.id checkPointId
+        FROM (
+            <foreach item="item" collection="taskModelDeviceList" index="index" separator=" UNION ALL ">
+                SELECT #{item.pointQrNo} qrNo
+            </foreach>
+        ) t
+        LEFT JOIN device_manage.d_check_point cp ON cp.qr_no = t.qrNo AND cp.project_id = #{projectId}
+        GROUP BY t.qrNo
+        HAVING cp.id is null
+    </select>
+
+    <!-- 判断 巡检点 是否存在 -->
+    <select id="findByTaskModelDevice" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM device_manage.d_check_point cp
+        WHERE cp.`status` &lt;= 98
+        <if test="projectId != null and projectId > 0">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="pointQrNo != null and pointQrNo != ''">
+            AND cp.qr_no = #{pointQrNo}
+        </if>
+    </select>
+
+</mapper>

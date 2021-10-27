@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.sys.core.dao.sys.UserDao" >
+
+    <resultMap id="userResultMap" type="com.xjt.cloud.sys.core.entity.User" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="login_name" property="loginName" jdbcType="VARCHAR" />
+        <result column="user_name" property="userName" jdbcType="VARCHAR" />
+        <result column="phone" property="phone" jdbcType="VARCHAR" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="modify_status" property="modifyStatus" jdbcType="INTEGER" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR" />
+
+        <result column="theme_color" property="themeColor" jdbcType="VARCHAR" />
+        <result column="theme_img_url" property="themeImgUrl" jdbcType="VARCHAR" />
+        <result column="theme_img_no" property="themeImgNo" jdbcType="VARCHAR" />
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="head_portrait" property="headPortrait" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="userSel">
+        id, login_name, user_name, status, phone, project_id, project_name, theme_color, theme_img_url, theme_img_no,
+        create_time, last_modify_time, modify_status, head_portrait, login_status
+    </sql>
+
+    <!-- 根据用户名查询 -->
+    <select id="getUser" parameterType="User" resultMap="userResultMap">
+        SELECT <include refid="userSel"/>
+        FROM s_user
+        WHERE status &lt;= 1
+        <if test="loginName != null">
+            AND (login_name = #{loginName} OR phone = #{loginName})
+        </if>
+        <if test="phone != null">
+            AND (login_name = #{phone} OR phone = #{phone})
+        </if>
+        <if test="id != null">
+            AND id = #{id}
+        </if>
+        LIMIT 1;
+    </select>
+
+    <!-- 用户注册 -->
+    <insert id="registerUser" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO s_user (login_name, password, phone, user_name, status, create_time)
+        VALUES (#{loginName}, #{password}, #{phone}, #{userName}, 1, NOW())
+    </insert>
+
+    <!-- 判断该登录名称与手机号码是否已存在 -->
+    <select id="findUserByLoginNameOrPhone" resultMap="userResultMap" parameterType="User" >
+        SELECT id, login_name, password,status
+        FROM s_user
+        WHERE status &lt;= 98 AND (login_name = #{loginName} OR phone = #{phone})
+        LIMIT 1
+    </select>
+
+    <!-- 修改用户信息 -->
+    <update id="modifyUser" parameterType="User" >
+        UPDATE s_user
+        <set>
+            <if test="userName != null and userName != ''">
+                user_name = #{userName},
+            </if>
+            <if test="headPortrait != null and headPortrait != ''">
+                head_portrait = #{headPortrait},
+            </if>
+
+            <if test="themeColor != null">
+                theme_color = #{themeColor},
+            </if>
+            <if test="themeImgUrl != null">
+                theme_img_url = #{themeImgUrl},
+            </if>
+            <if test="themeImgNo != null">
+                theme_img_no = #{themeImgNo}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 修改用户登录用户名 -->
+    <update id="modifyUserLoginName" parameterType="User" >
+        UPDATE s_user
+        SET login_name = #{loginName}, modify_status = 2
+        WHERE id = #{id}
+    </update>
+
+    <!-- 修改用户手机号码 -->
+    <update id="modifyUserPhone" parameterType="User" >
+        UPDATE s_user
+        SET phone = #{phone}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 修改用户密码 -->
+    <update id="modifyUserPassword" parameterType="User" >
+        UPDATE s_user
+        SET password = #{password}
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="phone != null and phone != ''">
+            phone = #{phone} OR login_name = #{phone}
+        </if>
+    </update>
+
+    <!-- 更新(编辑)成员信息 -->
+    <update id="updateUserStatus" parameterType="User" >
+        UPDATE s_user
+        SET status = 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- 查询登录用户信息 -->
+    <select id="findLoginUser" resultMap="userResultMap" parameterType="User" >
+        SELECT login_name, password
+        FROM s_user
+        WHERE login_name = #{loginName} OR phone = #{loginName}
+        LIMIT 1
+    </select>
+
+    <insert id="saveTest">
+        INSERT INTO test (col2, col3)
+        VALUES (1, 2);
+    </insert>
+
+    <insert id="saveTest1">
+        INSERT INTO device_manage.test1 (col2, col3)
+        VALUES (1, 2);
+    </insert>
+
+</mapper>

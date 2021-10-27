@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.log.manage.dao.log.SecurityLogDao" >
+
+    <!--添加日志-->
+    <insert id="saveSecurityLog" parameterType="SecurityLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO log_manage.l_security_log (user_id, user_name, content, model_type, source_id, source_type, model_name, action_type, action_name)
+        VALUES (#{userId}, #{userName}, #{content}, #{modelType}, #{sourceId}, #{sourceType}, #{modelName}, #{actionType}, #{actionName});
+
+    </insert>
+</mapper>

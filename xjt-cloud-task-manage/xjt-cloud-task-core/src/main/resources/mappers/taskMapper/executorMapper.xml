@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.ExecutorDao" >
+    <resultMap id="executorResultMap" type="com.xjt.cloud.task.core.entity.Executor" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="task_id" property="taskId" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="executor_id" property="executorId" jdbcType="BIGINT" />
+        <result column="executor_type" property="executorType" jdbcType="INTEGER"/>
+        <result column="executor_name" property="executorName" jdbcType="VARCHAR"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT" />
+        <result column="role_id" property="roleId" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <!-- 查询执行者列表-->
+    <select id="findExecutorList" parameterType="Executor" resultMap="executorResultMap">
+        SELECT
+            e.id, e.task_id, e.project_id, e.executor_id, e.executor_type, ou.user_name executor_name, e.user_id, e.role_id
+        FROM t_executor e
+        INNER JOIN project_manage.p_org_user ou
+        ON ou.id = e.executor_id
+        <where>
+            1 = 1
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="taskId != null">
+                AND task_id = #{taskId}
+            </if>
+            <if test="projectId != null">
+                AND project_id = #{projectId}
+            </if>
+            <if test="executorId != null">
+                AND executor_id = #{executorId}
+            </if>
+            <if test="executorType != null">
+                AND executor_type = #{executorType}
+            </if>
+        </where>
+    </select>
+
+    <select id="findExecutorListByTaskId" resultType="User">
+        SELECT
+         e.executor_id orgUserId, ou.user_name userName, e.user_id userId, e.role_id roleId
+        FROM t_executor e
+        INNER JOIN project_manage.p_org_user ou
+				ON ou.id = e.executor_id
+        WHERE
+            e.executor_type = #{executorType}
+            AND e.task_id = #{taskId}
+    </select>
+
+    <!--保存执行者-->
+    <insert id="saveExecutor" parameterType="Executor" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_executor
+            (task_id, project_id, executor_id, executor_type, executor_name, user_id,role_id)
+        VALUES
+            (#{taskId}, #{projectId}, #{executorId}, #{executorType}, #{executorName}, #{userId},#{roleId});
+    </insert>
+
+    <delete id="deleteExecutorByTaskId">
+        DELETE FROM t_executor
+        <where>
+            <if test="taskId != null and taskId != 0">
+                AND task_id = #{taskId}
+            </if>
+            <if test="executorType != null">
+                AND executor_type = #{executorType}
+            </if>
+            <if test="taskIds != null and taskIds.size > 0">
+                AND task_id IN
+                <foreach item="item" collection="taskIds" index="index" separator=","  open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </delete>
+
+    <!--查询任务审核权限-->
+    <select id="findReviewAuthority" parameterType="Executor" resultType="java.lang.Long">
+        SELECT
+            our.id
+        FROM project_manage.p_org_user_role our
+        LEFT JOIN t_executor e
+        ON e.executor_type = 1 AND e.executor_id = our.org_user_id AND our.project_id = e.project_id
+        WHERE e.user_id = #{userId}
+        AND  e.project_id = #{projectId}
+        AND e.task_id = #{taskId}
+        GROUP BY our.id
+        LIMIT 1
+    </select>
+</mapper>

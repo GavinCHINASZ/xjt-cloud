@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.maintenance.core.dao.project.BuildingDao">
+
+    <resultMap id="buildingResultMap" type="com.xjt.cloud.maintenance.core.entity.project.Building">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="upstairs_floor" property="upstairsFloor" jdbcType="BIGINT"/>
+        <result column="underground_floor" property="undergroundFloor" jdbcType="BIGINT"/>
+        <result column="province" property="province" jdbcType="VARCHAR"/>
+        <result column="city" property="city" jdbcType="VARCHAR"/>
+        <result column="district" property="district" jdbcType="VARCHAR"/>
+        <result column="road_no" property="roadNo" jdbcType="VARCHAR"/>
+        <result column="lng" property="lng" jdbcType="VARCHAR"/>
+        <result column="lat" property="lat" jdbcType="VARCHAR"/>
+        <result column="device_count" property="deviceCount" jdbcType="INTEGER"/>
+        <result column="check_point_count" property="checkPointCount" jdbcType="INTEGER"/>
+        <result column="fault_device_count" property="faultDeviceCount" jdbcType="INTEGER"/>
+
+        <result column="automatic_fire_fighting" property="automaticFireFighting" jdbcType="INTEGER"/>
+        <result column="building_acreage" property="buildingAcreage" jdbcType="INTEGER"/>
+        <result column="floor_number" property="floorNumber" jdbcType="INTEGER"/>
+        <result column="safety_exit_number" property="safetyExitNumber" jdbcType="INTEGER"/>
+        <result column="evacuation_staircases_number" property="evacuationStaircasesNumber" jdbcType="INTEGER"/>
+        <result column="fireLift_number" property="fireLiftNumber" jdbcType="INTEGER"/>
+        <result column="location_refuge_floor" property="locationRefugeFloor" jdbcType="VARCHAR"/>
+        <result column="building_type" property="buildingType" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        pb.id,pb.building_name,pb.height,pb.acreage,pb.upstairs_floor,pb.underground_floor,pb.province,pb.city,
+        pb.district,pb.road_no,pb.lng,pb.lat,pb.project_id,pb.address,pb.check_project_id,
+        pb.automatic_fire_fighting,pb.building_acreage,pb.floor_number,pb.safety_exit_number,pb.evacuation_staircases_number,
+        pb.fireLift_number,pb.location_refuge_floor,pb.building_type
+    </sql>
+
+    <!--添加建筑物-->
+    <insert id="addBuilding" parameterType="Building" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO `p_building`(`id`, `building_name`, `province`, `city`, `district`, `road_no`, `lng`,
+        `lat`, `create_user_id`, `create_time`, `acreage`, `height`, `upstairs_floor`, `underground_floor`,
+         `project_id`,`address`,`check_project_id`,
+         automatic_fire_fighting,building_acreage,floor_number,safety_exit_number,evacuation_staircases_number,
+        fireLift_number,location_refuge_floor,building_type)
+        VALUES (#{id}, #{buildingName}, #{province}, #{city}, #{district}, #{roadNo}, #{lng},
+        #{lat}, #{createUserId}, NOW(), #{acreage}, #{height}, #{upstairsFloor}, #{undergroundFloor},
+        #{projectId},#{address},#{checkProjectId},
+        #{automaticFireFighting},#{buildingAcreage},#{floorNumber},#{safetyExitNumber},#{evacuationStaircasesNumber},
+        #{fireLiftNumber},#{locationRefugeFloor},#{buildingType})
+    </insert>
+
+    <!--删除建筑物-->
+    <update id="deleteBuilding" parameterType="java.util.List">
+        update `p_building`
+        set `deleted` = true
+        WHERE id IN
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+
+    </update>
+
+    <!--修改建筑物信息-->
+    <update id="updateBuilding" parameterType="Building">
+        update `p_building`
+        set
+        <if test="buildingName != null">
+            `building_name` = #{buildingName}
+        </if>
+        <if test="province != null">
+            , `province` = #{province}
+        </if>
+        <if test="city != null">
+            ,`city` = #{city}
+        </if>
+        <if test="district != null">
+            ,`district` = #{district}
+        </if>
+        <if test="roadNo != null">
+            , `road_no` = #{roadNo}
+        </if>
+        <if test="lng != null">
+            ,`lng` = #{lng}
+        </if>
+        <if test="lat != null">
+            , `lat` = #{lat}
+        </if>
+        <if test="updateUserId != null">
+            ,`update_user_id` = #{updateUserId}
+        </if>
+        <if test="updateUserName != null">
+            ,`update_user_name` = #{updateUserName}
+        </if>
+        <if test="acreage != null">
+            ,`acreage` = #{acreage}
+        </if>
+        <if test="height != null">
+            ,`height` = #{height}
+        </if>
+        <if test="upstairsFloor != null">
+            ,`upstairs_floor` = #{upstairsFloor}
+        </if>
+        <if test="undergroundFloor != null">
+            ,`underground_floor` = #{undergroundFloor}
+        </if>
+        <if test="address != null">
+            ,`address` = #{address}
+        </if>
+        <if test="automaticFireFighting != null">
+            ,`automatic_fire_fighting` = #{automaticFireFighting}
+        </if>
+        <if test="buildingAcreage != null">
+            ,`building_acreage` = #{buildingAcreage}
+        </if>
+        <if test="floorNumber != null">
+            ,`floor_number` = #{floorNumber}
+        </if>
+        <if test="safetyExitNumber != null">
+            ,`safety_exit_number` = #{safetyExitNumber}
+        </if>
+        <if test="evacuationStaircasesNumber != null">
+            ,`evacuation_staircases_number` = #{evacuationStaircasesNumber}
+        </if>
+        <if test="fireLiftNumber != null">
+            ,`fireLift_number` = #{fireLiftNumber}
+        </if>
+        <if test="locationRefugeFloor != null">
+            ,`location_refuge_floor` = #{locationRefugeFloor}
+        </if>
+        <if test="buildingType != null">
+            ,`building_type` = #{buildingType}
+        </if>
+        WHERE id = #{id}
+    </update>
+
+
+    <!-- 查询项目建筑物列表总记录数-->
+    <select id="findByProjectListCount" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM p_building pb WHERE   pb.deleted = false
+        <if test="projectId != null and projectId != 0 ">
+            and pb.project_id = #{projectId}
+        </if>
+        <if test="checkProjectId != null and checkProjectId != 0 ">
+            and pb.check_project_id = #{checkProjectId}
+        </if>
+        <if test="buildingName != null and buildingName != ''">
+            and   pb.building_name LIKE CONCAT('%',#{buildingName},'%')
+        </if>
+    </select>
+
+    <!--查询项目建筑物列表-->
+    <select id="findByProjectList" parameterType="Building" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        from p_building pb
+         where pb.deleted = false
+         <if test="projectId != null ">
+             and pb.project_id = #{projectId}
+         </if>
+        <if test="buildingName != null and buildingName != ''">
+            and pb.building_name LIKE CONCAT('%',#{buildingName},'%')
+        </if>
+        <if test="checkProjectId != null ">
+            and pb.check_project_id = #{checkProjectId}
+        </if>
+        GROUP BY pb.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+
+    </select>
+
+    <select id="findByProjectAcreage" parameterType="java.lang.Long" resultType="java.lang.Long">
+         SELECT sum(pb.acreage)	FROM p_building pb WHERE pb.project_id = #{projectId} and pb.check_project_id = #{checkProjectId}
+    </select>
+
+    <!--查询建筑物-->
+    <select id="findByBuilding" parameterType="Building" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        from p_building pb where pb.deleted = false
+        <if test="id != null and id != 0">
+           and  pb.id = #{id}
+        </if>
+        <if test="checkProjectId != null ">
+            and pb.check_project_id = #{checkProjectId}
+        </if>
+        limit 1
+    </select>
+
+    <select id="findByBuildingName" parameterType="Building" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        from p_building pb where pb.deleted = false
+        <if test="projectId != null and projectId != 0">
+            and pb.project_id = #{projectId}
+        </if>
+        <if test="id != null and id != 0">
+            and  pb.id != #{id}
+        </if>
+        <if test="checkProjectId != null and checkProjectId != 0 ">
+            and pb.check_project_id = #{checkProjectId}
+        </if>
+        and pb.building_name = #{buildingName}
+        limit 1
+    </select>
+
+    <select id="findByBuildingAllList" resultMap="buildingResultMap">
+        SELECT
+        <include refid="selColumns"/>
+        from p_building pb where pb.deleted = false
+    </select>
+
+    <!-- 以sql文查询建筑物与楼层信息信息-->
+    <select id="findBuildingListBySql" parameterType="java.lang.String" resultType="Building">
+        SELECT s.buildingName, s.buildingFloorName floorName, b.id  id, bf.id floorId FROM ( ${sql}) s
+        LEFT JOIN p_building b ON s.buildingName = b.building_name AND b.deleted = 0 AND b.project_id = s.projectId
+        LEFT JOIN p_building_floor bf ON s.buildingFloorName = bf.floor_name AND bf.building_id = b.id AND b.deleted = 0
+    </select>
+
+    <!--查询项目建筑物信息-->
+    <select id="findByProjectBuildInfo" parameterType="Project" resultType="Project">
+        SELECT b.project_id as id ,count(*) as buildingCount,sum(b.acreage/100) as buildingSumAcreage from p_building b
+        WHERE b.project_id = #{id} and b.deleted = false
+    </select>
+</mapper>

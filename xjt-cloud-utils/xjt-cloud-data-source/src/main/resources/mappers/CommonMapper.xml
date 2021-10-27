@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="CommonSqlDao" >
+    <sql id="commonPagingHandle">
+        <if test="orderCols != null">
+            ORDER BY
+            <foreach collection="orderCols" item="colName" separator=",">
+                ${colName}
+                <if test="orderDesc">
+                    DESC
+                </if>
+            </foreach>
+        </if>
+
+        <if test="orderStr != null">
+            ORDER BY ${orderStr}
+        </if>
+
+        <if test="pageSize != null and pageSize != 0 and beginIndex != null and beginIndex >= 0">
+            LIMIT #{beginIndex}, #{pageSize}
+        </if>
+    </sql>
+</mapper>

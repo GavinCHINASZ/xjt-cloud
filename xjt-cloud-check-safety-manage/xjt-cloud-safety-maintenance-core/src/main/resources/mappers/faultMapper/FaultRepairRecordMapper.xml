@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.fault.FaultRepairRecordDao" >
+
+    <resultMap id="faultResultMap" type="com.xjt.cloud.safety.core.entity.fault.FaultRepairRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR" />
+        <result column="device_sys_id" property="deviceSysId" jdbcType="BIGINT" />
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
+
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+
+        <result column="fault_type" property="faultType" jdbcType="INTEGER" />
+        <result column="fault_type_id" property="faultTypeId" jdbcType="BIGINT" />
+        <result column="hand_in" property="handIn" jdbcType="INTEGER" />
+        <result column="hand_in" property="handIn" jdbcType="INTEGER" />
+        <result column="urgent_degree" property="urgentDegree" jdbcType="INTEGER" />
+        <result column="work_order_status" property="workOrderStatus" jdbcType="INTEGER" />
+        <result column="status" property="status" jdbcType="INTEGER" />
+        <result column="fault_description" property="faultDescription" jdbcType="VARCHAR" />
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR" />
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR" />
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR" />
+
+        <result column="maintenance_user_id" property="maintenanceUserId" jdbcType="VARCHAR" />
+        <result column="maintenance_result" property="maintenanceResult" jdbcType="VARCHAR" />
+        <result column="maintenance_image_url" property="maintenanceImageUrl" jdbcType="VARCHAR" />
+        <result column="maintenance_user_name" property="maintenanceUserName" jdbcType="VARCHAR" />
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="update_user_id" property="updateUserId" jdbcType="BIGINT" />
+        <result column="update_user_name" property="updateUserName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="faultSql">
+        f.id, f.project_id, f.project_name, f.device_sys_id, f.device_sys_name, f.status,
+        f.device_id, f.device_name, f.fault_description, f.work_order_status, f.image_url, f.fault_type, f.fault_type_id, f.hand_in, f.urgent_degree,
+        f.building_id, f.building_floor_id, f.create_user_name, f.create_user_id, f.create_time, f.last_modify_time, f.update_user_id, f.update_user_name,
+        f.maintenance_user_id, f.maintenance_result, f.maintenance_image_url
+    </sql>
+
+    <sql id="findFaultWhere">
+        WHERE f.status &lt;= 98
+        <if test="createTime != null and lastModifyTime != null">
+            AND f.create_time BETWEEN #{createTime} and  #{lastModifyTime}
+        </if>
+        <if test="createUserName != null and createUserName != ''">
+            AND f.create_user_name LIKE CONCAT('%',#{createUserName},'%')
+        </if>
+
+        <if test="deviceSysId != null and deviceSysId != 0">
+            AND f.device_sys_id = #{deviceSysId}
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND f.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+
+        <if test="deviceId != null and deviceId != 0">
+            AND f.deviceI_id = #{deviceId}
+        </if>
+        <if test="deviceName != null and deviceName != ''">
+            AND f.device_name LIKE CONCAT('%',#{deviceName},'%')
+        </if>
+
+        <if test="workOrderStatus != null and workOrderStatus != 0">
+            AND f.work_order_status = #{workOrderStatus}
+        </if>
+        <if test="workOrderStatusArr != null and workOrderStatusArr.length > 0">
+            AND f.work_order_status IN
+            <foreach collection="workOrderStatusArr" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="buildingId != null and buildingId != 0">
+            AND f.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND f.building_floor_id = #{buildingFloorId}
+        </if>
+
+        <if test="projectId != null and projectId != 0">
+            AND f.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND f.project_id IN
+            <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="ids != null and ids.length > 0">
+            AND f.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="id != null and id != 0">
+            AND f.id = #{id}
+        </if>
+
+        <if test="repairUserId != null and repairUserIds > 0">
+            AND (f.create_user_id = #{repairUserId} OR fh.repair_user_id = #{repairUserId})
+        </if>
+    </sql>
+
+    <!-- 新增 -->
+    <insert id="saveFaultRepairRecord" parameterType="FaultRepairRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO maintenance_manage.f_fault_repair_record(project_id, project_name, device_sys_id, device_sys_name, work_order_status,
+            device_id, device_name, fault_description, image_url, fault_type, fault_type_id, hand_in, urgent_degree,
+            building_id, building_floor_id, create_user_name, create_user_id, update_user_id, update_user_name, create_time,
+            maintenance_user_id, maintenance_result, maintenance_image_url)
+        VALUES (#{projectId}, #{projectName}, #{deviceSysId}, #{deviceSysName}, #{workOrderStatus},
+            #{deviceId}, #{deviceName}, #{faultDescription}, #{imageUrl}, #{faultType}, #{faultTypeId}, #{handIn}, #{urgentDegree},
+             #{buildingId}, #{buildingFloorId}, #{createUserName}, #{createUserId}, #{updateUserId}, #{updateUserName}, NOW(),
+             #{maintenanceUserId}, #{maintenanceResult}, #{maintenanceImageUrl});
+    </insert>
+
+    <!-- 批量新增 -->
+    <insert id="saveFaultRepairRecordList" parameterType="FaultRepairRecord">
+        INSERT INTO maintenance_manage.f_fault_repair_record(project_id, project_name, device_sys_id, device_sys_name,
+            device_id, device_name, fault_description, work_order_status, image_url, fault_type, fault_type_id,
+            hand_in, urgent_degree,
+            building_id, building_floor_id, create_user_name, create_user_id, update_user_id, update_user_name, create_time,
+            maintenance_user_id, maintenance_result, maintenance_image_url)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.projectId}, #{item.projectName}, #{item.deviceSysId}, #{item.deviceSysName},
+            #{item.deviceId}, #{item.deviceName}, #{item.faultDescription}, #{item.workOrderStatus}, #{item.imageUrl}, #{item.faultType}, #{item.faultTypeId},
+            #{item.handIn}, #{item.urgentDegree},
+            #{item.buildingId}, #{item.buildingFloorId}, #{item.createUserName}, #{item.createUserId}, #{item.updateUserId}, #{item.updateUserName}, NOW(),
+            #{item.maintenanceUserId}, #{item.maintenanceResult}, #{item.maintenanceImageUrl})
+        </foreach>
+    </insert>
+
+    <!-- 查询 故障报修 -->
+    <select id="findFaultRepairRecord" parameterType="FaultRepairRecord" resultMap="faultResultMap">
+        SELECT <include refid="faultSql"/>,
+            su.phone createUserIdPhone,
+            su2.phone maintenancePhone, su2.user_name maintenance_user_name
+        FROM maintenance_manage.f_fault_repair_record f
+        LEFT JOIN check_manage.s_user su ON su.id = f.create_user_id
+        LEFT JOIN check_manage.s_user su2 ON su2.id = f.maintenance_user_id
+        <include refid="findFaultWhere"/>
+        GROUP BY f.id LIMIT 1;
+    </select>
+
+    <!-- 查询 故障报修 列表 -->
+    <select id="findFaultRepairRecordList" parameterType="FaultRepairRecord" resultMap="faultResultMap">
+        SELECT <include refid="faultSql"/>,
+            su.phone createUserIdPhone,
+            su2.phone maintenancePhone, su2.user_name maintenance_user_name
+        FROM maintenance_manage.f_fault_repair_record f
+        LEFT JOIN maintenance_manage.f_fault_handler fh ON f.id = fh.fault_repair_record_id
+        LEFT JOIN check_manage.s_user su ON su.id = f.create_user_id
+        LEFT JOIN check_manage.s_user su2 ON su2.id = f.maintenance_user_id
+        <include refid="findFaultWhere"/>
+        GROUP BY f.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 故障报修 列表总条数 -->
+    <select id="findFaultRepairRecordTotalCount" parameterType="FaultRepairRecord" resultType="java.lang.Integer">
+        SELECT COUNT(t.id)
+        FROM (
+            SELECT f.id
+            FROM maintenance_manage.f_fault_repair_record f
+            LEFT JOIN maintenance_manage.f_fault_handler fh ON f.id = fh.fault_repair_record_id
+            <include refid="findFaultWhere"/>
+            GROUP BY f.id
+        ) t
+    </select>
+
+    <!-- 更新 -->
+    <update id="updateFaultRepairRecord" parameterType="FaultRepairRecord" >
+        UPDATE maintenance_manage.f_fault_repair_record
+        <set>
+            <if test="deviceSysId != null and deviceSysId != 0">
+                device_sys_id = #{deviceSysId},
+            </if>
+            <if test="deviceSysName != null and deviceSysName != ''">
+                device_sys_name = #{deviceSysName},
+            </if>
+
+            <if test="deviceId != null and deviceId != 0">
+                device_id = #{deviceId},
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                device_name = #{deviceName},
+            </if>
+
+            <if test="buildingId != null and buildingId != 0">
+                building_id = #{buildingId},
+            </if>
+            <if test="buildingFloorId != null and buildingFloorId != 0">
+                building_floor_id = #{buildingFloorId},
+            </if>
+
+            <if test="faultType != null and faultType != ''">
+                fault_type = #{faultType},
+            </if>
+            <if test="faultTypeId != null and faultTypeId != 0">
+                fault_type_id = #{faultTypeId},
+            </if>
+
+            <if test="faultDescription != null and faultDescription != ''">
+                fault_description = #{faultDescription},
+            </if>
+            <if test="handIn != null and handIn != 0">
+                hand_in = #{handIn},
+            </if>
+            <if test="urgentDegree != null and urgentDegree != 0">
+                urgent_degree = #{urgentDegree},
+            </if>
+            <if test="imageUrl != null and imageUrl != ''">
+                image_url = #{imageUrl},
+            </if>
+            <if test="workOrderStatus != null and workOrderStatus != 0">
+                work_order_status = #{workOrderStatus},
+            </if>
+            <if test="status != null and status != 0">
+                status = #{status},
+            </if>
+            <if test="maintenanceUserId != null and maintenanceUserId != 0">
+                maintenance_user_id = #{maintenanceUserId},
+            </if>
+            <if test="maintenanceResult != null and maintenanceResult != ''">
+                maintenance_result = #{maintenanceResult},
+            </if>
+            <if test="maintenanceImageUrl != null and maintenanceImageUrl != ''">
+                maintenance_image_url = #{maintenanceImageUrl}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+</mapper>

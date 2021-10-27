@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.fault.core.dao.fault.FaultRepairRecordDao" >
+
+    <resultMap id="faultResultMap" type="com.xjt.cloud.fault.core.entity.fault.FaultRepairRecord" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="device_image_url" property="deviceImageUrl" jdbcType="VARCHAR" />
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <result column="device_count" property="deviceCount" jdbcType="INTEGER" />
+        <result column="device_img_url" property="deviceImgUrl" jdbcType="VARCHAR" />
+        <result column="total_count" property="totalCount" jdbcType="INTEGER" />
+        <result column="normal_num" property="normalNum" jdbcType="INTEGER" />
+        <result column="fault_num" property="faultNum" jdbcType="INTEGER" />
+        <result column="device_location" property="deviceLocation" jdbcType="VARCHAR" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="check_point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="check_point_name" property="checkPointName" jdbcType="VARCHAR" />
+        <result column="check_record_id" property="checkRecordId" jdbcType="BIGINT" />
+        <result column="task_id" property="taskId" jdbcType="BIGINT" />
+        <result column="fault_description" property="faultDescription" jdbcType="VARCHAR" />
+        <result column="increase_explain" property="increaseExplain" jdbcType="VARCHAR" />
+        <result column="fault_location" property="faultLocation" jdbcType="VARCHAR" />
+        <result column="maintenance_method" property="maintenanceMethod" jdbcType="VARCHAR" />
+        <result column="maintenance_result" property="maintenanceResult" jdbcType="VARCHAR" />
+        <result column="is_stop_system" property="isStopSystem" jdbcType="INTEGER" />
+        <result column="stop_system_date" property="stopSystemDate" jdbcType="TIMESTAMP" />
+        <result column="work_order_number" property="workOrderNumber" jdbcType="VARCHAR" />
+        <result column="work_order_status" property="workOrderStatus" jdbcType="INTEGER" />
+        <result column="work_order_description" property="workOrderDescription" jdbcType="VARCHAR" />
+        <result column="start_handling_time" property="startHandlingTime" jdbcType="TIMESTAMP" />
+        <result column="end_handling_time" property="endHandlingTime" jdbcType="TIMESTAMP" />
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR" />
+        <result column="after_image_url" property="afterImageUrl" jdbcType="VARCHAR" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="repair_user" property="repairUser" jdbcType="VARCHAR" />
+        <result column="examine_user" property="examineUser" jdbcType="VARCHAR" />
+        <result column="audit_opinion" property="auditOpinion" jdbcType="VARCHAR" />
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR" />
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <result column="floor_name" property="floorName" jdbcType="VARCHAR" />
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="create_times" property="createTimes" jdbcType="VARCHAR" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="from_type" property="fromType" jdbcType="INTEGER" />
+        <result column="open_id" property="openId" jdbcType="VARCHAR" />
+        <result column="organization_id" property="organizationId" jdbcType="INTEGER" />
+        <result column="org_name" property="orgName" jdbcType="VARCHAR" />
+        <result column="security_measures" property="securityMeasures" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="faultSql">
+        f.id, f.device_id, f.device_name, f.device_image_url, f.device_qr_no, f.device_count, f.check_point_qr_no, f.check_record_id, f.task_id,
+        f.check_point_name, f.fault_description, f.increase_explain, f.fault_location, f.maintenance_method, f.maintenance_result, f.is_stop_system,
+        f.work_order_number, f.work_order_status, f.work_order_description,
+        f.start_handling_time, f.end_handling_time, f.project_id, f.repair_user, f.examine_user, f.audit_opinion, f.image_url, f.after_image_url,
+        f.create_time, f.create_user_name, f.create_user_id, f.from_type, f.open_id, f.organization_id, f.org_name, f.security_measures, f.check_point_id,
+        f.building_id, f.building_floor_id, f.last_modify_time
+    </sql>
+
+    <sql id="findFaultWhere">
+        WHERE 1 = 1
+        <if test="createTime != null and lastModifyTime != null">
+            AND f.create_time BETWEEN #{createTime} and  #{lastModifyTime}
+        </if>
+        <if test="createUserName != null and createUserName != ''">
+            AND f.create_user_name LIKE CONCAT('%',#{createUserName},'%')
+        </if>
+        <if test="orgName != null and orgName != null">
+            AND f.org_name LIKE CONCAT('%',#{orgName},'%')
+        </if>
+        <!--<if test="startDate != null and endDate != null">
+            AND f.create_time between #{startDate} and #{endDate}
+        </if>-->
+        <if test="workOrderStatus != null">
+            AND f.work_order_status = #{workOrderStatus}
+        </if>
+        <if test="workOrderNumber != null and workOrderNumber != ''">
+            AND f.work_order_number LIKE CONCAT('%',#{workOrderNumber},'%')
+        </if>
+        <if test="deviceName != null and deviceName != ''">
+            AND f.device_name LIKE CONCAT('%',#{deviceName},'%')
+        </if>
+        <if test="deviceQrNo != null and deviceQrNo != ''">
+            AND f.device_qr_no LIKE CONCAT('%',#{deviceQrNo},'%')
+        </if>
+        <if test="checkPointName != null and checkPointName != ''">
+            AND f.check_point_name LIKE CONCAT('%',#{checkPointName},'%')
+        </if>
+        <if test="checkPointQrNo != null and checkPointQrNo != ''">
+            AND f.check_point_qr_no LIKE CONCAT('%',#{checkPointQrNo},'%')
+        </if>
+        <if test="deviceLocation != null and deviceLocation != ''">
+            AND (f.device_location LIKE CONCAT('%', #{deviceLocation}, '%')
+                OR b.building_name LIKE CONCAT('%', #{deviceLocation}, '%')
+                OR bf.floor_name LIKE CONCAT('%', #{deviceLocation}, '%'))
+        </if>
+        <if test="increaseExplain != null and increaseExplain != ''">
+            AND f.increase_explain LIKE CONCAT('%',#{increaseExplain},'%')
+        </if>
+        <if test="repairUser != null and repairUser != ''">
+            AND f.repair_user LIKE CONCAT('%',#{repairUser},'%')
+        </if>
+        <if test="examineUser != null and examineUser != ''">
+            AND f.examine_user LIKE CONCAT('%',#{examineUser},'%')
+        </if>
+        <if test="optionState != null and optionState == 1">
+            AND f.work_order_status in(1, 2, 3)
+        </if>
+        <if test="optionState != null and optionState == 2">
+            AND f.work_order_status in(4, 5)
+        </if>
+        <if test="overdue != null and overdue == 1">
+            AND f.end_handling_time &lt; NOW()
+        </if>
+        <if test="overdue != null and overdue == 2">
+            AND f.end_handling_time &gt; NOW()
+        </if>
+
+        <if test="buildingId != null and buildingId != 0">
+            AND f.building_id = #{buildingId}
+        </if>
+        <if test="buildingName != null and buildingName != ''">
+            AND f.building_name LIKE CONCAT('%',#{buildingName},'%')
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND f.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="floorName != null and floorName != ''">
+            AND f.floor_name LIKE CONCAT('%',#{floorName},'%')
+        </if>
+
+        <if test="projectId != null and projectId != 0">
+            AND f.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND f.project_id IN
+            <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="ids != null and ids.length > 0">
+            AND f.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="id != null and id != 0">
+            AND f.id = #{id}
+        </if>
+
+        <if test="permissionAll != null and permissionAll == false">
+            AND (f.create_user_id = #{createUserId} OR fh.repair_user_id = #{orgUserId} OR fh.examine_user_id = #{orgUserId})
+        </if>
+        <if test="screenCondition != null and screenCondition.length > 0">
+            AND f.work_order_status IN
+            <foreach collection="screenCondition" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="repairUserIds != null and repairUserIds.length > 0 and examineUsers == null">
+            AND fh.repair_user_id IN
+            <foreach collection="repairUserIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="examineUsers != null and examineUsers.length > 0 and repairUserIds == null">
+            AND fh.examine_user_id IN
+            <foreach collection="examineUsers" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="examineUsers != null and examineUsers.length > 0 and repairUserIds != null and repairUserIds.length > 0">
+            AND (
+                fh.repair_user_id IN
+                <foreach collection="repairUserIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+                OR fh.examine_user_id IN
+                <foreach collection="examineUsers" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            )
+        </if>
+    </sql>
+
+    <!-- 新增 -->
+    <insert id="saveFaultRepairRecord" parameterType="FaultRepairRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO f_fault_repair_record (work_order_number, device_id, device_name, device_image_url, device_qr_no, device_count, device_location,
+            check_point_qr_no, check_point_id, check_point_name, check_record_id, task_id, fault_description, increase_explain, fault_location,
+            maintenance_method, maintenance_result, is_stop_system, stop_system_date, work_order_status, work_order_description,
+            start_handling_time, end_handling_time, security_measures, image_url, after_image_url, project_id,
+            repair_user, examine_user, audit_opinion, create_time, create_user_name, create_user_id, from_type, open_id,
+            organization_id, org_name,
+            building_id, building_name, building_floor_id, floor_name)
+        VALUES (#{workOrderNumber}, #{deviceId}, #{deviceName}, #{deviceImageUrl}, #{deviceQrNo}, #{deviceCount}, #{deviceLocation},
+            #{checkPointQrNo}, #{checkPointId}, #{checkPointName}, #{checkRecordId}, #{taskId}, #{faultDescription}, #{increaseExplain}, #{faultLocation},
+            #{maintenanceMethod}, #{maintenanceResult}, #{isStopSystem}, #{stopSystemDate}, #{workOrderStatus}, #{workOrderDescription},
+            #{startHandlingTime}, #{endHandlingTime}, #{securityMeasures}, #{imageUrl}, #{afterImageUrl}, #{projectId},
+            #{repairUser}, #{examineUser}, #{auditOpinion}, NOW(), #{createUserName}, #{createUserId}, #{fromType}, #{openId},
+            #{organizationId}, #{orgName},
+            #{buildingId}, #{buildingName}, #{buildingFloorId}, #{floorName});
+    </insert>
+
+    <!-- 批量新增 -->
+    <insert id="saveFaultRepairRecordList" parameterType="FaultRepairRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO f_fault_repair_record(work_order_number, device_id, device_name, device_image_url, device_qr_no, device_count, device_location,
+            check_point_qr_no, check_point_id, check_point_name, check_record_id, task_id, fault_description, increase_explain, fault_location,
+            maintenance_method, maintenance_result, is_stop_system, stop_system_date, work_order_status, work_order_description,
+            start_handling_time, end_handling_time, security_measures, image_url, after_image_url, project_id,
+            repair_user, examine_user, audit_opinion, create_time, create_user_name, create_user_id,
+            from_type, open_id, organization_id, org_name,
+            building_id, building_name, building_floor_id, floor_name)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.workOrderNumber}, #{item.deviceId}, #{item.deviceName}, #{item.deviceImageUrl}, #{item.deviceQrNo}, #{item.deviceCount}, #{item.deviceLocation},
+            #{item.checkPointQrNo}, #{item.checkPointId}, #{item.checkPointName}, #{item.checkRecordId}, #{item.taskId}, #{item.faultDescription}, #{item.increaseExplain}, #{item.faultLocation},
+            #{item.maintenanceMethod}, #{item.maintenanceResult}, #{item.isStopSystem}, #{item.stopSystemDate}, #{item.workOrderStatus}, #{item.workOrderDescription},
+            #{item.startHandlingTime}, #{item.endHandlingTime}, #{item.securityMeasures}, #{item.imageUrl}, #{item.afterImageUrl}, #{item.projectId},
+            #{item.repairUser}, #{item.examineUser}, #{item.auditOpinion}, NOW(), #{item.createUserName}, #{item.createUserId},
+            #{item.fromType}, #{item.openId}, #{item.organizationId}, #{item.orgName},
+            #{item.buildingId}, #{item.buildingName}, #{item.buildingFloorId}, #{item.floorName})
+        </foreach>
+    </insert>
+
+    <!-- 查询 故障报修 列表 -->
+    <select id="findFaultRepairRecordList" parameterType="FaultRepairRecord" resultMap="faultResultMap">
+        SELECT n.id, n.device_id, n.device_name, n.device_image_url, n.device_qr_no, n.device_count, n.check_point_qr_no, n.check_record_id, n.task_id,
+            n.check_point_name, n.fault_description, n.increase_explain, n.fault_location, n.maintenance_method, n.maintenance_result, n.is_stop_system,
+            n.work_order_number, n.work_order_status, n.work_order_description,
+            n.start_handling_time, n.end_handling_time, n.project_id, n.repair_user, n.examine_user, n.audit_opinion, n.image_url, n.after_image_url,
+            n.create_time, n.create_user_name, n.create_user_id, n.from_type, n.open_id, n.organization_id, n.org_name, n.security_measures, n.check_point_id,
+            n.building_id, n.building_floor_id, n.last_modify_time, n.open_id,
+            dt.img_url device_img_url, cp.point_location device_location
+        FROM (
+            SELECT <include refid="faultSql"/>
+            FROM f_fault_repair_record f
+            LEFT JOIN f_fault_handler fh ON f.id = fh.fault_repair_record_id
+            <if test="deviceLocation != null and deviceLocation != ''">
+                LEFT JOIN project_manage.p_building b ON b.id = f.building_id
+                LEFT JOIN project_manage.p_building_floor bf ON bf.id = f.building_floor_id
+            </if>
+            <include refid="findFaultWhere"/>
+            GROUP BY f.id
+            <include refid="CommonSqlDao.commonPagingHandle"/>
+        ) n
+        LEFT JOIN device_manage.d_device d ON n.device_id = d.id
+        LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        LEFT JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id
+    </select>
+
+    <!-- 查询 故障报修 数量 -->
+    <select id="findFaultRepairRecords" parameterType="FaultRepairRecord" resultType="FaultRepairRecord">
+        SELECT t.work_order_status workOrderStatus, COUNT(t.id) totalCount
+        FROM(
+            SELECT f.work_order_status, f.id
+            FROM f_fault_repair_record f
+            LEFT JOIN f_fault_handler fh ON f.id = fh.fault_repair_record_id
+            WHERE 1 = 1
+            <if test="projectId != null and projectId != 0">
+                AND f.project_id = #{projectId}
+            </if>
+            <if test="permissionAll != null and permissionAll == false">
+                AND (f.create_user_id = #{createUserId} OR fh.repair_user_id = #{orgUserId} OR fh.examine_user_id = #{orgUserId})
+            </if>
+            GROUP BY f.id
+        ) t
+        GROUP BY t.work_order_status
+    </select>
+
+    <!-- 项目主页 数量 大屏 -->
+    <select id="findProjectCount" parameterType="FaultRepairRecord" resultType="FaultRepairRecord">
+        SELECT COUNT(t.id) totalCount,
+            SUM(if(t.work_order_status = 4 || t.work_order_status = 5, 1, 0)) normalNum,
+            SUM(if(t.work_order_status = 1 || t.work_order_status = 2 || t.work_order_status = 3, 1, 0)) faultNum
+        FROM(
+            SELECT f.work_order_status, f.id
+            FROM f_fault_repair_record f
+            LEFT JOIN f_fault_handler fh ON f.id = fh.fault_repair_record_id
+            <include refid="findFaultWhere"/>
+            GROUP BY f.id
+        ) t
+    </select>
+
+    <!-- 查询 故障报修 -->
+    <select id="findFaultRepairRecordOne" parameterType="FaultRepairRecord" resultMap="faultResultMap">
+        SELECT <include refid="faultSql"/>
+            , dt.img_url device_img_url, cp.point_location device_location
+        FROM f_fault_repair_record f
+        LEFT JOIN f_fault_handler fh ON f.id = fh.fault_repair_record_id
+        LEFT JOIN device_manage.d_device d ON f.device_id = d.id
+        LEFT JOIN device_manage.d_device_type dt ON d.device_type_id = dt.id
+        LEFT JOIN device_manage.d_check_point cp ON d.check_point_id = cp.id
+        <include refid="findFaultWhere"/>
+        GROUP BY f.id
+        LIMIT 1
+    </select>
+
+    <!-- 查询 故障报修 列表总条数 -->
+    <select id="findFaultRepairRecordTotalCount" parameterType="FaultRepairRecord" resultType="java.lang.Integer">
+        SELECT COUNT(t.id)
+        FROM (
+            SELECT f.id
+            FROM f_fault_repair_record f
+            LEFT JOIN f_fault_handler fh ON f.id = fh.fault_repair_record_id
+            <if test="deviceLocation != null and deviceLocation != ''">
+                LEFT JOIN project_manage.p_building b ON b.id = f.building_id
+                LEFT JOIN project_manage.p_building_floor bf ON bf.id = f.building_floor_id
+            </if>
+            <include refid="findFaultWhere"/>
+            GROUP BY f.id
+        ) t
+    </select>
+
+    <!-- 更新 -->
+    <update id="updateFaultRepairRecord" parameterType="FaultRepairRecord" >
+        UPDATE f_fault_repair_record
+        SET work_order_status = #{workOrderStatus}
+        <if test="startHandlingTime != null and endHandlingTime != null">
+            ,start_handling_time = #{startHandlingTime}
+            ,end_handling_time = #{endHandlingTime}
+        </if>
+        <if test="isStopSystem != null and isStopSystem != 0">
+            ,is_stop_system = #{isStopSystem}
+        </if>
+        <if test="stopSystemDate != null">
+            ,stop_system_date = #{stopSystemDate}
+        </if>
+        <if test="workOrderDescription != null and workOrderDescription != ''">
+            ,work_order_description = #{workOrderDescription}
+        </if>
+        <if test="maintenanceMethod != null and maintenanceMethod != ''">
+            ,maintenance_method = #{maintenanceMethod}
+        </if>
+        <if test="maintenanceResult != null and maintenanceResult != ''">
+            ,maintenance_result = #{maintenanceResult}
+        </if>
+        <if test="imageUrl != null and imageUrl != ''">
+            ,image_url = #{imageUrl}
+        </if>
+        <if test="afterImageUrl != null and afterImageUrl != ''">
+            ,after_image_url = #{afterImageUrl}
+        </if>
+        <if test="repairUser != null and repairUser != ''">
+            ,repair_user = #{repairUser}
+        </if>
+        <if test="examineUser != null and examineUser != ''">
+            ,examine_user = #{examineUser}
+        </if>
+        <if test="auditOpinion != null and auditOpinion != ''">
+            ,audit_opinion = #{auditOpinion}
+        </if>
+        <if test="securityMeasures != null and securityMeasures != ''">
+            ,security_measures = #{securityMeasures}
+        </if>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="organizationId != null and organizationId != 0">
+            organization_id = #{organizationId}
+            AND work_order_status <![CDATA[< ]]> 4
+        </if>
+    </update>
+
+    <!-- 删除 -->
+    <delete id="deletedFaultRepairRecord" parameterType="java.util.List" >
+        DELETE FROM f_fault_repair_record
+        WHERE id IN
+        <foreach item="item" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!-- 大屏 故障报修列表 -->
+    <select id="findScreenList" parameterType="FaultRepairRecord" resultMap="faultResultMap">
+        SELECT d.totalCount total_count, d.normal_num, d.fault_num,
+                DATE_FORMAT(date_list.createTime,
+                    <if test="dateType != null and dateType == 1">
+                        '%Y-%m-%d %H'
+                    </if>
+                    <if test="dateType != null and dateType == 2">
+                        '%Y-%m-%d'
+                    </if>
+                    <if test="dateType != null and dateType == 3">
+                        '%Y-%m'
+                    </if>
+                    <if test="dateType != null and dateType == 4">
+                        '%Y-%m'
+                    </if>
+                ) create_times
+        FROM( SELECT COUNT(t.id) totalCount,
+                SUM(if(t.work_order_status = 4 || t.work_order_status = 5, 1, 0)) normal_num,
+                SUM(if(t.work_order_status = 1 || t.work_order_status = 2 || t.work_order_status = 3, 1, 0)) fault_num, t.createTime
+            FROM(
+                SELECT f.work_order_status, f.id,
+                    DATE_FORMAT(f.create_time,
+                        <if test="dateType != null and dateType == 1">
+                            '%Y-%m-%d %H'
+                        </if>
+                        <if test="dateType != null and dateType == 2">
+                            '%Y-%m-%d'
+                        </if>
+                        <if test="dateType != null and dateType == 3">
+                            '%Y-%m'
+                        </if>
+                        <if test="dateType != null and dateType == 4">
+                            '%Y-%m'
+                        </if>
+                    ) as createTime
+                FROM f_fault_repair_record f
+                LEFT JOIN f_fault_handler fh ON f.id = fh.fault_repair_record_id
+                WHERE f.create_time BETWEEN #{startTime} AND #{endTime}
+                    <if test="projectId != null and projectId != 0">
+                        AND f.project_id = #{projectId}
+                    </if>
+                    <if test="projectIds != null and projectIds.length > 0">
+                        AND f.project_id IN
+                        <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+                            #{item}
+                        </foreach>
+                    </if>
+                GROUP BY f.id
+            ) t
+                GROUP BY t.createTime
+            ) d
+                RIGHT JOIN (
+                SELECT
+                    <if test="dateType != null and dateType == 1">
+                        @date := DATE_ADD(@date, interval 1 HOUR) createTime
+                    </if>
+                    <if test="dateType != null and dateType == 2">
+                        @date := DATE_ADD(@date, interval 1 DAY) createTime
+                    </if>
+                    <if test="dateType != null and dateType == 3">
+                        @date := DATE_ADD(@date, interval 1 MONTH) createTime
+                    </if>
+                    <if test="dateType != null and dateType == 4">
+                        @date := DATE_ADD(@date, interval 1 YEAR) createTime
+                    </if>
+                FROM(
+                SELECT
+                    <if test="dateType != null and dateType == 1">
+                        @date := DATE_ADD(#{startTime}, interval -1 HOUR)
+                    </if>
+                    <if test="dateType != null and dateType == 2">
+                        @date := DATE_ADD(#{startTime}, interval -1 DAY)
+                    </if>
+                    <if test="dateType != null and dateType == 3">
+                        @date := DATE_ADD(#{startTime}, interval -1 MONTH)
+                    </if>
+                    <if test="dateType != null and dateType == 4">
+                        @date := DATE_ADD(#{startTime}, interval -1 YEAR)
+                    </if>
+                FROM iot_manage.b_base_data
+                LIMIT #{dateNum}
+            ) days
+            LIMIT #{dateNum}
+        ) date_list ON date_list.createTime > d.createTime
+        <if test="dateType != null and dateType == 1">
+            AND d.createTime &gt;= DATE_ADD(date_list.createTime, interval -1 HOUR)
+        </if>
+        <if test="dateType != null and dateType == 2">
+            AND d.createTime &gt;= DATE_ADD(date_list.createTime, interval -1 DAY)
+        </if>
+        <if test="dateType != null and dateType == 3">
+            AND d.createTime &gt;= DATE_ADD(date_list.createTime, interval -1 MONTH)
+        </if>
+        <if test="dateType != null and dateType == 4">
+            AND d.createTime &gt;= DATE_ADD(date_list.createTime, interval -1 YEAR)
+        </if>
+        GROUP BY date_list.createTime
+        ORDER BY date_list.createTime
+    </select>
+
+    <!--查询故障饼图分析 统计已修复数量和未修复数-->
+    <select id="findFaultRepairPieChartAnalysis" parameterType="FaultRepairRecord" resultType="FaultRepairRecord">
+        SELECT
+            COUNT( frr.id ) AS deviceNum,
+            SUM(case when frr.work_order_status <![CDATA[ >= ]]>  0 AND frr.work_order_status <![CDATA[ <= ]]>  3 then 1 else 0 end) as faultNum,
+            SUM(case when frr.work_order_status <![CDATA[ >= ]]> 4 AND frr.work_order_status <![CDATA[ <= ]]> 5 then 1 else 0 end) as normalNum
+        FROM fault_repair_manage.f_fault_repair_record frr
+        WHERE
+        frr.project_id IN
+        <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND frr.create_time BETWEEN #{startTime} AND #{endTime};
+    </select>
+
+    <!--查询故障设备条形图 统计故障设备前五类设备及故障数量-->
+    <select id="findFaultRepairBarGraphAnalysis" parameterType="FaultRepairRecord" resultType="java.util.HashMap">
+        SELECT frr.device_name as deviceName, COUNT(frr.id) as deviceNum
+        FROM fault_repair_manage.f_fault_repair_record frr
+        INNER JOIN device_manage.d_device d ON d.id = frr.device_id
+        WHERE
+        frr.project_id IN
+        <foreach item="item" collection="projectIds" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND frr.create_time BETWEEN #{startTime} AND #{endTime}
+        GROUP BY d.device_type_id
+        ORDER BY deviceNum DESC
+        limit 5
+    </select>
+
+    <!-- 地铁 故障报修 列表 -->
+    <select id="findMetroScreenList" parameterType="FaultRepairRecord" resultType="FaultRepairRecords">
+        SELECT f.device_name deviceName, f.fault_description faultDescription, f.create_time createTime,
+            CASE f.work_order_status when 5 then 1 when 4 then 1 else 2 end as workOrderStatus
+        FROM f_fault_repair_record f
+        LEFT JOIN f_fault_handler fh ON f.id = fh.fault_repair_record_id
+        <include refid="findFaultWhere"/>
+        GROUP BY f.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 恢复巡检记录 -->
+    <update id="updateCheckRecord" parameterType="FaultRepairRecord" >
+        UPDATE task_manage.t_check_record cr
+        INNER JOIN fault_repair_manage.f_fault_repair_record frr ON cr.id = frr.check_record_id
+        SET cr.handle_status = 2
+        WHERE frr.id IN
+        <foreach collection="ids" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+</mapper>

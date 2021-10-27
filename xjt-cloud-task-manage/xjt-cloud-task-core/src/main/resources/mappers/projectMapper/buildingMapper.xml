@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.project.TaskBuildingDao">
+
+    <sql id="selColumns">
+        pb.id, pb.building_name, pb.height,pb.acreage, pb.upstairs_floors, pb.downstairsa_floors, pb.province, pb.city, pb.district, pb.road_no,
+        pb.lng, pb.lat, pb.project_id
+    </sql>
+
+    <!--查询项目建筑物列表-->
+    <select id="findByProjectId" resultType="TaskBuilding">
+        SELECT pb.id, pb.building_name buildingName
+        FROM project_manage.p_building pb
+        WHERE pb.project_id = #{projectId}
+        AND pb.deleted = 0
+    </select>
+
+    <select id="findBuildingListByProjectId" parameterType="TaskDevice" resultType="TaskBuilding">
+        SELECT t.id, t.building_name buildingName, min(sel) sel, min(notSel) notSel,
+            t.pointLocation, t.floorId
+        FROM (
+            SELECT cp.id, cp.building_name, cp.cpId, if(cp.cpId = t.id, -1, 0) sel, if(isnull(t.id), -2, 0) notSel,
+                t.pointLocation, t.floorId
+            FROM (
+                SELECT pb.id, pb.building_name,
+                    cp.id cpId
+                FROM project_manage.p_building pb
+                INNER JOIN device_manage.d_check_point cp ON cp.building_id = pb.id
+                WHERE pb.project_id = #{projectId} AND pb.deleted = 0 AND cp.project_id = #{projectId}
+            ) cp
+            LEFT JOIN (
+                SELECT cp.id, cp.point_location pointLocation, cp.building_floor_id floorId
+                FROM device_manage.d_check_point cp
+                WHERE cp.project_id = #{projectId}
+                AND cp.status &lt;= 98
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            ) t ON cp.cpId = t.id
+            GROUP BY cp.id, sel, notSel
+        ) t
+        GROUP BY t.id
+    </select>
+
+    <!-- 按建筑物楼筛选设备：筛选参数 -->
+    <select id="findBuilding" parameterType="TaskDevice" resultType="TaskBuilding">
+            SELECT b.id,building_name buildingName
+            FROM project_manage.p_building b
+            LEFT JOIN project_manage.p_building_floor f ON b.id = f.building_id
+            LEFT JOIN device_manage.d_check_point p ON p.building_floor_id = f.id
+            LEFT JOIN device_manage.d_device d ON d.check_point_id = p.id
+            LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+            <where>
+                p.status &lt; 99
+                AND d.status &lt; 99
+                <if test="checkPointId != null and checkPointId != 0">
+                    AND p.id = #{checkPointId}
+                </if>
+                <if test="qrNo != null and qrNo != ''">
+                    AND p.qr_no LIKE CONCAT('%',#{qrNo},'%')
+                </if>
+                <if test="deviceName != null and deviceName != ''">
+                    AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
+                </if>
+                <if test="floorName != null and floorName != ''">
+                    AND f.floor_name LIKE CONCAT('%',#{floorName},'%')
+                </if>
+                <if test="projectId != null and projectId != 0">
+                    AND p.project_id = #{projectId}
+                </if>
+                <if test="pointName != null and pointName != ''">
+                    AND p.point_name LIKE CONCAT('%',#{pointName},'%')
+                </if>
+                <if test="buildingId != null and buildingId != 0">
+                    AND b.id = #{buildingId}
+                </if>
+            </where>
+            GROUP BY b.id
+    </select>
+
+    <!-- 按建筑物楼筛选设备：筛选参数 -->
+    <select id="findBuildingSelORNOtSel" parameterType="TaskDevice" resultType="TaskBuilding">
+        SELECT b.id, b.buildingName, MIN(sel) sel, MIN(notSel) notSel
+        FROM(
+            SELECT b.id, building_name buildingName, if(p.id = t.id,-1,0) sel, if(isnull(t.id), -2, 0) notSel
+            FROM project_manage.p_building b
+            LEFT JOIN project_manage.p_building_floor f ON b.id = f.building_id
+            LEFT JOIN device_manage.d_check_point p ON p.building_floor_id = f.id
+            LEFT JOIN device_manage.d_device d ON d.check_point_id = p.id
+            LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+            LEFT JOIN (
+                SELECT cp.id
+                FROM device_manage.d_check_point cp
+                WHERE cp.project_id = #{projectId}
+                AND cp.status &lt;= 98
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            ) t ON p.id = t.id
+            <where>
+                p.status &lt; 99
+                AND d.status &lt; 99
+                <if test="checkPointId != null and checkPointId != 0">
+                    AND p.id = #{checkPointId}
+                </if>
+                <if test="qrNo != null and qrNo != ''">
+                    AND p.qr_no LIKE CONCAT('%',#{qrNo},'%')
+                </if>
+                <if test="deviceName != null and deviceName != ''">
+                    AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
+                </if>
+                <if test="floorName != null and floorName != ''">
+                    AND f.floor_name LIKE CONCAT('%',#{floorName},'%')
+                </if>
+                <if test="projectId != null and projectId != 0">
+                    AND p.project_id = #{projectId}
+                </if>
+                <if test="pointName != null and pointName != ''">
+                    AND p.point_name LIKE CONCAT('%',#{pointName},'%')
+                </if>
+                <if test="buildingId != null and buildingId != 0">
+                    AND b.id = #{buildingId}
+                </if>
+            </where>
+            GROUP BY b.id,sel,notSel
+         ) b
+        GROUP BY b.id
+    </select>
+</mapper>

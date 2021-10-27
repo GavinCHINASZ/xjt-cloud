@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.gateway.FireGatewayDao" >
+
+    <resultMap id="fireGatewayResultMap" type="com.xjt.cloud.iot.core.entity.gateway.FireGateway" >
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="register_code" property="registerCode" jdbcType="VARCHAR"/>
+        <result column="slave_id" property="slaveId" jdbcType="INTEGER"/>
+        <result column="start_address" property="startAddress" jdbcType="INTEGER"/>
+        <result column="address_account" property="addressAccount" jdbcType="INTEGER" />
+        <result column="gateway" property="gateway" jdbcType="VARCHAR"/>
+        <result column="fire_alarm_no" property="fireAlarmNo" jdbcType="INTEGER"/>
+    </resultMap>
+    <!-- 根据网关查询火警主机网关列表 -->
+    <select id="findFireGatewayList" parameterType="java.lang.String" resultMap="fireGatewayResultMap">
+        SELECT
+            fg.id, fg.project_id, fg.register_code, fg.slave_id, fg.start_address, fg.address_account, fg.gateway, fg.fire_alarm_no
+        FROM f_fire_gateway fg
+        WHERE fg.gateway = #{gateway}
+    </select>
+    <!-- 查询火警主机网关名称列表 -->
+    <select id="findGatewayList" resultType="java.lang.String">
+        SELECT
+            fg.gateway
+        FROM f_fire_gateway fg
+        GROUP BY fg.gateway
+    </select>
+
+</mapper>

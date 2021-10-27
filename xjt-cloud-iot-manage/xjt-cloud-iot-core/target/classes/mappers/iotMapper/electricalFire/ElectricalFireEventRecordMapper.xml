@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.electricalFire.ElectricalFireEventRecordDao" >
+
+    <resultMap id="fireAlarmDeviceResultMap" type="com.xjt.cloud.iot.core.entity.electricalFire.ElectricalFireEventRecord" >
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="raw_data" property="rawData" jdbcType="VARCHAR"/>
+        <result column="leakage_alarm_value" property="leakageAlarmValue" jdbcType="VARCHAR"/>
+        <result column="temp_alarm_value" property="tempAlarmValue" jdbcType="VARCHAR"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="channel" property="channel" jdbcType="VARCHAR"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR"/>
+        <result column="alarm_device_id" property="alarmDeviceId" jdbcType="BIGINT"/>
+        <result column="leakage_current1" property="leakageCurrent1" jdbcType="VARCHAR"/>
+        <result column="leakage_current2" property="leakageCurrent2" jdbcType="VARCHAR"/>
+        <result column="leakage_current3" property="leakageCurrent3" jdbcType="VARCHAR"/>
+        <result column="leakage_current4" property="leakageCurrent4" jdbcType="VARCHAR"/>
+        <result column="leakage_current5" property="leakageCurrent5" jdbcType="VARCHAR"/>
+        <result column="leakage_current6" property="leakageCurrent6" jdbcType="VARCHAR"/>
+        <result column="leakage_current7" property="leakageCurrent7" jdbcType="VARCHAR"/>
+        <result column="leakage_current8" property="leakageCurrent8" jdbcType="VARCHAR"/>
+        <result column="temperature1" property="temperature1" jdbcType="VARCHAR"/>
+        <result column="temperature2" property="temperature2" jdbcType="VARCHAR"/>
+        <result column="temperature3" property="temperature3" jdbcType="VARCHAR"/>
+        <result column="temperature4" property="temperature4" jdbcType="VARCHAR"/>
+        <result column="temperature5" property="temperature5" jdbcType="VARCHAR"/>
+        <result column="temperature6" property="temperature6" jdbcType="VARCHAR"/>
+        <result column="temperature7" property="temperature7" jdbcType="VARCHAR"/>
+        <result column="temperature8" property="temperature8" jdbcType="VARCHAR"/>
+    </resultMap>
+    <sql id="sqlWhere">
+        <where>
+            <if test="projectId != null and projectId != 0">
+                AND efr.project_id = #{projectId}
+            </if>
+            <if test="sensorNo != null and sensorNo != ''">
+                AND efr.sensor_no = #{sensorNo}
+            </if>
+            <if test="channel != null and channel != ''">
+                AND efr.channel = #{channel}
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                AND efr.device_id = #{deviceId}
+            </if>
+            <if test="alarmDeviceId != null and alarmDeviceId != 0">
+                AND efr.alarm_device_id = #{alarmDeviceId}
+            </if>
+            <if test="startTime != null">
+                AND efr.create_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND efr.create_time &lt; #{endTime}
+            </if>
+        </where>
+    </sql>
+    <!--根据条件查询电气火灾设备事件记录-->
+    <select id="findElectricalFireEventRecord" parameterType="ElectricalFireEventRecord" resultType="ElectricalFireEventRecord">
+        SELECT
+            efr.id, efr.project_id projectId, efr.raw_data rawData, efr.leakage_alarm_value leakageAlarmValue,
+            efr.temp_alarm_value tempAlarmValue,efr.device_id deviceId, efr.event_type eventType,
+            efr.create_time createTime, efr.channel, efr.sensor_no sensorNo, efr.alarm_device_id alarmDeviceId,
+            efr.leakage_current1 leakageCurrent1, efr.leakage_current2 leakageCurrent2, efr.leakage_current3 leakageCurrent3,
+            efr.leakage_current4 leakageCurrent4, efr.leakage_current5 leakageCurrent5, efr.leakage_current6 leakageCurrent6,
+            efr.leakage_current7 leakageCurrent7, efr.leakage_current8 leakageCurrent8, efr.temperature1, efr.temperature2,
+            efr.temperature3, efr.temperature4, efr.temperature5, efr.temperature6, efr.temperature7, efr.temperature8
+        FROM e_electrical_fire_event_record efr
+        <include refid="sqlWhere"></include>
+        GROUP BY efr.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--插入电气火灾设备信息-->
+    <insert id="saveElectricalFireEventRecord" parameterType="ElectricalFireEventRecord" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO e_electrical_fire_event_record
+            (project_id, device_id, raw_data, leakage_alarm_value, temp_alarm_value,
+            sensor_no, create_time, channel, alarm_device_id, leakage_current1, leakage_current2, leakage_current3,
+            leakage_current4, leakage_current5, leakage_current6, leakage_current7, leakage_current8, temperature1, temperature2,
+            temperature3, temperature4, temperature5, temperature6, temperature7, temperature8)
+        VALUES
+            (#{projectId}, #{deviceId}, #{rawData}, #{leakageAlarmValue}, #{tempAlarmValue},
+            #{sensorNo}, NOW(), #{channel}, #{alarmDeviceId}, #{leakageCurrent1}, #{leakageCurrent2}, #{leakageCurrent3},
+            #{leakageCurrent4}, #{leakageCurrent5}, #{leakageCurrent6}, #{leakageCurrent7}, #{leakageCurrent8}, #{temperature1},
+            #{temperature2}, #{temperature3}, #{temperature4}, #{temperature5}, #{temperature6}, #{temperature7}, #{temperature8});
+    </insert>
+    <select id="findNewestEventRecord" parameterType="ElectricalFireEventRecord" resultType="ElectricalFireEventRecord">
+        SELECT
+        efr.id, efr.project_id projectId, efr.raw_data rawData, efr.leakage_alarm_value leakageAlarmValue,
+        efr.temp_alarm_value tempAlarmValue,efr.device_id deviceId,
+        efr.create_time createTime, efr.channel, efr.sensor_no sensorNo, efr.alarm_device_id alarmDeviceId,
+        efr.leakage_current1 leakageCurrent1, efr.leakage_current2 leakageCurrent2, efr.leakage_current3 leakageCurrent3,
+        efr.leakage_current4 leakageCurrent4, efr.leakage_current5 leakageCurrent5, efr.leakage_current6 leakageCurrent6,
+        efr.leakage_current7 leakageCurrent7, efr.leakage_current8 leakageCurrent8, efr.temperature1, efr.temperature2,
+        efr.temperature3, efr.temperature4, efr.temperature5, efr.temperature6, efr.temperature7, efr.temperature8
+        FROM e_electrical_fire_event_record efr
+        <include refid="sqlWhere"></include>
+        ORDER BY efr.create_time DESC
+        LIMIT 1
+    </select>
+    <select id="findDeviceEventRecordList" parameterType="ElectricalFireEventRecord" resultType="ElectricalFireEventRecord">
+        SELECT
+        efr.create_time createTime,
+        efr.leakage_current1 leakageCurrent1, efr.leakage_current2 leakageCurrent2, efr.leakage_current3 leakageCurrent3,
+        efr.leakage_current4 leakageCurrent4, efr.leakage_current5 leakageCurrent5, efr.leakage_current6 leakageCurrent6,
+        efr.leakage_current7 leakageCurrent7, efr.leakage_current8 leakageCurrent8, efr.temperature1, efr.temperature2,
+        efr.temperature3, efr.temperature4, efr.temperature5, efr.temperature6, efr.temperature7, efr.temperature8
+        FROM e_electrical_fire_event_record efr
+        <include refid="sqlWhere"></include>
+        GROUP BY efr.id
+        ORDER BY efr.create_time ASC
+    </select>
+</mapper>

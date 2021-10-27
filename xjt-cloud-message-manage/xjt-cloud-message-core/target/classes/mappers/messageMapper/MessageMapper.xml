@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.message.core.dao.message.MessageDao">
+
+    <resultMap id="messageResultMap" type="com.xjt.cloud.message.core.entity.Message">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <id column="message_type" property="messageType" jdbcType="INTEGER"/>
+        <id column="title" property="title" jdbcType="VARCHAR"/>
+        <id column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <id column="project_id" property="projectId" jdbcType="VARCHAR"/>
+        <id column="content" property="content" jdbcType="VARCHAR"/>
+        <id column="own_user_id" property="ownUserId" jdbcType="BIGINT"/>
+        <id column="record_id" property="recordId" jdbcType="BIGINT"/>
+        <id column="message_status" property="messageStatus" jdbcType="INTEGER"/>
+        <id column="url" property="url" jdbcType="VARCHAR"/>
+        <id column="data" property="data" jdbcType="VARCHAR"/>
+        <id column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <id column="unreadCount" property="unreadCount" jdbcType="INTEGER"/>
+        <id column="event_type" property="eventType" jdbcType="INTEGER"/>
+        <id column="is_notify" property="isNotify" jdbcType="INTEGER"/>
+        <id column="project_name" property="projectName" jdbcType="VARCHAR"/>
+        <id column="font_color" property="fontColor" jdbcType="VARCHAR"/>
+        <id column="building_id" property="buildingId" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        m.id, m.url, m.title, m.record_id, m.project_id, m.message_status, m.data, m.content, m.own_user_id, m.create_time, m.message_type, m.event_type,
+        m.project_name, font_color, building_id
+    </sql>
+
+    <sql id="findConditions">
+        <if test="projectId != null and projectId != 0">
+            AND m.project_id = #{projectId}
+        </if>
+        <if test="id != null and id != 0">
+            AND m.id <![CDATA[ >= ]]> #{id}
+        </if>
+        <if test="messageType != null and messageType != 0">
+            AND m.message_type = #{messageType}
+        </if>
+        <if test="title != null and title != '' ">
+            AND m.title = #{title}
+        </if>
+        <if test="content != null">
+            AND (m.project_name LIKE CONCAT('%', #{content},'%') OR m.content LIKE CONCAT('%', #{content},'%'))
+        </if>
+    </sql>
+
+    <!--查询消息列表-->
+    <select id="findByMessageList" parameterType="Message" resultMap="messageResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM ${databasesName}.${tableName} m
+        WHERE m.own_user_id = #{ownUserId}
+        <include refid="findConditions"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询消息数量-->
+    <select id="findByMessageListCount" parameterType="Message" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM ${databasesName}.${tableName} m
+        WHERE m.own_user_id = #{ownUserId}
+        <include refid="findConditions"/>
+    </select>
+
+    <!--查询消息项目列表-->
+    <select id="findByMessageProjectList" parameterType="Message" resultType="java.lang.Long">
+        SELECT m.project_id
+        FROM ${databasesName}.${tableName} m
+        WHERE m.own_user_id = #{ownUserId}
+        GROUP BY m.project_id
+    </select>
+
+    <!--删除消息-->
+    <delete id="deleteMessage" parameterType="Message">
+        DELETE FROM ${databasesName}.${tableName}
+        WHERE 1=1
+        <if test="ids != null and ids.size > 0">
+            AND id in
+            <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+        <if test="messageType != null">
+            AND message_type = #{messageType}
+        </if>
+        <if test="ownUserId != null and ownUserId != 0">
+            AND own_user_id = #{ownUserId}
+        </if>
+    </delete>
+
+    <!--按条件修改消息状态为已读-->
+    <update id="updateMessageStatus" parameterType="Message">
+        UPDATE ${databasesName}.${tableName} m
+        SET m.message_status = 2
+        WHERE
+        /*按消息ID修改*/
+        <if test="id != null and id != 0">
+            m.id = #{id}
+        </if>
+        <if test="ids != null">
+            m.id in
+            <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+        /*按所属人和消息类型修改*/
+        <if test="ownUserId != null and ownUserId != 0 and messageType!=null">
+            m.own_user_id=#{ownUserId} AND m.message_type=#{messageType}
+        </if>
+    </update>
+
+    <!--查询用户未读消息数量-->
+    <select id="findByUserUnreadMessageCount" parameterType="Message" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM ${databasesName}.${tableName} m
+        WHERE m.own_user_id = #{ownUserId} AND m.message_status = 1
+    </select>
+
+    <!--查询消息类别-->
+    <select id="findMessageCategoryList" parameterType="Message" resultMap="messageResultMap">
+        SELECT
+            MAX(mmm.unreadCount) as unreadCount ,
+            <include refid="selColumns"/>,
+            if(umm.is_notify=1,1,2) as is_notify
+        FROM m_message m
+        LEFT JOIN m_user_msg_manage umm ON m.message_type =umm.msg_type AND umm.user_id = m.own_user_id
+        INNER JOIN (
+            SELECT MAX(mm.id) as id, SUM(if(mm.message_status = 1,1,0)) as unreadCount
+            FROM m_message mm
+            WHERE mm.own_user_id = #{ownUserId}
+            GROUP BY mm.message_type
+        ) mmm ON mmm.id = m.id
+        WHERE m.own_user_id = #{ownUserId}
+        GROUP BY m.message_type
+        ORDER BY m.create_time DESC ;
+    </select>
+
+    <!--查询消息事件-->
+    <select id="findByMessageEvents" parameterType="Message" resultType="java.lang.String">
+       SELECT m.title
+       FROM m_message m
+       WHERE m.own_user_id = #{ownUserId} AND m.message_type = #{messageType}
+       GROUP BY m.title
+    </select>
+
+    <!--查询项目消息-->
+    <select id="findProjectMsgList" parameterType="Message" resultMap="messageResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM ${databasesName}.${tableName} m
+        WHERE m.source_type = 1
+        AND m.project_id IN
+        <foreach collection="projectIds" item="projectId" index="index" open="(" close=")" separator=",">
+            #{projectId}
+        </foreach>
+        <if test="createTime != null">
+            AND  m.create_time >= #{createTime}
+        </if>
+        <if test="messageStatus != null and messageStatus > 0">
+            AND m.message_status = #{messageStatus}
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <select id="findProjectMsgListCount" parameterType="Message" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM ${databasesName}.${tableName} m
+        WHERE m.source_type = 1
+        AND m.project_id IN
+        <foreach collection="projectIds" item="projectId" index="index" open="(" close=")" separator=",">
+            #{projectId}
+        </foreach>
+        <if test="createTime != null">
+            AND m.create_time >= #{createTime}
+        </if>
+        <if test="messageStatus != null and messageStatus > 0">
+            AND m.message_status = #{messageStatus}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.linkage.LinkageDeviceRelationDao" >
+
+    <resultMap id="linkageDeviceResultMap" type="com.xjt.cloud.iot.core.entity.linkage.LinkageDeviceRelation" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+        <result column="device_qr_no" property="deviceQrNo" jdbcType="VARCHAR" />
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT" />
+        <result column="point_qr_no" property="checkPointQrNo" jdbcType="VARCHAR" />
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR" />
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="img_url" property="imgUrl" jdbcType="VARCHAR" />
+        <result column="sensor_no" property="sensorNo" jdbcType="VARCHAR" />
+        <result column="iot_status" property="iotStatus" jdbcType="INTEGER" />
+
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_name" property="buildingName" jdbcType="VARCHAR"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="building_floor_name" property="buildingFloorName" jdbcType="VARCHAR"/>
+        <result column="linkage_device_id" property="linkageDeviceId" jdbcType="BIGINT"/>
+
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="deviceSql">
+        ldr.id, ldr.deleted, ldr.linkage_device_id, ldr.device_id, ldr.check_point_id, ldr.device_type_id, ldr.device_type, ldr.project_id,
+        ldr.building_id, ldr.building_floor_id, ldr.create_time, ldr.last_modify_time
+    </sql>
+
+    <sql id="findWhere">
+        WHERE 1 = 1
+        <if test="deviceName != null and deviceName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
+        </if>
+
+        <if test="sensorNo != null and sensorNo != ''">
+            AND d.sensor_no LIKE CONCAT('%',#{sensorNo},'%')
+        </if>
+
+        <if test="checkPointName != null and checkPointName != ''">
+            AND cp.point_name LIKE CONCAT('%',#{checkPointName},'%')
+        </if>
+        <if test="checkPointQrNo != null and checkPointQrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{checkPointQrNo},'%')
+        </if>
+
+        <if test="buildingId != null and buildingId > 0">
+            AND ldr.building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId > 0">
+            AND ldr.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="buildingFloorIds != null and buildingFloorIds.length > 0">
+            AND ldr.building_floor_id IN
+            <foreach item="item" collection="buildingFloorIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="createTime != null">
+            AND ldr.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="linkageDeviceId != null and linkageDeviceId > 0">
+            AND ldr.linkage_device_id = #{linkageDeviceId}
+        </if>
+        <if test="linkageDeviceIds != null and linkageDeviceIds.length > 0">
+            AND ldr.linkage_device_id IN
+            <foreach item="item" collection="linkageDeviceIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="projectId != null and projectId > 0">
+            AND ldr.project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND ldr.project_id IN
+            <foreach item="item" collection="projectIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="id != null and id > 0">
+            AND ldr.id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            AND ldr.id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <!-- 查询 声光报警关联的设备 -->
+    <select id="findLinkageDeviceRelationList" parameterType="LinkageDeviceRelation" resultMap="linkageDeviceResultMap">
+        SELECT ldr.device_id id, ldr.linkage_device_id, ldr.device_id,
+            d.qr_no device_qr_no, d.sensor_no, d.iot_status,
+            dt.device_sys_name device_name, dt.img_url,
+            cp.point_location, cp.qr_no point_qr_no, cp.point_name, cp.building_id, cp.building_floor_id
+        FROM iot_manage.l_linkage_device_relation ldr
+        LEFT JOIN device_manage.d_device d ON ldr.device_id = d.id
+        LEFT JOIN device_manage.d_device_type dt ON dt.id = d.device_type_id
+        LEFT JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        <include refid="findWhere"/>
+        GROUP BY ldr.id;
+    </select>
+
+    <insert id="saveLinkageDeviceRelation" parameterType="LinkageDeviceRelation" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO iot_manage.l_linkage_device_relation(device_id, check_point_id, device_type_id, project_id,
+            building_id, building_floor_id, create_time)
+        VALUES (#{deviceId}, #{checkPointId}, #{deviceTypeId}, #{projectId},
+            #{buildingId}, #{buildingFloorId}, NOW());
+    </insert>
+
+    <insert id="saveLinkageDeviceRelationList" useGeneratedKeys="true">
+        INSERT INTO iot_manage.l_linkage_device_relation(linkage_device_id, device_id, check_point_id, device_type_id, project_id,
+            building_id, building_floor_id, create_time)
+        VALUES
+        <foreach collection="linkageDeviceRelationList" item="item" separator="," close=";">
+            (#{linkageDeviceId}, #{item.deviceId}, #{item.checkPointId}, #{item.deviceTypeId}, #{item.projectId},
+            #{item.buildingId}, #{item.buildingFloorId}, NOW())
+        </foreach>
+    </insert>
+
+    <delete id="deleteLinkageRelationDevice" parameterType="LinkageDeviceRelation">
+        DELETE FROM iot_manage.l_linkage_device_relation
+        WHERE 1 = 1
+        <if test="buildingId != null and buildingId > 0">
+            AND building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId > 0">
+            AND building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="buildingFloorIds != null and buildingFloorIds.length > 0">
+            AND building_floor_id IN
+            <foreach item="item" collection="buildingFloorIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="createTime != null">
+            AND create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+
+        <if test="linkageDeviceId != null and linkageDeviceId > 0">
+            AND linkage_device_id = #{linkageDeviceId}
+        </if>
+        <if test="linkageDeviceIds != null and linkageDeviceIds.length > 0">
+            AND linkage_device_id IN
+            <foreach item="item" collection="linkageDeviceIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="projectId != null and projectId > 0">
+            AND project_id = #{projectId}
+        </if>
+        <if test="projectIds != null and projectIds.length > 0">
+            AND project_id IN
+            <foreach item="item" collection="projectIds" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="id != null and id > 0">
+            AND id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            AND id IN
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+
+    <!-- 根据 设备ID 查询数量 -->
+    <select id="findDeviceTableNumByDeviceId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT COUNT(id)
+        FROM iot_manage.l_linkage_device_relation
+        WHERE device_id IN
+        <foreach item="item" collection="array" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+</mapper>

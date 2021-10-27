@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.safety.core.dao.fault.RepairProgressDao" >
+
+    <resultMap id="repairResultMap" type="com.xjt.cloud.safety.core.entity.fault.RepairProgress" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="fault_repair_record_id" property="faultRepairRecordId" jdbcType="BIGINT" />
+        <result column="content" property="content" jdbcType="VARCHAR" />
+        <result column="title" property="title" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="faultSql">
+       id, fault_repair_record_id, content, create_time, create_user_id, create_user_name, title
+    </sql>
+
+    <sql id="findRepairWhere">
+        WHERE 1 = 1
+        <if test="content != null and content != ''">
+            AND content LIKE CONCAT('%',#{content},'%')
+        </if>
+        <if test="title != null and title != ''">
+            AND title = #{title}
+        </if>
+        <if test="createUserId != null">
+            AND create_user_id = #{createUserId}
+        </if>
+        <if test="faultRepairRecordId != null">
+            AND fault_repair_record_id = #{faultRepairRecordId}
+        </if>
+        <if test="id != null and id != 0">
+            AND id = #{id}
+        </if>
+    </sql>
+
+    <!-- 新增 -->
+    <insert id="saverRepairProgress" parameterType="RepairProgress" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO maintenance_manage.f_repair_progress(fault_repair_record_id, content, create_user_id, create_user_name, title, create_time)
+        VALUES (#{faultRepairRecordId}, #{content}, #{createUserId}, #{createUserName}, #{title}, NOW());
+    </insert>
+
+    <!-- 批量新增 报修进度 -->
+    <insert id="saverRepairProgressList" parameterType="RepairProgress" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO maintenance_manage.f_repair_progress(fault_repair_record_id, content, create_user_id, create_user_name, title, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.faultRepairRecordId}, #{item.content}, #{item.createUserId}, #{item.createUserName}, #{item.title}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 报修进度 数量 -->
+    <select id="findRepairProgressTotalCount" parameterType="RepairProgress" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM maintenance_manage.f_repair_progress
+        <include refid="findRepairWhere"/>
+    </select>
+
+    <!-- 报修进度 列表 -->
+    <select id="findRepairProgressList" parameterType="RepairProgress" resultMap="repairResultMap">
+        SELECT <include refid="faultSql"/>
+        FROM maintenance_manage.f_repair_progress
+        <include refid="findRepairWhere"/>
+        ORDER BY create_time desc;
+    </select>
+
+    <!-- 删除 -->
+    <delete id="deletedRepairProgressList" parameterType="RepairProgress">
+        DELETE FROM maintenance_manage.f_repair_progress
+        <include refid="findRepairWhere"/>
+    </delete>
+
+</mapper>

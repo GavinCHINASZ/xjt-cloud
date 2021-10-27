@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-task-api/xjt-cloud-task-api.iml" filepath="$PROJECT_DIR$/xjt-cloud-task-api/xjt-cloud-task-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-task-core/xjt-cloud-task-core.iml" filepath="$PROJECT_DIR$/xjt-cloud-task-core/xjt-cloud-task-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-task-manage.iml" filepath="$PROJECT_DIR$/xjt-cloud-task-manage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/xjt-cloud-task-web/xjt-cloud-task-web.iml" filepath="$PROJECT_DIR$/xjt-cloud-task-web/xjt-cloud-task-web.iml" />
+    </modules>
+  </component>
+</project>

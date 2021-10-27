@@ -1,0 +1,657 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.water.WaterDeviceDao">
+
+    <resultMap id="waterDeviceResultMap" type="com.xjt.cloud.iot.core.entity.water.WaterDevice">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_point_id" property="checkPointId" jdbcType="BIGINT"/>
+        <result column="device_type_id" property="deviceTypeId" jdbcType="BIGINT"/>
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <result column="device_id" property="deviceId" jdbcType="BIGINT"/>
+        <result column="sensor_no" property="sensorNo" jdbcType="INTEGER"/>
+        <result column="min_value" property="minValue" jdbcType="INTEGER"/>
+        <result column="max_value" property="maxValue" jdbcType="INTEGER"/>
+        <result column="present_value" property="presentValue" jdbcType="INTEGER"/>
+        <result column="device_status" property="deviceStatus" jdbcType="INTEGER"/>
+        <result column="signal_intensity" property="signalIntensity" jdbcType="INTEGER"/>
+        <result column="signal_status" property="signalStatus" jdbcType="INTEGER"/>
+        <result column="electric_quantity" property="electricQuantity" jdbcType="INTEGER"/>
+        <result column="electric_quantity_status" property="electricQuantityStatus" jdbcType="INTEGER"/>
+        <result column="status_update_time" property="statusUpdateTime" jdbcType="TIMESTAMP"/>
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR"/>
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT"/>
+        <result column="set_update_status" property="setUpdateStatus" jdbcType="VARCHAR"/>
+        <result column="value_update_status" property="valueUpdateStatus" jdbcType="INTEGER"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="set_update_status" property="setUpdateStatus" jdbcType="INTEGER"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="send_type" property="sendType" jdbcType="INTEGER"/>
+        <result column="monitor_status" property="monitorStatus" jdbcType="INTEGER"/>
+        <result column="wave_alarm_value" property="waveAlarmValue" jdbcType="VARCHAR"/>
+        <result column="sim_card" property="simCard" jdbcType="VARCHAR"/>
+        <result column="signal_status" property="signalStatus" jdbcType="INTEGER"/>
+        <result column="alarm_mode" property="alarmMode" jdbcType="INTEGER"/>
+        <result column="data_interval" property="dataInterval" jdbcType="INTEGER"/>
+        <result column="building_id" property="buildingId" jdbcType="BIGINT"/>
+        <result column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT"/>
+        <result column="water_terminal_id" property="waterTerminalId" jdbcType="BIGINT"/>
+        <result column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <result column="point_qr_no" property="pointQrNo" jdbcType="VARCHAR"/>
+        <result column="qr_no" property="qrNo" jdbcType="VARCHAR"/>
+        <result column="device_type" property="deviceType" jdbcType="INTEGER"/>
+        <result column="time_desc" property="timeDesc" jdbcType="VARCHAR"/>
+        <result column="leak_monitor_status" property="leakMonitorStatus" jdbcType="INTEGER"/>
+        <result column="strike_monitor_status" property="strikeMonitorStatus" jdbcType="INTEGER"/>
+        <result column="open_cover_status" property="openCoverStatus" jdbcType="INTEGER"/>
+        <result column="baidu_lng" property="baiduLng" jdbcType="INTEGER"/>
+        <result column="baidu_lat" property="baiduLat" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="findWaterDeviceWhere">
+        AND w.status &lt;= 98
+        <if test="deviceStatus != null and deviceStatus != 0">
+            AND w.device_status = #{deviceStatus}
+        </if>
+        <if test="checkPointId != null and checkPointId != 0">
+            AND cp.id = #{checkPointId}
+        </if>
+        <if test="pointName != null and pointName != ''">
+            AND cp.point_name = #{pointName}
+        </if>
+        <if test="pointQrNo != null and pointQrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{pointQrNo},'%')
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND w.project_id = #{projectId}
+        </if>
+        <if test="signalStatus != null and signalStatus != 0">
+            AND w.signal_status = #{signalStatus}
+        </if>
+        <if test="electricQuantityStatus != null and electricQuantityStatus != 0">
+            AND w.electric_quantity_status = #{electricQuantityStatus}
+        </if>
+        <if test="deviceSysName != null and deviceSysName != ''">
+            AND dt.device_sys_name LIKE CONCAT('%',#{deviceSysName},'%')
+        </if>
+        <if test="deviceTypeId != null and deviceTypeId != 0">
+            AND d.device_type_id = #{deviceTypeId}
+        </if>
+        <if test="sensorNo != null and sensorNo != ''">
+            AND w.sensor_no LIKE CONCAT('%',#{sensorNo},'%')
+        </if>
+        <if test="buildingId != null and buildingId != 0">
+            AND cp.building_id = #{buildingId}
+        </if>
+        <if test="pointLocation != null and pointLocation != ''">
+            AND cp.point_location = #{pointLocation}
+        </if>
+        <if test="buildingFloorId != null and buildingFloorId != 0">
+            AND cp.building_floor_id = #{buildingFloorId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="qrNo != null and qrNo != ''">
+            AND d.qr_no LIKE CONCAT('%',#{qrNo},'%')
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        <if test="ids != null">
+            AND w.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="monitorStatus != null and monitorStatus != 0">
+            AND w.monitor_status = #{monitorStatus}
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND w.type = #{deviceType}
+        </if>
+        <if test="buildingFloorIds != null">
+            AND cp.building_floor_id IN
+            <foreach collection="buildingFloorIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceTypes != null">
+            AND w.type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="monitorStatuss != null">
+            AND w.monitor_status IN
+            <foreach item="item" collection="monitorStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceStatuss != null">
+            AND w.device_status IN
+            <foreach item="item" collection="deviceStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="signalIntensitys != null">
+            AND w.signal_status IN
+            <foreach item="item" collection="signalIntensitys" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="electricQuantitys != null">
+            AND w.electric_quantity_status IN
+            <foreach item="item" collection="electricQuantitys" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="leakMonitorStatuss != null">
+            AND w.leak_monitor_status IN
+            <foreach item="item" collection="leakMonitorStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="leakMonitorStatus != null">
+            AND w.leak_monitor_status = #{leakMonitorStatus}
+        </if>
+
+        <if test="strikeMonitorStatus != null">
+            AND w.strike_monitor_status = #{strikeMonitorStatus}
+        </if>
+        <if test="endHeartbeatTime != null">
+            AND w.end_heartbeat_time &lt;= #{endHeartbeatTime} AND w.device_status = 1
+        </if>
+
+        <if test="faultStatus != null and faultStatus == 1">
+            AND (w.leak_monitor_status IN (1) OR w.leak_monitor_status IS NULL)
+            AND (w.strike_monitor_status IN (1) OR w.strike_monitor_status IS NULL)
+            AND (w.open_cover_status IN (0, 1) OR w.open_cover_status IS NULL)
+        </if>
+        <if test="faultStatus != null and faultStatus == 2">
+            AND( w.leak_monitor_status IN (2, 3, 4)
+            OR w.strike_monitor_status IN (2, 3, 4)
+            OR w.open_cover_status IN (2))
+        </if>
+
+        <if test="alarmEventsDesc != null">
+            AND ${alarmEventsDesc}
+        </if>
+        <if test="impactDamagesDesc != null">
+            AND ${impactDamagesDesc}
+        </if>
+        <if test="faultEventsDesc != null">
+            AND ${faultEventsDesc}
+        </if>
+
+    </sql>
+
+    <sql id="findSysTerminalWhere">
+        ) OR w.id IN (
+            SELECT w.water_terminal_id
+            FROM iot_manage.w_water_device w
+            INNER JOIN device_manage.d_device d ON w.device_id = d.id AND d.status &lt;= 98
+            INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id AND dt.status &lt;= 98
+            INNER JOIN device_manage.d_check_point cp ON cp.id = w.check_point_id AND cp.status &lt;= 98
+            WHERE w.water_terminal_id >= 1
+            <include refid="findWaterDeviceWhere"/>
+        )
+    </sql>
+
+    <!-- 判断传感器id是否存在-->
+    <select id="checkWaterDeviceSensorNo" parameterType="WaterDevice" resultMap="waterDeviceResultMap">
+        SELECT id
+        FROM w_water_device w
+        WHERE w.status &lt;= 98
+        <if test="sensorNo2 == null || sensorNo2 == ''">
+            AND w.sensor_no = #{sensorNo}
+        </if>
+        <if test="sensorNo2 != null and sensorNo2 != ''">
+            AND (w.sensor_no = #{sensorNo} OR w.sensor_no = #{sensorNo2})
+        </if>
+        LIMIT 1
+    </select>
+
+    <!-- 查询水压设备列表总记录数-->
+    <select id="findWaterDeviceListTotalCount" parameterType="WaterDevice" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT w.id)
+        FROM w_water_device w
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id AND d.status &lt;= 98
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id AND dt.status &lt;= 98
+        INNER JOIN device_manage.d_check_point cp ON cp.id = w.check_point_id AND cp.status &lt;= 98
+        WHERE 1 = 1
+        <if test="findSysTerminal and (sensorNo != null or monitorStatuss != null or deviceStatuss != null or signalIntensitys != null or electricQuantitys != null)">
+            AND ( 1 = 1
+        </if>
+        <if test="waterTerminalId != -1">
+            AND w.water_terminal_id = 0
+        </if>
+        <include refid="findWaterDeviceWhere"/>
+        <if test="findSysTerminal and (sensorNo != null or monitorStatuss != null or deviceStatuss != null or signalIntensitys != null or electricQuantitys != null)">
+            <include refid="findSysTerminalWhere"/>
+        </if>
+    </select>
+
+    <sql id="findSysTerminalBegin">
+        SELECT t.*,w.id id2, w.sensor_no sensorNo2, w.min_value minValue2, w.max_value maxValue2, w.present_value presentValue2, w.device_status deviceStatus2,
+            w.signal_intensity  signalIntensity2, w.electric_quantity electricQuantity2, w.monitor_status monitorStatus2
+        FROM iot_manage.w_water_device w
+        RIGHT JOIN
+            (
+    </sql>
+
+    <sql id="findSysTerminalEnd">
+        ) t
+        ON t.id = w.water_terminal_id AND w.type = 14 AND w.water_terminal_id &gt;= 1
+        AND w.project_id = #{projectId}
+        <if test="deviceStatuss != null">
+            AND w.device_status IN
+            <foreach item="item" collection="deviceStatuss" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY create_time DESC
+    </sql>
+
+    <!-- 查询水压设备列表-->
+    <select id="findWaterDeviceList" parameterType="WaterDevice" resultMap="waterDeviceResultMap">
+        <if test="findSysTerminal">
+            <include refid="findSysTerminalBegin"/>
+        </if>
+        SELECT w.id, w.device_type_id, w.project_id, w.check_point_id, w.device_id, w.status, w.signal_status, w.electric_quantity_status,
+            w.create_time, w.status_update_time, w.create_user_name, w.create_user_id, w.set_update_status, d.qr_no,
+            cp.point_location, dt.device_sys_name,
+            dt.device_type, w.unit, w.type, w.send_type, w.url, w.wave_alarm_value, w.port, w.heartbeat, w.alarm_mode,
+            w.sensor_no, w.min_value, w.max_value,
+            w.present_value, w.device_status, w.signal_intensity, w.electric_quantity,
+            w.monitor_status,w.leak_monitor_status,w.strike_monitor_status,
+            cp.building_id, cp.building_floor_id, cp.qr_no point_qr_no, cp.point_name,w.water_terminal_id,w.data_interval,
+            w.open_cover_status
+        FROM iot_manage.w_water_device w
+        INNER JOIN device_manage.d_device d ON w.device_id = d.id AND d.status &lt;= 98
+        INNER JOIN device_manage.d_device_type dt ON dt.id = w.device_type_id AND dt.status &lt;= 98
+        INNER JOIN device_manage.d_check_point cp ON cp.id = w.check_point_id AND cp.status &lt;= 98
+        WHERE 1 = 1
+        <if test="findSysTerminal and (sensorNo != null or monitorStatuss != null or deviceStatuss != null or signalIntensitys != null or electricQuantitys != null)">
+            AND ( 1 = 1
+        </if>
+        <if test="waterTerminalId != -1">
+            AND w.water_terminal_id = 0
+        </if>
+        <include refid="findWaterDeviceWhere"/>
+        <if test="findSysTerminal and (sensorNo != null or monitorStatuss != null or deviceStatuss != null or signalIntensitys != null or electricQuantitys != null)">
+            <include refid="findSysTerminalWhere"/>
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+        <if test="findSysTerminal">
+            <include refid="findSysTerminalEnd"/>
+        </if>
+    </select>
+
+    <!-- 查询水压设备列表-->
+    <select id="findWaterDevice" parameterType="WaterDevice" resultMap="waterDeviceResultMap">
+        SELECT w.id, w.device_type_id, w.project_id, w.check_point_id, w.device_id, w.sensor_no, w.status, w.min_value, w.max_value, w.present_value,
+            w.device_status, w.signal_intensity, w.signal_status, w.electric_quantity, w.electric_quantity_status,
+            w.create_time, w.status_update_time, w.create_user_name, w.create_user_id,
+            w.set_update_status,w.type,w.monitor_status,w.send_type,w.unit,w.url,w.wave_alarm_value,
+            w.leak_monitor_status,w.strike_monitor_status,w.water_terminal_id,w.send_num sendNum,w.send_time sendTime,
+            w.port,w.signal_intensity,w.heartbeat,w.alarm_mode,w.data_interval,w.open_cover_status,w.value_update_status
+        FROM w_water_device w
+        WHERE w.status &lt;= 98
+        <if test="sensorNo != null">
+            AND w.sensor_no = #{sensorNo}
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="waterTerminalId != null and waterTerminalId != 0">
+            AND w.water_terminal_id = #{waterTerminalId}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!--查询时间内是否水设备是否绑定-->
+    <select id="findWaterDeviceDelTime" parameterType="WaterDevice" resultMap="waterDeviceResultMap">
+        SELECT w.id, w.device_type_id, w.project_id, w.check_point_id, w.device_id, w.sensor_no, w.status, w.min_value, w.max_value, w.present_value,
+            w.device_status, w.signal_intensity, w.signal_status, w.electric_quantity, w.electric_quantity_status,
+            w.create_time, w.status_update_time, w.create_user_name, w.create_user_id,
+            w.set_update_status,w.type,w.monitor_status,w.send_type,w.unit,w.url,w.wave_alarm_value,
+            w.leak_monitor_status,w.strike_monitor_status,w.water_terminal_id,w.send_num sendNum,w.send_time sendTime,
+            w.port,w.signal_intensity,w.heartbeat,w.alarm_mode,w.data_interval,w.open_cover_status,w.value_update_status
+        FROM w_water_device w
+        WHERE w.status_update_time > now() - interval 3 day
+        <if test="sensorNo != null">
+            AND w.sensor_no = #{sensorNo}
+        </if>
+        <if test="id != null and id != 0">
+            AND w.id = #{id}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND w.device_id = #{deviceId}
+        </if>
+        <if test="waterTerminalId != null and waterTerminalId != 0">
+            AND w.water_terminal_id = #{waterTerminalId}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!--添加水压设备-->
+    <insert id="saveWaterDevice" parameterType="WaterDevice" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO w_water_device (device_type_id, project_id, check_point_id, device_id, sensor_no, min_value, max_value, create_time, create_user_name,
+            create_user_id, type, water_terminal_id, unit,status_update_time, end_heartbeat_time, device_status)
+        VALUES
+        (#{deviceTypeId}, #{projectId}, #{checkPointId}, #{deviceId}, #{sensorNo}, #{minValue}, #{maxValue}, NOW(), #{createUserName},
+         #{createUserId},#{type}, #{waterTerminalId}, #{unit}, NOW(), NOW(), 2);
+    </insert>
+
+    <!--添加水压设备设备值修改记录-->
+    <insert id="saveWaterDeviceEdit" parameterType="WaterDevice" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO w_water_device_edit (water_id, min_value, max_value, create_user_name, create_user_id,edit_record_id,unit,sim_card,
+            alarm_mode,data_interval,heartbeat,url,wave_alarm_value,port)
+        VALUES
+        (#{id}, #{minValue}, #{maxValue}, #{createUserName}, #{createUserId}, #{editRecordId},#{unit}, #{simCard},
+        #{alarmMode}, #{dataInterval}, #{heartbeat}, #{url}, #{waveAlarmValue}, #{port});
+    </insert>
+
+    <!-- 查询水压设备设备值修改记录列表-->
+    <select id="findWaterDeviceEditList" parameterType="WaterDevice" resultMap="waterDeviceResultMap">
+        SELECT
+        <if test="findSysTerminal">
+            e.min_value minValue2, e.max_value maxValue2,
+        </if>
+            w.water_id, w.min_value, w.max_value, w.create_user_name,
+            w.create_user_id, w.create_time, w.unit, w.sim_card, w.alarm_mode, w.data_interval,
+            w.heartbeat, w.url, w.wave_alarm_value, w.port
+        FROM w_water_device_edit w
+        <if test="findSysTerminal">
+            LEFT JOIN w_water_device_edit e ON w.id = e.edit_record_id
+        </if>
+        WHERE w.water_id = #{id}
+        ORDER BY create_time DESC
+    </select>
+
+    <!--修改水压设备-->
+    <update id="modifyWaterDevice" parameterType="WaterDevice">
+        UPDATE w_water_device
+        <set>
+            <if test="checkPointId != null and checkPointId != 0">
+                check_point_id = #{checkPointId} ,
+            </if>
+            <if test="deviceId != null and deviceId != 0">
+                device_id = #{deviceId} ,
+            </if>
+            <if test="sensorNo != null and sensorNo != ''">
+                sensor_no = #{sensorNo} ,
+            </if>
+            <if test="sensorNoNull">
+                sensor_no = '',
+            </if>
+            <if test="status != null">
+                status = #{status} ,
+            </if>
+            <if test="minValue != null">
+                min_value = #{minValue} ,
+            </if>
+            <if test="maxValue != null">
+                max_value = #{maxValue} ,
+            </if>
+            <if test="presentValue != null">
+                present_value = #{presentValue} ,
+            </if>
+            <if test="deviceStatus != null and deviceStatus != 0">
+                device_status = #{deviceStatus} ,
+            </if>
+            <if test="signalIntensity != null">
+                signal_intensity = #{signalIntensity} ,
+            </if>
+            <if test="signalStatus != null and signalStatus != 0">
+                signal_status = #{signalStatus} ,
+            </if>
+            <if test="electricQuantity != null ">
+                electric_quantity = #{electricQuantity} ,
+            </if>
+            <if test="electricQuantityStatus != null and electricQuantityStatus != 0">
+                electric_quantity_status = #{electricQuantityStatus} ,
+            </if>
+            <if test="setUpdateStatus != null and setUpdateStatus != 0">
+                set_update_status = #{setUpdateStatus} ,
+            </if>
+            <if test="valueUpdateStatus != null and valueUpdateStatus != 0">
+                value_update_status = #{valueUpdateStatus} ,
+            </if>
+            <if test="statusUpdateTime != null">
+                status_update_time = #{statusUpdateTime} ,
+            </if>
+            <if test="type != null and type != 0">
+                type = #{type} ,
+            </if>
+            <if test="monitorStatus != null and monitorStatus != 0">
+                monitor_status = #{monitorStatus} ,
+            </if>
+            <if test="endHeartbeatTime != null">
+                end_heartbeat_time = #{endHeartbeatTime} ,
+            </if>
+            <if test="leakMonitorStatus != null">
+                leak_monitor_status = #{leakMonitorStatus} ,
+            </if>
+            <if test="strikeMonitorStatus != null">
+                strike_monitor_status = #{strikeMonitorStatus} ,
+            </if>
+            <if test="sendNum != null">
+                send_num = #{sendNum} ,
+            </if>
+            <if test="sendTime != null">
+                send_time = #{sendTime} ,
+            </if>
+            <if test="openCoverStatus != null">
+                open_cover_status = #{openCoverStatus},
+            </if>
+        </set>
+        WHERE
+        <if test="id != null">
+            id = #{id}
+        </if>
+        <if test="findSensorNo != null">
+            sensor_no = #{findSensorNo}
+        </if>
+        <if test="waterTerminalId != null and waterTerminalId > 0">
+            water_terminal_id = #{waterTerminalId}
+        </if>
+        <if test="ids != null">
+            id in
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!--删除水压设备-->
+    <update id="delWaterDevice" parameterType="WaterDevice">
+        UPDATE w_water_device SET status = 99
+        WHERE
+        <if test="id != null">
+            id = #{id} OR water_terminal_id = #{id}
+        </if>
+        <if test="waterTerminalId != null">
+            water_terminal_id = #{waterTerminalId}
+        </if>
+        <if test="ids != null">
+            id in
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            OR
+            water_terminal_id in
+            <foreach item="item" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <!-- 查询水压设备汇总报表-->
+    <select id="findWaterDeviceSummaryReport" parameterType="WaterDevice" resultType="WaterDeviceReport">
+        SELECT COUNT(DISTINCT device_id) deviceTotal, COUNT(DISTINCT failDeviceId) failDevice, COUNT(failWaterId) failWaterTotal,
+            COUNT(DISTINCT id) waterTotal,
+            IFNULL(SUM(offLine), 0) offLine,
+            IFNULL(SUM(lowPower), 0) lowPower,
+            IFNULL(SUM(superHigh), 0) superHigh,
+            IFNULL(SUM(ultralow), 0) ultralow,
+            IFNULL(SUM(leak), 0) leak,
+            IFNULL(SUM(alarmEvent), 0) alarmEvent,
+            IFNULL(SUM(impactDamage), 0) impactDamage,
+            IFNULL(SUM(faultEvent), 0) faultEvent,
+            COUNT(DISTINCT normalDeviceId) normal
+        FROM(
+            SELECT device_id,id,
+                IF(monitor_status >= 2 OR strike_monitor_status >= 3 OR device_status = 2 OR electric_quantity_status = 2
+                    OR leak_monitor_status >= 2 OR strike_monitor_status >= 2 OR open_cover_status = 2, device_id, null
+                ) failDeviceId,
+
+                IF(device_status = 2 OR electric_quantity_status = 2 OR monitor_status = 2 OR monitor_status = 3 OR leak_monitor_status >= 2
+                    OR strike_monitor_status >= 2 OR open_cover_status = 2, id, null) failWaterId,
+
+                SUM(IF(device_status = 2, 1, 0)) offLine, SUM(IF(electric_quantity_status = 2, 1, 0)) lowPower,
+                SUM(IF(monitor_status = 2, 1, 0)) superHigh, SUM(IF(monitor_status = 3, 1, 0)) ultralow,
+                SUM(IF(leak_monitor_status = 2, 1, 0)) leak,
+                SUM(IF(monitor_status = 2 OR monitor_status = 3 OR leak_monitor_status = 2 OR leak_monitor_status = 3, 1, 0)) alarmEvent,
+                SUM(IF(strike_monitor_status = 2 OR open_cover_status = 2, 1, 0)) impactDamage,
+                SUM(IF(leak_monitor_status = 4 OR strike_monitor_status = 4, 1, 0)) faultEvent,
+                IF(monitor_status = 1 AND strike_monitor_status = 1 AND (open_cover_status = 1 OR open_cover_status = 0) AND leak_monitor_status = 1
+                    AND strike_monitor_status = 1 AND device_status = 1 AND electric_quantity_status = 1, id, null
+                ) normalDeviceId
+            FROM w_water_device
+            WHERE status &lt;= 98
+            AND sensor_no IS NOT NULL
+            AND LENGTH(TRIM(sensor_no)) > 0
+            <if test="projectId != null and projectId != 0">
+                AND project_id = #{projectId}
+            </if>
+            <if test="projectIds != null">
+                AND project_id IN
+                <foreach collection="projectIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="deviceType != null and deviceType != 0">
+                AND type = #{deviceType}
+            </if>
+            <if test="deviceTypes != null">
+                AND type IN
+                <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY id
+        ) t
+    </select>
+
+    <!-- 根据 触发条件 查询 水设备 -->
+    <select id="findByLinkageRequirement" parameterType="LinkageControl" resultMap="waterDeviceResultMap">
+        SELECT w.id, w.device_type_id, w.project_id, w.check_point_id, w.device_id, w.sensor_no, w.status, w.min_value,
+            w.max_value, w.present_value,
+            w.device_status, w.signal_intensity, w.signal_status, w.electric_quantity, w.electric_quantity_status,
+            w.create_time, w.status_update_time,
+            w.create_user_name, w.create_user_id, w.set_update_status, d.qr_no,cp.point_location, w.type,w.monitor_status,
+            w.leak_monitor_status,w.strike_monitor_status,w.open_cover_status,w.value_update_status
+        FROM w_water_device w
+        LEFT JOIN device_manage.d_device d ON w.device_id = d.id
+        LEFT JOIN l_linkage_requirement r ON r.device_qr_no = d.qr_no
+        WHERE AND w.status &lt;= 98 AND r.id IN
+        <foreach collection="linkageRequirementList" item="item" separator="," open="(" close=")">
+            #{item.id}
+        </foreach>
+        AND r.event = w.device_status;
+    </select>
+
+    <!-- 保存水设备离线事件信息-->
+    <insert id="saveWaterOffLineEvent" parameterType="java.util.Date">
+        INSERT INTO w_water_event ( project_id, device_id, water_id, min_value, max_value,  device_status,
+            create_time, sensor_no, device_type_id, type, unit
+        )
+        SELECT project_id, device_id, id, min_value, max_value, 2, now(), sensor_no, device_type_id, 4, unit FROM w_water_device
+        WHERE status &lt;= 98 AND end_heartbeat_time &lt;= #{date} AND device_status = 1
+    </insert>
+
+    <!-- 保存水设备离线记录信息-->
+    <insert id="saveWaterOffLineRecord" parameterType="java.util.Date">
+        INSERT INTO w_water_record ( project_id, device_id, water_id, min_value, max_value,  device_status,
+        create_time, sensor_no, device_type_id, unit
+        )
+        SELECT project_id, device_id, id, min_value, max_value,  2, now(), sensor_no, device_type_id, unit
+        FROM w_water_device
+        WHERE status &lt;= 98 AND end_heartbeat_time &lt;= #{date} AND device_status = 1
+    </insert>
+
+    <update id="waterOffLineTask" parameterType="WaterDevice">
+        UPDATE w_water_device SET device_status = 2, end_heartbeat_time = #{endHeartbeatTime}
+        WHERE status &lt;= 98 AND end_heartbeat_time &lt;= #{endHeartbeatTime} AND device_status = 1
+    </update>
+
+    <update id="waterOffLineModifyDeviceIotStatus" parameterType="java.util.Date">
+        UPDATE device_manage.d_device d
+        INNER JOIN iot_manage.w_water_device w ON w.device_id = d.id
+        SET d.iot_status = 2
+        WHERE w.status &lt;= 98 AND w.end_heartbeat_time &lt;= #{date} AND w.device_status = 1
+    </update>
+
+    <select id="findHydrantDeviceNum" parameterType="WaterDevice" resultType="WaterDeviceReport">
+        SELECT
+            SUM(IF(wd.open_cover_status >= 2 OR wd.strike_monitor_status >= 2 OR wd.leak_monitor_status >= 2
+            OR wd.device_status = 2 OR wd.electric_quantity_status = 2 OR wd.monitor_status >= 2,1,0)) failDevice,
+            COUNT(wd.id) deviceTotal
+        FROM w_water_device wd
+        WHERE wd.status &lt;= 98 AND wd.type = 8
+        AND wd.project_id = #{projectId}
+    </select>
+
+    <select id="findHydrantDeviceCheckPoints" parameterType="WaterDevice" resultType="WaterDevice">
+        SELECT wd.id, cp.id checkPointId, cp.lat, cp.lng, cp.qr_no pointQrNo, cp.point_location pointLocation, cp.point_name pointName,
+            cp.building_floor_id buildingFloorId, cp.building_id buildingId, wd.device_id deviceId, cp.baidu_lng baiduLng, cp.baidu_lat baiduLat,
+            IF(wd.open_cover_status >= 2 OR wd.strike_monitor_status >= 2 OR wd.leak_monitor_status >= 2
+                OR wd.device_status = 2 OR wd.electric_quantity_status = 2 OR wd.monitor_status >= 2, 2, 1
+            ) deviceStatus
+        FROM w_water_device wd
+        LEFT JOIN device_manage.d_check_point cp
+        ON wd.check_point_id = cp.id
+        WHERE cp.status &lt;= 98 AND wd.status &lt;= 98 AND wd.type = 8
+        AND wd.project_id = #{projectId}
+        <if test="pointQrNo != null and pointQrNo != ''">
+            AND cp.qr_no LIKE CONCAT('%',#{pointQrNo},'%')
+        </if>
+        <if test="deviceStatus != null and deviceStatus == 1">
+            AND (wd.open_cover_status &lt;= 1 OR wd.open_cover_status IS NULL)
+            AND (wd.leak_monitor_status &lt;= 1 OR wd.leak_monitor_status IS NULL)
+            AND (wd.strike_monitor_status &lt;= 1 OR wd.strike_monitor_status IS NULL)
+            AND wd.device_status = 1 AND wd.electric_quantity_status = 1 AND wd.monitor_status = 1
+        </if>
+        <if test="deviceStatus != null and deviceStatus == 2">
+            AND (wd.open_cover_status >= 2
+            OR wd.leak_monitor_status >= 2
+            OR wd.strike_monitor_status >= 2
+            OR wd.device_status = 2 OR wd.electric_quantity_status = 2 OR wd.monitor_status >= 2)
+        </if>
+        GROUP BY wd.id
+    </select>
+
+    <update id="modifyCheckPointLatAndLng" parameterType="WaterDevice">
+        UPDATE device_manage.d_check_point
+        <set>
+            last_modify_time = NOW(),
+            <if test="lat != null and lat != 0">
+                lat = #{lat} ,
+            </if>
+            <if test="lng != null and lng != 0">
+                lng = #{lng} ,
+            </if>
+            <if test="pointLocation != null and pointLocation != ''">
+                point_location = #{pointLocation} ,
+            </if>
+        </set>
+        WHERE id = #{checkPointId}
+    </update>
+
+</mapper>

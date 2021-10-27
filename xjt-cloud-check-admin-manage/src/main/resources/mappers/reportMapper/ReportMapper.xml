@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.report.ReportDao" >
+    <resultMap id="reportResultMap" type="com.xjt.cloud.admin.manage.entity.report.Report" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="report_name" property="reportName" jdbcType="VARCHAR" />
+        <result column="report_no" property="reportNo" jdbcType="VARCHAR" />
+        <result column="report_period" property="reportPeriod" jdbcType="BIGINT" />
+        <result column="sort_no" property="sortNo" jdbcType="INTEGER" />
+        <result column="check_result" property="checkResult" jdbcType="VARCHAR" />
+
+        <result column="check_normal_number" property="checkNormalNumber" jdbcType="INTEGER" />
+        <result column="check_fault_number" property="checkFaultNumber" jdbcType="INTEGER" />
+
+        <result column="memo" property="memo" jdbcType="VARCHAR" />
+        <result column="field_treatment" property="fieldTreatment" jdbcType="VARCHAR" />
+        <result column="fault_desc" property="faultDesc" jdbcType="VARCHAR" />
+        <result column="parts" property="parts" jdbcType="VARCHAR" />
+        <result column="repair_methods" property="repairMethods" jdbcType="VARCHAR" />
+        <result column="find_time" property="findTime" jdbcType="DATE" />
+        <result column="find_user" property="findUser" jdbcType="VARCHAR" />
+        <result column="handle_msg" property="handleMsg" jdbcType="VARCHAR" />
+
+        <result column="repair_time" property="repairTime" jdbcType="DATE" />
+        <result column="disable_system" property="disableSystem" jdbcType="VARCHAR" />
+        <result column="department_record" property="departmentRecord" jdbcType="VARCHAR" />
+        <result column="protective_measures" property="protectiveMeasures" jdbcType="VARCHAR" />
+        <result column="repair_user" property="repairUser" jdbcType="VARCHAR" />
+        <result column="troubleshooting" property="troubleshooting" jdbcType="VARCHAR" />
+
+        <result column="check_record_id" property="checkRecordId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_check_item_id" property="deviceCheckItemId" jdbcType="BIGINT" />
+        <result column="report_system_id" property="reportSystemId" jdbcType="BIGINT" />
+
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="selColumns">
+        id, project_id, create_time, report_name, report_no, report_period, sort_no, check_result, check_normal_number,
+        check_fault_number, memo, field_treatment, fault_desc, parts, repair_methods, find_time, find_user, handle_msg, repair_time,
+        disable_system, department_record, protective_measures, repair_user, troubleshooting, check_record_id, device_id,
+        device_check_item_id, report_system_id
+    </sql>
+
+    <sql id="findReportWhere">
+        WHERE 1 = 1
+        <if test="projectId != null and projectId != 0">
+            AND project_id = #{projectId}
+        </if>
+        <if test="id != null and id != 0">
+            AND id = #{id}
+        </if>
+    </sql>
+
+    <!-- 查询 -->
+    <select id="findDeviceList" parameterType="Report" resultMap="reportResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM r_report
+        <include refid="findReportWhere"/>
+    </select>
+
+    <!--   查询 报表往期数据   -->
+    <select id="findByPeriodAndNoBySql" parameterType="Report" resultType="Report">
+        SELECT r.id, r.field_treatment fieldTreatment, r.fault_desc faultDesc, r.parts, r.check_result checkResult, r.memo, r.check_normal_number checkNormalNumber,
+			r.check_fault_number checkFaultNumber, r.sort_no sortNo, rs.id reportSystemId, rs.report_name reportName, rs.parent_id parentId,
+			rs.report_name reportName, rs.report_no reportNo, rs.type type,
+			rs.sort_no systemSortNo, GROUP_CONCAT(ri.device_check_item_id) reportItemList, rsp.report_name systemName, rsp1.report_name systemName0
+        FROM r_report r
+        INNER JOIN r_report_system rs ON r.report_system_id = rs.id
+        LEFT JOIN r_report_item ri ON rs.ID = ri.report_system_id
+        LEFT JOIN r_report_system rsp ON rs.parent_id = rsp.id
+        LEFT JOIN r_report_system rsp1 ON rsp1.parent_id = rsp1.id
+        WHERE r.report_period = #{reportPeriod} AND r.report_name = #{reportName} AND r.report_no = #{reportNo} AND r.project_id= #{projectId}
+        GROUP BY rs.id
+        ORDER BY r.sort_no
+    </select>
+
+</mapper>

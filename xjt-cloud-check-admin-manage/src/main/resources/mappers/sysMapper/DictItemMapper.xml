@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.sys.DictItemDao">
+
+    <resultMap id="dictResultMap" type="com.xjt.cloud.admin.manage.entity.sys.DictItem">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="dict_name" property="dictName" jdbcType="VARCHAR"/>
+        <result column="dict_code" property="dictCode" jdbcType="VARCHAR"/>
+        <result column="dict_id" property="dictId" jdbcType="BIGINT"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="item_id" property="itemId" jdbcType="BIGINT"/>
+        <result column="item_name" property="itemName" jdbcType="VARCHAR"/>
+        <result column="item_value" property="itemValue" jdbcType="VARCHAR"/>
+        <result column="item_code" property="itemCode" jdbcType="VARCHAR"/>
+        <result column="memo" property="memo" jdbcType="VARCHAR"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="dictItemSqlColumns">
+        di.id , di.dict_id, di.item_name, di.item_value, di.description, di.sort_order, di.status, di.create_time, di.item_code, di.memo
+    </sql>
+
+    <sql id="findDictWhere">
+        WHERE di.status &lt;= 98
+        <if test="dictCode != null and dictCode != ''">
+            AND sd.dict_code = #{dictCode}
+        </if>
+        <if test="dictId != null ">
+            AND di.dict_id = #{dictId}
+        </if>
+    </sql>
+
+    <!-- 查询数据词典项列表 -->
+    <select id="findDictItemList" resultMap="dictResultMap" parameterType="com.xjt.cloud.commons.dict.Dict">
+        SELECT
+        <include refid="dictItemSqlColumns"/>
+        FROM s_dict_item di
+        <include refid="findDictWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询数据词典项列表 -->
+    <select id="findDictItemLists" resultMap="dictResultMap" parameterType="DictItem">
+        SELECT<include refid="dictItemSqlColumns"/>, #{projectId} projectId
+        FROM s_dict sd
+        LEFT JOIN s_dict_item di ON sd.id = di.dict_id
+        <include refid="findDictWhere"/>
+        GROUP BY di.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询数据词典项列表总行数 -->
+    <select id="findDictItemListTotalCount" resultType="java.lang.Integer" parameterType="com.xjt.cloud.commons.dict.Dict">
+        SELECT COUNT(*)
+        FROM s_dict_item
+        WHERE status &lt;= 98 AND dict_id = #{dictId}
+    </select>
+
+    <!--新增词典项信息 -->
+    <insert id="saveDictItem" parameterType="com.xjt.cloud.commons.dict.Dict" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO s_dict_item (dict_id, item_name, item_value, description, sort_order, status, create_time, item_code, memo)
+        VALUES (#{dictId}, #{itemName}, #{itemValue}, #{description}, #{sortOrder}, 1, NOW(), #{itemCode}, #{memo});
+    </insert>
+
+    <!--新增词典项信息 -->
+    <update id="modifyDictItem" parameterType="com.xjt.cloud.commons.dict.Dict">
+        UPDATE s_dict_item
+        <set>
+            <if test="itemName != null">
+                item_name = #{itemName},
+            </if>
+            <if test="itemValue != null">
+                item_value = #{itemValue},
+            </if>
+            <if test="description != null">
+                description = #{description},
+            </if>
+            <if test="sortOrder != null">
+                sort_order = #{sortOrder},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="itemCode != null">
+                item_code = #{itemCode},
+            </if>
+            <if test="memo != null">
+                memo = #{memo},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

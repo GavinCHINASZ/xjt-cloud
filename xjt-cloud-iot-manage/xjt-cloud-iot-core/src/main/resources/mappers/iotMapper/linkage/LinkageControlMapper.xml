@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.linkage.LinkageControlDao" >
+
+    <resultMap id="linkageControlResultMap" type="com.xjt.cloud.iot.core.entity.linkage.LinkageControl" >
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="project_id" property="projectId" jdbcType="INTEGER" />
+        <result column="rule_name" property="ruleName" jdbcType="VARCHAR" />
+        <result column="rule_description" property="ruleDescription" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="controlSql">
+        lc.id, lc.project_id, lc.rule_name, lc.rule_description, lc.state, lc.relation, lc.create_time, lc.create_user_name,
+	    lc.create_user_id, lc.update_user_name, lc.update_user_id
+    </sql>
+
+    <sql id="findControlWhere">
+        WHERE 1 = 1
+        <if test="ruleName != null and ruleName != ''">
+            AND ld.rule_name LIKE CONCAT('%',#{ruleName},'%')
+        </if>
+        <if test="id != null and id != 0">
+            AND ld.id = #{id}
+        </if>
+    </sql>
+
+    <!-- 查询 联动控制 列表 -->
+    <select id="findLinkageControlList" parameterType="LinkageControl" resultMap="linkageControlResultMap">
+        SELECT <include refid="controlSql"/>
+        FROM l_linkage_control lc
+        <include refid="findControlWhere"/>
+    </select>
+
+    <!-- 查询 联动控制 列表总条数 -->
+    <select id="findLinkageControlTotalCount" parameterType="LinkageControl" resultType="java.lang.Integer">
+        SELECT COUNT(ld.ID)
+        FROM l_linkage_control lc
+        <include refid="findControlWhere"/>
+    </select>
+
+    <!-- 更新 -->
+    <update id="updateLinkageControl" parameterType="WaterDevice">
+        UPDATE l_linkage_control
+        <set>
+            <if test="state != null">
+                state = #{state}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 查询 联动控制 列表总条数 -->
+    <select id="findFaultControl" parameterType="java.lang.Long" resultMap="linkageControlResultMap">
+        SELECT
+        <include refid="controlSql"/>
+        FROM l_linkage_control lc
+        LEFT JOIN l_linkage_requirement lr on lr.linkage_control_id = lc.id
+        where lc.state = 1 and lr.device_id = #{deviceId}
+    </select>
+
+</mapper>

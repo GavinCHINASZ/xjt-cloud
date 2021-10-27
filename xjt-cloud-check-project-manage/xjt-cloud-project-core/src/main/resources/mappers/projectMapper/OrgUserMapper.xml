@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.OrgUserDao">
+    <resultMap id="orgUserResultMap" type="com.xjt.cloud.project.core.entity.project.OrgUser">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="org_id" property="orgId" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="role_id" property="roleId" jdbcType="BIGINT"/>
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="login_name" property="loginName" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="BIGINT"/>
+        <result column="company_name" property="companyName" jdbcType="VARCHAR"/>
+        <result column="department_name" property="departmentName" jdbcType="VARCHAR"/>
+        <result column="role_name" property="roleName" jdbcType="VARCHAR"/>
+        <result column="is_owner" property="isOwner" jdbcType="VARCHAR"/>
+        <result column="certificate_level" property="certificateLevel" jdbcType="VARCHAR"/>
+        <result column="certificate_number" property="certificateNumber" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="orgUserSql">
+        ou.id, ou.user_id, ou.user_name, ou.org_id, ou.project_id, ou.certificate_level, ou.certificate_number
+    </sql>
+
+    <sql id="findOrgUserWhere">
+        WHERE 1 = 1
+        <if test="id != null and id != 0">
+            AND ou.id =#{id}
+        </if>
+        <if test="userId != null and userId != 0">
+            AND ou.user_id =#{userId}
+        </if>
+        <if test="orgId != null and orgId != 0">
+            AND ou.org_id =#{orgId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND ou.project_id =#{projectId}
+        </if>
+
+        <if test="phone != null ">
+            AND u.phone =#{phone}
+        </if>
+    </sql>
+
+    <select id="findOrgUser" resultMap="orgUserResultMap" parameterType="OrgUser">
+        SELECT <include refid="orgUserSql"/>
+        FROM p_org_user ou
+        INNER JOIN s_user u ON u.id = ou.user_id
+        <include refid="findOrgUserWhere"/>
+        limit 1;
+    </select>
+
+    <!--组织架构,成员中间表新增数据-->
+    <insert id="saveOrgUser" parameterType="OrgUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO p_org_user(org_id, user_id, project_id, user_name, certificate_level, certificate_number)
+        VALUES(#{orgId}, #{userId}, #{projectId}, #{userName}, #{certificateLevel}, #{certificateNumber})
+    </insert>
+
+    <!--删除用户部门关系-->
+    <delete id="deleteOrgUser" parameterType="OrgUser">
+        DELETE FROM p_org_user
+        WHERE 1 = 1
+        <if test="id != null and id != 0">
+            AND id = #{id}
+        </if>
+        <if test="roleId != null and roleId != 0">
+            AND role_id = #{roleId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND project_id = #{projectId}
+        </if>
+        <if test="orgId != null and orgId != 0">
+            AND org_id = #{orgId}
+        </if>
+        <if test="userId != null and userId != 0">
+            AND user_id = #{userId}
+        </if>
+        <if test="userIds != null">
+            AND user_id IN
+            <foreach collection="userIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="ids != null">
+            AND id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+
+    <!--组织架构,成员中间表新增数据-->
+    <insert id="relateOrgUsers" parameterType="OrgUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO p_org_user(org_id, user_id, project_id, user_name)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.orgId}, #{item.userId}, #{item.projectId}, #{item.userName})
+        </foreach>
+    </insert>
+
+    <!--查询公司与部门是否存在 -->
+    <select id="findCoDepByNames" parameterType="java.lang.String" resultType="Organization">
+        SELECT o.id, o.org_name orgName, d.id depId, d.org_name orgDepName
+        FROM p_organization o
+        INNER JOIN p_organization d ON d.ower_company = o.id  AND o.deleted = false AND d.deleted = false
+        AND o.org_type = 2 AND d.org_type = 3 AND o.project_id = #{projectId}
+        INNER JOIN ( ${sql}) c ON c.coName = o.org_name AND c.depName = d.org_name
+    </select>
+
+
+    <select id="findByOrgUserIdList" parameterType="java.util.List" resultMap="orgUserResultMap">
+        SELECT ou.id, ou.user_id, ou.user_name, ou.org_id, ou.project_id ,ou.certificate_level,ou.certificate_number
+        FROM p_org_user ou
+        WHERE ou.id IN
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="findOrgUserList" resultMap="orgUserResultMap" parameterType="OrgUser">
+        SELECT ou.id,ou.user_id ,ou.org_id ,group_concat(r.id) as rolesDesc, ou.certificate_level ,ou.certificate_number,
+            u.login_name ,ou.user_name , u.phone,u.status,
+            com.org_name as company_name,
+            dep.org_name as department_name, group_concat(r.role_name) as role_name ,
+            if(u.id = p.owner_id,true,false) as is_owner
+        FROM p_org_user ou
+        INNER JOIN s_user u ON ou.user_id = u.id
+        left join p_org_user_role our on our.org_user_id = ou.id
+        left join p_role r on r.id = our.role_id
+        left join p_organization dep on dep.id = ou.org_id AND dep.deleted = false
+        left join p_organization com on com.id = dep.ower_company AND com.deleted = false
+        left join p_project p on p.id = ou.project_id
+        WHERE
+        ou.project_id = #{projectId}
+        <if test="userName != null ">
+            and (ou.user_name LIKE CONCAT('%',#{userName},'%') or u.login_name LIKE CONCAT('%',#{userName},'%'))
+        </if>
+        <if test="phone != null ">
+            and u.phone LIKE CONCAT('%',#{phone},'%')
+        </if>
+        <if test="orgIds != null">
+            and (dep.id in
+            <foreach collection="orgIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+            or com.id in
+            <foreach collection="orgIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+            )
+        </if>
+
+        <if test="roleIds != null">
+            and (r.id in
+            <foreach collection="roleIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+            )
+        </if>
+
+        <if test="status != null">
+            and u.status = #{status}
+        </if>
+        GROUP BY u.login_name
+        <if test="orderCols == null">
+            ORDER BY ou.user_name REGEXP '^[0-9]' ,convert (ou.user_name USING gbk)
+        </if>
+        <if test="orderCols != null">
+            ORDER BY
+            <foreach collection="orderCols" item="colName" separator=",">
+                ${colName}
+                <if test="orderDesc">
+                    DESC
+                </if>
+            </foreach>
+        </if>
+
+        <if test="orderStr != null">
+            ORDER BY ${orderStr}
+        </if>
+
+        <if test="pageSize != null and pageSize != 0 and beginIndex != null and beginIndex >= 0">
+            LIMIT #{beginIndex}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="findByOrgListCount" resultType="java.lang.Integer" parameterType="OrgUser">
+        SELECT COUNT(*)
+        FROM (
+            SELECT COUNT(*)
+            FROM p_org_user ou
+            INNER JOIN s_user u ON ou.user_id = u.id
+            left join p_org_user_role our on our.org_user_id = ou.id
+            left join p_role r on r.id = our.role_id
+            left join p_organization dep on dep.id = ou.org_id AND dep.deleted = false
+            left join p_organization com on com.id = dep.ower_company AND com.deleted = false
+            WHERE ou.project_id = #{projectId}
+            <if test="userName != null ">
+                and (ou.user_name LIKE CONCAT('%',#{userName},'%') or u.login_name LIKE CONCAT('%',#{userName},'%'))
+            </if>
+            <if test=" phone != null ">
+                and u.phone LIKE CONCAT('%',#{phone},'%')
+            </if>
+            <if test="orgIds != null">
+                and (dep.id in
+                <foreach collection="orgIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+                or com.id in
+                <foreach collection="orgIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            GROUP BY u.login_name
+        ) t
+    </select>
+
+    <!--查询用户部门公司关系树 -->
+    <select id="findOrgUserTree" resultType="Organization" parameterType="Organization">
+        SELECT *
+        from (
+            SELECT c.id id, ifnull(c.parent_id,0) parentId, c.org_name orgName, '1' orgType,0 userId,0 phone,null
+            depName,null roleId,null orgUserId, null userName
+            FROM p_organization c
+            WHERE org_type=2 AND project_id = #{projectId} AND c.deleted = false
+
+            UNION ALL
+            SELECT op.id id, op.parent_id parentId, op.org_name orgName, '2' orgType,0 userId,0 phone,null depName,null
+            roleId,null orgUserId,null userName
+            FROM p_organization c
+            INNER JOIN p_organization op ON op.ower_company = c.id AND op.org_type=3 AND c.org_type=2 AND c.project_id = #{projectId}
+            AND c.deleted = false AND op.deleted = false
+
+            UNION ALL
+            SELECT ou.id id, ou.org_id parentId, ou.user_name orgName, '3' orgType,ou.user_id userId,u.phone phone
+            ,dep.org_name depName,our.id roleId,
+            ou.id orgUserId,ou.user_name userName
+            FROM p_org_user ou
+            INNER JOIN s_user u ON u.id = ou.user_id AND ou.project_id = #{projectId}
+            INNER JOIN p_organization dep on dep.id = ou.org_id
+            LEFT JOIN p_org_user_role our on our.org_user_id = ou.id
+            GROUP BY ou.id
+        )t
+        where 1 = 1
+        <if test="name!=null and name != ''">
+            and t.depName like CONCAT('%',#{name},'%') or t.phone like CONCAT('%',#{name},'%') or t.orgName like
+            CONCAT('%',#{name},'%')
+        </if>
+    </select>
+
+    <select id="findByJoinProjectIds" resultType="Long" parameterType="java.lang.Long">
+        SELECT our.project_id
+        from p_org_user_role our
+        inner join p_role_permission rp on our.role_id = rp.role_id
+		inner join p_project p on our.project_id = p.id and p.deleted = FALSE
+        where our.user_id =  #{userId} and rp.permission_id = 72;
+    </select>
+
+    <select id="findByProjectJoinOrgUserTree" resultType="Organization" parameterType="java.util.List">
+        SELECT c.id id, ifnull(c.parent_id,0) parentId, c.org_name orgName, '1' orgType,0 userId,0 phone
+        FROM p_organization c
+        WHERE org_type=2 AND c.deleted = false
+        AND project_id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+
+        UNION ALL
+        SELECT op.id id, op.parent_id parentId, op.org_name orgName, '2' orgType,0 userId,0 phone
+        FROM p_organization c
+        INNER JOIN p_organization op ON op.ower_company = c.id AND op.org_type=3 AND c.deleted = false AND op.deleted = false AND c.org_type = 2
+        AND c.project_id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+
+        UNION ALL
+        SELECT ou.id id, ou.org_id parentId, ou.user_name orgName, '3' orgType, ou.user_id userId, u.phone phone
+        FROM p_org_user ou
+        INNER JOIN s_user u ON u.id = ou.user_id
+        And ou.project_id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        GROUP BY ou.id
+    </select>
+
+    <!--更新用户名称和部门-->
+    <update id="updateOrgUser" parameterType="OrgUser">
+        UPDATE p_org_user ou
+        SET org_id = #{orgId},ou.user_name =#{userName}, ou.certificate_level = #{certificateLevel}, ou.certificate_number = #{certificateNumber}
+        WHERE ou.project_id = #{projectId} AND ou.user_id = #{userId}
+    </update>
+
+    <!--批量修改用户部门-->
+    <update id="updateOrgUsers" parameterType="OrgUser">
+        UPDATE p_org_user ou
+        SET ou.org_id = #{orgId} , ou.certificate_level = #{certificateLevel},ou.certificate_number=#{certificateNumber}
+        where ou.project_id = #{projectId} and ou.user_id in
+        <foreach collection="userIds" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="findByDepIdOrgUserList" resultMap="orgUserResultMap" parameterType="java.util.List">
+        SELECT ou.id ,ou.user_name,ou.project_id,ou.org_id,ou.certificate_level,ou.certificate_number from p_org_user ou
+        where ou.org_id in
+        <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="findByProjectIsAdmin" resultMap="orgUserResultMap" parameterType="OrgUser">
+        SELECT ou.id ,ou.user_name,ou.project_id,ou.org_id from p_project p
+        INNER JOIN p_org_user ou on ou.user_id = p.owner_id and p.id = ou.project_id
+        where p.id = #{projectId} and ou.user_id in
+        <foreach collection="userIds" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <select id="findByOrgUserList" resultMap="orgUserResultMap" parameterType="OrgUser">
+        SELECT ou.id, ou.user_name, ou.project_id, ou.org_id, ou.certificate_level, ou.certificate_number
+        FROM p_org_user ou
+        WHERE 1 = 1
+        <if test="projectId != null and projectId != 0 ">
+            AND ou.project_id = #{projectId}
+        </if>
+        <if test="userIds != null">
+            AND ou.user_id IN
+            <foreach collection="userIds" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+        <if test="orgId != null ">
+            and p.org_id = #{orgId}
+        </if>
+    </select>
+
+    <select id="findByRoleOrgUserList" resultMap="orgUserResultMap" parameterType="OrgUser">
+        SELECT ou.id, ou.user_id, ou.user_name, ou.org_id, ou.project_id,our.role_id, ou.certificate_level, ou.certificate_number
+        FROM p_org_user ou
+        INNER JOIN p_org_user_role our ON our.org_user_id = ou.id
+        WHERE our.role_id = #{roleId}
+    </select>
+
+
+    <!--查询导入的用户部门信息 -->
+    <select id="findOrgUserListBySql" parameterType="java.lang.String" resultMap="orgUserResultMap">
+        SELECT ou.id, ou.org_id, t.newOrgId , t.user_id, t.user_name
+        FROM p_org_user ou
+        RIGHT JOIN ( ${sql} )t ON ou.user_id = t.user_id AND ou.org_id = t.newOrgId AND ou.project_id = #{projectId}
+        UNION
+        SELECT ou.id, ou.org_id, t.newOrgId,t.user_id,t.user_name
+        FROM p_org_user ou
+        LEFT JOIN ( ${sql})t ON ou.user_id = t.user_id AND ou.org_id = t.newOrgId
+        WHERE ou.user_id IN
+        <foreach collection="list" item="user" index="index" open="(" close=")" separator=",">
+            #{user.id}
+        </foreach>
+        AND ou.project_id = #{projectId}
+    </select>
+
+    <!--查询项目成员数量-->
+    <select id="findProjectOrgUserCount" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT ou.user_id )
+        FROM p_org_user ou
+        WHERE ou.project_id IN
+        <foreach collection="projectIds" item="projectId" index="index" open="(" close=")" separator=",">
+            #{projectId}
+        </foreach>
+    </select>
+</mapper>

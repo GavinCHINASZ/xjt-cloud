@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.iot.core.dao.iot.vesa.VesaEventHandleDao" >
+
+    <resultMap id="VesaEventHandleResultMap" type="com.xjt.cloud.iot.core.entity.vesa.VesaEventHandle" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="device_id" property="deviceId" jdbcType="BIGINT" />
+        <result column="device_fault_type_id" property="deviceFaultTypeId" jdbcType="BIGINT" />
+        <result column="vesa_device_id" property="vesaDeviceId" jdbcType="BIGINT" />
+        <result column="event_id" property="eventId" jdbcType="VARCHAR" />
+        <result column="device_type" property="deviceType" jdbcType="INTEGER" />
+        <result column="img_urls" property="imgUrls" jdbcType="VARCHAR" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="fault_type" property="faultType" jdbcType="VARCHAR" />
+        <result column="cause_analysis" property="causeAnalysis" jdbcType="VARCHAR" />
+        <result column="repair_method" property="repairMethod" jdbcType="VARCHAR" />
+        <result column="fault_level" property="faultLevel" jdbcType="INTEGER" />
+        <result column="repair_proposal" property="repairProposal" jdbcType="VARCHAR" />
+        <result column="fault_color" property="faultColor" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="findVesaEventHandleWhere">
+        WHERE 1=1
+        <if test="vesaDeviceId != null and vesaDeviceId != 0">
+            AND veh.vesa_device_id = #{vesaDeviceId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND veh.device_id = #{deviceId}
+        </if>
+        <if test="eventId != null and eventId != 0">
+            AND veh.event_id = #{eventId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND veh.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND veh.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+        <if test="deviceType != null and deviceType != 0">
+            AND veh.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypes != null">
+            AND veh.device_type IN
+            <foreach collection="deviceTypes" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <!-- 查询 极早期事件处理信息-->
+    <select id="findVesaEventHandleList" parameterType="VesaEventHandle" resultMap="VesaEventHandleResultMap">
+        SELECT veh.*, dft.fault_type, dft.fault_level, dft.cause_analysis, dft.repair_method, dft.repair_proposal, dft.fault_color
+        FROM iot_manage.v_vesa_event_handle veh
+        INNER JOIN device_manage.d_device_fault_type dft ON veh.device_fault_type_id = dft.id
+        <include refid="findVesaEventHandleWhere"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询 极早期事件处理信息列表总记录数-->
+    <select id="findVesaEventHandleListCount" parameterType="VesaEventHandle" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT veh.id)
+        FROM iot_manage.v_vesa_event_handle veh
+        INNER JOIN device_manage.d_device_fault_type dft ON veh.device_fault_type_id = dft.id
+        <include refid="findVesaEventHandleWhere"/>
+    </select>
+
+    <!--添加 极早期事件处理信息-->
+    <insert id="saveVesaEventHandle" parameterType="VesaEventHandle">
+        INSERT INTO iot_manage.v_vesa_event_handle (project_id, device_id, device_fault_type_id, vesa_device_id, event_id, status,
+            device_type, description, img_urls, create_user_id, create_user_name, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=","  close=";">
+            (#{item.projectId}, #{item.deviceId}, #{item.deviceFaultTypeId}, #{item.vesaDeviceId}, #{item.eventId}, 1,
+            #{item.deviceType}, #{item.description}, #{item.imgUrls}, #{item.createUserId}, #{item.createUserName}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 查询 极早期事件处理信息-->
+    <select id="findVesaEventFaultTypeColumnChart" parameterType="VesaEventHandle" resultType="EventFaultReport">
+        SELECT IF(dft.fault_event_type IS NULL, veh.untreated, COUNT(DISTINCT veh.id)) faultCount,
+            dft.fault_event_type faultEventType, dft.fault_type faultType, dft.device_type deviceType, dft.fault_color faultColor
+        FROM (
+            SELECT veh.* ,
+                t.untreated
+            FROM iot_manage.v_vesa_event_handle veh
+            RIGHT JOIN (
+                SELECT MAX(veh.id) id, COUNT(DISTINCT ve.id) - COUNT(DISTINCT veh.event_id) untreated
+                FROM iot_manage.v_vesa_event ve
+                LEFT JOIN v_vesa_event_handle veh ON ve.id = veh.event_id
+                <include refid="findVesaEventFaultTypeColumnChartWhere"/>
+                GROUP BY veh.event_id
+            ) t ON t.id = veh.id 
+        ) veh
+        LEFT JOIN device_manage.d_device_fault_type dft ON veh.device_fault_type_id = dft.id
+        GROUP BY dft.id ORDER BY dft.fault_event_type, dft.sort
+    </select>
+
+    <sql id="findVesaEventFaultTypeColumnChartWhere">
+        WHERE 1 = 1
+        <if test="vesaDeviceId != null and vesaDeviceId != 0">
+            AND ve.vesa_id = #{vesaDeviceId}
+        </if>
+        <if test="deviceId != null and deviceId != 0">
+            AND ve.device_id = #{deviceId}
+        </if>
+        <if test="eventId != null and eventId != 0">
+            AND veh.event_id = #{eventId}
+        </if>
+        <if test="projectId != null and projectId != 0">
+            AND ve.project_id = #{projectId}
+        </if>
+        <if test="createTime != null">
+            AND ve.create_time BETWEEN #{createTime} AND #{endTimeDesc}
+        </if>
+    </sql>
+
+</mapper>

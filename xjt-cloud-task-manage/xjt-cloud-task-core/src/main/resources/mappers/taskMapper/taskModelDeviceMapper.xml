@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.TaskModelDeviceDao" >
+
+    <resultMap id="taskModelDeviceResultMap" type="com.xjt.cloud.task.core.entity.task.TaskModelDevice" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="check_point_id" property="checkPointId" jdbcType="INTEGER"/>
+        <result column="point_qr_no" property="pointQrNo" jdbcType="VARCHAR"/>
+        <result column="point_name" property="pointName" jdbcType="VARCHAR"/>
+        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="point_location" property="pointLocation" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    </resultMap>
+
+    <sql id="taskModelDeviceSql">
+        tmd.id, tmd.task_model_manage_id, tmd.project_id, tmd.point_qr_no, tmd.point_name, tmd.device_name, tmd.point_location, tmd.create_time
+    </sql>
+
+    <sql id="findTaskModelDeviceListSql">
+        <where>
+            1 = 1
+            <if test="id != null">
+                AND tmd.id = #{id}
+            </if>
+            <if test="projectId != null">
+                AND tmd.project_id = #{projectId}
+            </if>
+
+            <if test="taskModelManageId != null and taskModelManageId > 0">
+                AND tmd.task_model_manage_id = #{taskModelManageId}
+            </if>
+
+            <if test="deviceName != null and deviceName != ''">
+                AND tmd.device_name LIKE CONCAT('%',#{deviceName},'%')
+            </if>
+            <if test="pointQrNo != null and pointQrNo != ''">
+                AND tmd.point_qr_no LIKE CONCAT('%',#{pointQrNo},'%')
+            </if>
+            <if test="pointLocation != null and pointLocation != ''">
+                AND tmd.point_location LIKE CONCAT('%',#{pointLocation},'%')
+            </if>
+
+            <if test="createTime != null and lastModifyTime != null">
+                AND tmd.create_time between #{createTime} and #{lastModifyTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询 模板管理 总行数 -->
+    <select id="findTaskModelDeviceTotalCount" parameterType="TaskModelDevice" resultType="java.lang.Integer">
+        SELECT COUNT(tmd.id)
+        FROM task_manage.t_task_model_device tmd
+        <include refid="findTaskModelDeviceListSql"/>
+    </select>
+
+    <!-- 查询 模板管理 list -->
+    <select id="findTaskModelDeviceList" parameterType="TaskModelDevice" resultMap="taskModelDeviceResultMap">
+        SELECT <include refid="taskModelDeviceSql"/>
+            ,cp.id checkPointId, cp.point_location pointLocation,
+            cp.building_id buildingId,
+            cp.building_floor_id buildingFloorId
+        FROM task_manage.t_task_model_device tmd
+        INNER JOIN device_manage.d_check_point cp ON tmd.point_qr_no = cp.qr_no
+
+        <include refid="findTaskModelDeviceListSql"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 新增 任务模板设备 -->
+    <insert id="saveTaskModelDeviceList">
+        INSERT INTO task_manage.t_task_model_device(task_model_manage_id, project_id, point_qr_no, point_name, device_name, point_location, create_time)
+        VALUES
+        <foreach item="item" collection="taskModelDeviceList" index="index" separator=",">
+            (#{taskModelManageId},
+            #{projectId}, #{item.pointQrNo}, #{item.pointName}, #{item.deviceName}, #{item.pointLocation}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 删除模板设备 -->
+    <delete id="deletedTaskModelDevice" parameterType="TaskModelDevice">
+        DELETE FROM task_manage.t_task_model_device
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach item="item" collection="ids" index="index" separator="," open="(" close=")" >
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="taskModelManageIdArr != null and taskModelManageIdArr.length > 0">
+            task_model_manage_id IN
+            <foreach item="item" collection="taskModelManageIdArr" index="index" separator="," open="(" close=")" >
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+
+    <!-- 新增 模板管理设备 -->
+    <insert id="saveTaskModelDevice" parameterType="TaskModelDevice" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO task_manage.t_task_model_device(
+            task_model_manage_id, project_id, point_qr_no, point_name, device_name, point_location, create_time)
+        VALUES (#{taskModelManageId}, #{projectId}, #{pointQrNo}, #{pointName}, #{deviceName}, #{pointLocation}, NOW());
+    </insert>
+
+    <!-- 修改 模板管理设备 -->
+    <update id="updateTaskModelDevice" parameterType="TaskModelDevice">
+        UPDATE task_manage.t_task_model_device
+        <set>
+            <if test="deleted != null">
+                deleted = #{deleted},
+            </if>
+
+            <if test="pointQrNo != null and pointQrNo != ''">
+                point_qr_no = #{pointQrNo},
+            </if>
+            <if test="pointName != null and pointName != ''">
+                point_name = #{pointName},
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                device_name = #{deviceName},
+            </if>
+            <if test="pointLocation != null and pointLocation != ''">
+                point_location = #{pointLocation}
+            </if>
+        </set>
+        WHERE
+        <if test="id != null and id != 0">
+            id = #{id}
+        </if>
+
+        <if test="ids != null and ids.length > 0">
+            id IN
+            <foreach item="item" collection="ids" index="index" separator="," open="(" close=")" >
+                #{item}
+            </foreach>
+        </if>
+    </update>
+</mapper>

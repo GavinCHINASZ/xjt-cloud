@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.maintenance.core.dao.project.CheckUserDao">
+
+    <resultMap id="checkUserResultMap" type="com.xjt.cloud.maintenance.core.entity.project.CheckUser">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_id" property="checkProjectId" jdbcType="BIGINT"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="selColumns">
+            pcu.id, pcu.user_id, pou.user_name, pcu.project_id, pcu.check_project_id, pcu.create_time
+    </sql>
+    <!--保存检测项目信息-->
+    <insert id="saveCheckUser" parameterType="CheckUser" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO check_manage.p_check_user (user_id, user_name, project_id, check_project_id,status,create_time)
+           VALUES
+        <foreach collection="checkUsers" item="item" separator=","  close=";">
+            (#{item.userId}, #{item.userName}, #{item.projectId}, #{item.checkProjectId}, 1, NOW())
+        </foreach>
+    </insert>
+    <!--删除检测项目信息-->
+    <delete id="delCheckUser" parameterType="CheckUser" >
+         DELETE FROM check_manage.p_check_user where check_project_id = #{checkProjectId}
+    </delete>
+
+    <select id="findCheckUserByCheckProjectId" parameterType="CheckUser" resultType="CheckUser">
+        SELECT
+        <include refid="selColumns"/>
+        FROM check_manage.p_check_user pcu
+        INNER JOIN check_manage.p_org_user pou
+        ON  pcu.user_id = pou.user_id
+        WHERE pcu.check_project_id = #{checkProjectId}
+        GROUP BY pcu.id,pcu.user_id
+    </select>
+
+    <select id="findCheckUser" parameterType="CheckUser" resultType="CheckUser">
+        SELECT
+        <include refid="selColumns"/>
+        FROM check_manage.p_check_user pcu
+        INNER JOIN check_manage.p_org_user pou
+        ON  pcu.user_id = pou.user_id
+        WHERE 1 = 1
+        <if test="userId != null and userId != 0">
+            AND pcu.user_id = #{userId}
+        </if>
+        <if test="checkProjectId != null and checkProjectId != 0">
+            AND pcu.check_project_id = #{checkProjectId}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!--查询人员用户List-->
+
+    <select id="findCheckUserIdList" parameterType="CheckUser" resultType="java.lang.Long">
+		SELECT cu.user_id FROM check_manage.p_check_user cu WHERE cu.check_project_id = #{checkProjectId}
+	</select>
+
+
+</mapper>

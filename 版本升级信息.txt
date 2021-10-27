@@ -1,0 +1,41 @@
+2020-06-17 5.0上线
+
+-------------------------------------------------------------------------------------------------
+负责人：王志文
+模块：web系统 
+功能：二维码扫码，二维码显示修改
+sql：
+配置:
+
+负责人：张再发
+模块：iot-netty
+功能：websocket通信下发信息不成功
+
+
+负责人：王志文
+ALTER TABLE
+    device_manage.d_check_point ADD (status_update_time DATETIME COMMENT '最新巡查时间');
+
+#web 设备删除任务中巡检点信息
+delTaskCheckPoint=http://127.0.0.1:7084/task/deleteCheckPointByCheckPointId
+#是否存在平面存点 true存在 false不存在
+isFloorPoint=false
+
+#task配置无token
+/task/deleteCheckPointByCheckPointId
+
+ALTER TABLE project_manage.p_organization ADD credit_code VARCHAR(30) DEFAULT NULL COMMENT '统一信用代码';
+ALTER TABLE project_manage.p_organization ADD address VARCHAR(50) DEFAULT NULL COMMENT '单位地址';
+ALTER TABLE report_manage.r_duty_notice ADD title VARCHAR(30) DEFAULT NULL COMMENT '自定义事件标题';
+ALTER TABLE report_manage.r_duty_notice ADD auto_time VARCHAR(20) DEFAULT NULL COMMENT '自定义提醒事件';
+ALTER TABLE sys_manage.s_user ADD task_id BIGINT(11) DEFAULT NULL;
+ALTER TABLE sys_manage.s_user ADD building_id BIGINT(11) DEFAULT NULL;
+ALTER TABLE sys_manage.s_user ADD building_floor_id BIGINT(11) DEFAULT NULL;
+
+
+#sys添加,/accessRefresh
+,/accessRefresh
+
+
+升级项目
+iot　device　project　　　sys　message  device

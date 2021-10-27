@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.admin.manage.dao.backstage.InventoryDao">
+
+    <sql id="findInventoryWhere">
+        WHERE psp.status &lt;= 98
+        <if test="producerId != null and producerId != 0">
+            AND psp.producer_id = #{producerId}
+        </if>
+        <if test="productId != null and productId != 0">
+            AND psp.product_id = #{productId}
+        </if>
+        <if test="productType != null and productType != 0">
+            AND p.product_type = #{productType}
+        </if>
+    </sql>
+
+    <!-- 查询设备巡检项列表总记录数-->
+    <select id="findInventoryListTotalCount" parameterType="Inventory" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM (SELECT pr.id producerId, pr.producer_name producerName, p.id productId, p.product_name
+        productName, p.product_type productType,
+        COUNT(psp.id) totalNum, COUNT(osp.id) outNum
+        FROM backstage_manage.i_put_storage_product psp
+        INNER JOIN backstage_manage.i_producer pr ON pr.id = psp.producer_id AND pr.status &lt;= 98
+        INNER JOIN backstage_manage.i_product p ON p.id = psp.product_id AND p.status &lt;= 98
+        LEFT JOIN backstage_manage.i_out_storage_product osp ON osp.put_storage_product_id = psp.id AND osp.status &lt;=
+        98
+        <include refid="findInventoryWhere"/>
+        GROUP BY pr.id, p.id) t
+    </select>
+
+    <!-- 查询设备巡检项列表-->
+    <select id="findInventoryList" parameterType="Inventory" resultType="Inventory">
+        SELECT pr.id producerId, pr.producer_name producerName, p.id productId, p.product_name productName,
+        p.product_type productType,
+        COUNT(psp.id) totalNum, COUNT(osp.id) outNum
+        FROM backstage_manage.i_put_storage_product psp
+        INNER JOIN backstage_manage.i_producer pr ON pr.id = psp.producer_id AND pr.status &lt;= 98
+        INNER JOIN backstage_manage.i_product p ON p.id = psp.product_id AND p.status &lt;= 98
+        LEFT JOIN backstage_manage.i_out_storage_product osp ON osp.put_storage_product_id = psp.id AND osp.status &lt;=
+        98
+        <include refid="findInventoryWhere"/>
+        GROUP BY pr.id, p.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 查询未激活移动物联卡列表-->
+    <select id="findOneLinkCardNotActiveList" parameterType="PutStorageProduct" resultType="PutStorageProduct">
+        SELECT psp.id,property_1 property1,property_2 property2,property_3 property3
+        FROM backstage_manage.i_put_storage_product psp
+        INNER JOIN backstage_manage.i_product p ON p.id = psp.product_id AND p.status &lt;= 98
+        WHERE psp.status &lt;= 98
+        <if test="productStatus != null">
+            AND psp.product_status = #{productStatus}
+        </if>
+        <if test="flowDandleDate != null">
+            AND psp.flow_handle_date &lt;= #{flowDandleDate} OR psp.flow_handle_date IS NULL
+        </if>
+        <if test="productTypes != null">
+            AND p.product_type in
+            <foreach item="item" collection="productTypes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="pageSize != null and pageSize != 0">
+            LIMIT #{pageSize}
+        </if>
+    </select>
+
+    <update id="modifyCardStatusByList" parameterType="PutStorageProduct">
+        UPDATE backstage_manage.i_put_storage_product
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="product_status = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.productStatus != null">
+                        when id = #{item.id} then #{item.productStatus}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="active_date = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.activeDate != null">
+                        when id = #{item.id} then #{item.activeDate}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="open_date = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.openDate != null">
+                        when id = #{item.id} then #{item.openDate}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="offering_id = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.offeringId != null">
+                        when id = #{item.id} then #{item.offeringId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="offering_name = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.offeringName != null">
+                        when id = #{item.id} then #{item.offeringName}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="remain_flow = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.remainFlow != null">
+                        when id = #{item.id} then #{item.remainFlow}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="total_flow = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.totalFlow != null">
+                        when id = #{item.id} then #{item.totalFlow}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="used_flow = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.usedFlow != null">
+                        when id = #{item.id} then #{item.usedFlow}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="flow_handle_date = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.flowDandleDate != null">
+                        when id = #{item.id} then #{item.flowDandleDate}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        WHERE id IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item.id}
+        </foreach>
+    </update>
+</mapper>

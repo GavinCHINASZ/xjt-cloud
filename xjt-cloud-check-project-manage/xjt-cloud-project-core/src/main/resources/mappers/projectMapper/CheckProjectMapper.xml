@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.project.CheckProjectDao">
+
+    <resultMap id="checkProjectResultMap" type="com.xjt.cloud.project.core.entity.project.CheckProject">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="height" property="heightInt" jdbcType="BIGINT"/>
+        <result column="acreage" property="acreageInt" jdbcType="BIGINT"/>
+        <result column="project_id" property="projectId" jdbcType="BIGINT"/>
+        <result column="check_project_name" property="checkProjectName" jdbcType="VARCHAR"/>
+        <result column="floor" property="floor" jdbcType="BIGINT"/>
+        <result column="province" property="province" jdbcType="VARCHAR"/>
+        <result column="city" property="city" jdbcType="VARCHAR"/>
+        <result column="district" property="district" jdbcType="VARCHAR"/>
+        <result column="road_no" property="roadNo" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="building_type" property="buildingType" jdbcType="VARCHAR"/>
+        <result column="check_range" property="checkRange" jdbcType="BIGINT"/>
+        <result column="check_type" property="checkType" jdbcType="BIGINT"/>
+        <result column="check_part" property="checkPart" jdbcType="VARCHAR"/>
+        <result column="check_acreage" property="checkAcreageInt" jdbcType="VARCHAR"/>
+        <result column="check_part_fun" property="checkPartFun" jdbcType="VARCHAR"/>
+        <result column="number" property="number" jdbcType="VARCHAR"/>
+        <result column="credit_code" property="creditCode" jdbcType="VARCHAR"/>
+        <result column="requester_unit" property="requesterUnit" jdbcType="VARCHAR"/>
+        <result column="design_unit" property="designUnit" jdbcType="VARCHAR"/>
+        <result column="construction_unit" property="constructionUnit" jdbcType="VARCHAR"/>
+        <result column="drawing_description" property="drawingDescription" jdbcType="VARCHAR"/>
+        <result column="check_start_time" property="checkStartTime" jdbcType="TIMESTAMP"/>
+        <result column="check_end_time" property="checkEndTime" jdbcType="TIMESTAMP"/>
+        <result column="contact_phone" property="contactPhone" jdbcType="VARCHAR"/>
+        <result column="contract_amount" property="contractAmountInt" jdbcType="VARCHAR"/>
+        <result column="fire_approval" property="fireApproval" jdbcType="VARCHAR"/>
+        <result column="contact_user_name" property="contactUserName" jdbcType="VARCHAR"/>
+        <result column="sys_type_ids" property="sysTypeIds" jdbcType="VARCHAR"/>
+        <result column="leading_user_name" property="leadingUserName" jdbcType="VARCHAR"/>
+        <result column="leading_user_id" property="leadingUserId" jdbcType="BIGINT"/>
+
+        <result column="approval_user_name" property="approvalUserName" jdbcType="VARCHAR"/>
+        <result column="approve_user_id" property="approveUserId" jdbcType="BIGINT"/>
+        <result column="approval_org_id" property="approvalOrgId" jdbcType="BIGINT"/>
+
+        <result column="check_user_name" property="checkUserName" jdbcType="VARCHAR"/>
+        <result column="check_code" property="checkCode" jdbcType="VARCHAR"/>
+        <result column="check_label_file_url" property="checkLabelFileUrl" jdbcType="VARCHAR"/>
+        <result column="check_program_file_url" property="checkProgramFileUrl" jdbcType="VARCHAR"/>
+        <result column="contract_file_url" property="contractFileUrl" jdbcType="VARCHAR"/>
+        <result column="drawing_time" property="drawingTime" jdbcType="TIMESTAMP"/>
+        <result column="focus_unit" property="focusUnit" jdbcType="INTEGER"/>
+        <result column="use_function" property="useFunction" jdbcType="VARCHAR"/>
+        <result column="check_base" property="checkBase" jdbcType="VARCHAR"/>
+        <result column="check_conclusion" property="checkConclusion" jdbcType="VARCHAR"/>
+        <result column="check_project_status" property="checkProjectStatus" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="check_project_number" property="checkProjectNumber" jdbcType="VARCHAR"/>
+        <result column="check_project_report_url" property="checkProjectReportUrl" jdbcType="VARCHAR"/>
+        <result column="check_result" property="checkResult" jdbcType="INTEGER"/>
+        <result column="check_project_report_create_time" property="checkProjectReportCreateTime" jdbcType="TIMESTAMP"/>
+        <result column="check_version" property="checkVersion" jdbcType="INTEGER"/>
+
+        <result column="audit_user_name" property="auditUserName" jdbcType="VARCHAR"/>
+        <result column="audit_user_id" property="auditUserId" jdbcType="BIGINT"/>
+        <result column="audit_org_id" property="auditOrgId" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="selColumns">
+        id,	check_project_name,province,city,district,acreage,lng,lat,
+        floor,project_id,height,address,building_type,check_range,
+        check_type,check_part,check_acreage,check_part_fun,`number`,
+        credit_code,requester_unit,design_unit,construction_unit,
+        drawing_description,check_start_time,check_end_time,contact_phone,approve_user_id,
+        contact_user_name,contract_amount,fire_approval,check_result,check_project_report_create_time,check_version, check_code, check_label_file_url,
+        check_user_name, approval_user_name, approve_user_id, approval_org_id,
+        leading_user_id, leading_user_name, sys_type_ids,check_project_number,check_project_report_url,
+        check_program_file_url,contract_file_url,drawing_time,focus_unit,use_function,check_base,check_conclusion,check_project_status,create_time,
+        audit_user_name, audit_user_id, audit_org_id
+    </sql>
+
+    <sql id="sqlColumns">
+        cp.id, cp.check_project_name, cp.province, cp.city, cp.district, cp.acreage, cp.lng, cp.lat,
+        cp.floor,cp.project_id,cp.height,cp.address,cp.building_type,cp.check_range,
+        cp.check_type,cp.check_part,cp.check_acreage,cp.check_part_fun,cp.`number`,
+        cp.credit_code,cp.requester_unit,cp.design_unit,cp.construction_unit,
+        cp.drawing_description,cp.check_start_time,cp.check_end_time,cp.contact_phone,
+        cp.contact_user_name,cp.contract_amount,cp.fire_approval,cp.check_result,cp.check_project_report_create_time,cp.check_version, check_code, check_label_file_url,
+        cp.check_user_name,cp.approval_user_name, cp.approve_user_id, cp.approval_org_id,
+        cp.leading_user_id, cp.leading_user_name, cp.sys_type_ids, cp.check_project_number,
+        cp.check_program_file_url,cp.contract_file_url,cp.drawing_time,cp.focus_unit,cp.use_function,cp.check_base,cp.check_conclusion,cp.check_project_status,cp.create_time,
+        cp.audit_user_name, cp.audit_user_id, cp.audit_org_id
+    </sql>
+
+    <!--保存检测项目信息-->
+    <insert id="saveCheckProject" parameterType="CheckProject" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO `p_check_project`(`check_project_name`, `province`, `city`, `district`, `create_user_id`, `create_time`,
+            `acreage`, `floor`, `project_id`, `height`, `address`,`lng`,`lat`,
+            `building_type`, `check_range`, `check_type`, `check_part`, `check_acreage`, `check_part_fun`, `number`,
+            `credit_code`, `requester_unit`, `design_unit`, `construction_unit`, `drawing_description`, `check_start_time`,
+            `check_end_time`, `contact_phone`, `contact_user_name`, `contract_amount`, `fire_approval`,
+            `check_user_name`, `approval_user_name`, approve_user_id, approval_org_id,
+            `leading_user_id`, `leading_user_name`, `sys_type_ids`, `check_code`, `check_label_file_url`,
+            `check_program_file_url`, `contract_file_url`, `drawing_time`, `focus_unit`
+            , `use_function`, `check_base`, `check_conclusion`,
+            audit_user_name, audit_user_id, audit_org_id
+           )
+           VALUES(#{checkProjectName}, #{province}, #{city}, #{district}, #{createUserId}, NOW(),
+           #{acreageInt}, #{floor}, #{projectId}, #{heightInt}, #{address}, #{lng}, #{lat},
+           #{buildingType}, #{checkRange}, #{checkType}, #{checkPart}, #{checkAcreageInt}, #{checkPartFun}, #{number},
+           #{creditCode}, #{requesterUnit}, #{designUnit}, #{constructionUnit}, #{drawingDescription}, #{checkStartTime},
+           #{checkEndTime}, #{contactPhone}, #{contactUserName}, #{contractAmountInt}, #{fireApproval},
+           #{checkUserName}, #{approvalUserName}, #{approveUserId}, #{approvalOrgId},
+           #{leadingUserId}, #{leadingUserName}, #{sysTypeIds}, #{checkCode}, #{checkLabelFileUrl},
+           #{checkProgramFileUrl}, #{contractFileUrl}, #{drawingTime}, #{focusUnit},
+           #{useFunction}, #{checkBase}, #{checkConclusion},
+           #{auditUserName}, #{auditUserId}, #{auditOrgId}
+           );
+    </insert>
+
+    <!--删除检测项目信息-->
+    <delete id="delCheckProject" parameterType="CheckProject" >
+        DELETE FROM p_check_project
+        WHERE id IN
+        <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        AND check_project_status = 1
+    </delete>
+
+    <!--更新检测项目信息-->
+    <update id="updCheckProject" parameterType="CheckProject" >
+        UPDATE `p_check_project`
+        SET
+        <if test="creditCode != null and creditCode != ''">
+            `credit_code` = #{creditCode},
+        </if>
+        <if test="checkProjectName != null and checkProjectName != ''">
+            `check_project_name` = #{checkProjectName},
+        </if>
+        <if test="province != null">
+            `province` = #{province},
+        </if>
+        <if test="city != null">
+            `city` = #{city},
+        </if>
+        <if test="district != null">
+            `district` = #{district},
+        </if>
+        <if test="acreage != null">
+            `acreage` = #{acreageInt},
+        </if>
+        <if test="lat != null">
+            `lat` = #{lat},
+        </if>
+        <if test="lng != null">
+            `lng` = #{lng},
+        </if>
+        <if test="floor != null">
+            `floor` = #{floor},
+        </if>
+        <if test="height != null">
+            `height` = #{heightInt},
+        </if>
+        <if test="address != null and address != ''">
+            `address` = #{address},
+        </if>
+        <if test="buildingType != null and buildingType != ''">
+            `building_type` = #{buildingType},
+        </if>
+        <if test="checkRange != null">
+            `check_range` = #{checkRange},
+        </if>
+
+        <if test="checkType != null">
+             `check_type` = #{checkType},
+        </if>
+        <if test="checkPart != null ">
+            `check_part` = #{checkPart},
+        </if>
+        <if test="checkAcreageInt != null">
+            `check_acreage` = #{checkAcreageInt},
+        </if>
+        <if test="checkPartFun != null and checkPartFun != ''">
+            `check_part_fun` = #{checkPartFun},
+        </if>
+        <if test="number != null and number != ''">
+            `number` = #{number},
+        </if>
+        <if test="checkProjectNumber != null and checkProjectNumber != ''">
+            `check_project_number` = #{checkProjectNumber},
+        </if>
+        <if test="requesterUnit != null and requesterUnit != '' ">
+            `requester_unit` = #{requesterUnit},
+        </if>
+        <if test="designUnit != null and designUnit != ''">
+            `design_unit` = #{designUnit},
+        </if>
+        <if test="constructionUnit != null and constructionUnit != ''">
+            `construction_unit` = #{constructionUnit},
+        </if>
+        <if test="drawingDescription != null and drawingDescription != ''">
+            `drawing_description` = #{drawingDescription},
+        </if>
+        <if test="checkStartTime != null">
+            `check_start_time` = #{checkStartTime},
+        </if>
+        <if test="checkEndTime != null">
+            `check_end_time` = #{checkEndTime},
+        </if>
+        <if test="contactPhone != null and contactPhone != ''">
+            `contact_phone` = #{contactPhone},
+        </if>
+        <if test="contactUserName != null and contactUserName != ''">
+            `contact_user_name` = #{contactUserName},
+        </if>
+        <if test="contractAmount != null">
+            `contract_amount` = #{contractAmountInt},
+        </if>
+        <if test="fireApproval != null and fireApproval != ''">
+            `fire_approval` = #{fireApproval},
+        </if>
+        <if test="sysTypeIds != null and sysTypeIds != ''">
+            `sys_type_ids` = #{sysTypeIds},
+        </if>
+
+        <if test="leadingUserName != null and leadingUserName != ''">
+            `leading_user_name` = #{leadingUserName},
+        </if>
+        <if test="leadingUserId != null">
+            `leading_user_id` = #{leadingUserId},
+        </if>
+
+        <if test="approveUserId != null">
+            `approve_user_id` = #{approveUserId},
+        </if>
+        <if test="approvalUserName != null and approvalUserName != ''">
+            `approval_user_name` = #{approvalUserName},
+        </if>
+        <if test="approvalOrgId != null and approvalOrgId > 0">
+            `approval_org_id` = #{approvalOrgId},
+        </if>
+
+        <if test="checkUserName != null and checkUserName != ''">
+            `check_user_name` = #{checkUserName},
+        </if>
+        <if test="contractFileUrl != null and contractFileUrl != ''">
+            `contract_file_url` = #{contractFileUrl},
+        </if>
+        <if test="checkProgramFileUrl != null and checkProgramFileUrl != ''">
+            `check_program_file_url` = #{checkProgramFileUrl},
+        </if>
+        <if test="drawingTime != null">
+            `drawing_time` = #{drawingTime},
+        </if>
+        <if test="focusUnit != null">
+            `focus_unit` = #{focusUnit},
+        </if>
+        <if test="useFunction != null">
+            `use_function` = #{useFunction},
+        </if>
+        <if test="checkBase != null">
+            `check_base` = #{checkBase},
+        </if>
+        <if test="checkConclusion != null and checkConclusion != ''">
+            `check_conclusion` = #{checkConclusion},
+        </if>
+
+        <if test="checkProjectReportUrl != null">
+            `check_project_report_url` = #{checkProjectReportUrl},
+        </if>
+        <if test="checkResult != null">
+            `check_result` = #{checkResult},
+        </if>
+        <if test="checkProjectReportCreateTime != null">
+            `check_project_report_create_time` = #{checkProjectReportCreateTime},
+        </if>
+        <if test="checkVersion != null">
+            `check_version` = #{checkVersion},
+        </if>
+        <if test="checkProjectStatus != null">
+            `check_project_status` = #{checkProjectStatus},
+        </if>
+
+        <if test="auditUserId != null and auditUserId > 0">
+            `audit_user_id` = #{auditUserId},
+        </if>
+        <if test="auditUserName != null and auditUserName != ''">
+            `audit_user_name` = #{auditUserName},
+        </if>
+        <if test="auditOrgId != null and auditOrgId > 0">
+            `audit_org_id` = #{auditOrgId},
+        </if>
+
+        <if test="checkCode != null">
+            `check_code` = #{checkCode},
+        </if>
+        <if test="checkLabelFileUrl != null">
+            `check_label_file_url` = #{checkLabelFileUrl},
+        </if>
+        `update_user_id` = #{updateUserId,jdbcType=BIGINT},
+        `update_user_name` = #{updateUserName,jdbcType=VARCHAR}
+        WHERE `id` = #{id}
+    </update>
+
+    <!--查询检测项目信息详情-->
+    <select id="findByCheckProject" parameterType="CheckProject" resultMap="checkProjectResultMap">
+        SELECT <include refid="selColumns"/>
+        FROM p_check_project
+        WHERE 1 = 1
+        <if test="projectId != null">
+            AND  project_id = #{projectId}
+        </if>
+        <if test="id != null">
+            AND id = #{id}
+        </if>
+        <if test="number != null">
+            AND `number` = #{number}
+        </if>
+        limit 1;
+    </select>
+
+    <!--查询检测项目信息列表-->
+    <select id="findByCheckProjectList" parameterType="CheckProject" resultMap="checkProjectResultMap" >
+        SELECT <include refid="selColumns"/>
+        FROM p_check_project
+        WHERE 1 = 1
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="checkProjectName != null">
+            AND check_project_name LIKE CONCAT('%',#{checkProjectName},'%')
+        </if>
+        <if test="checkProjectStatus != null and checkProjectStatus != 0">
+            AND check_project_status = #{checkProjectStatus}
+        </if>
+        <if test="id != null and id != 0">
+            AND id = #{id}
+        </if>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询检测项目信息列表数量-->
+    <select id="findByCheckProjectListCount" parameterType="CheckProject" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM p_check_project
+        WHERE 1 = 1
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="checkProjectName != null">
+            AND check_project_name LIKE CONCAT('%',#{checkProjectName},'%')
+        </if>
+    </select>
+
+    <!--查询数据词典描述-->
+    <select id="findDictCodeDescription" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT d.description
+        FROM s_dict d
+        WHERE d.dict_code =#{dictCode};
+    </select>
+
+    <!--更新数据词典描述-->
+    <select id="updDictCodeDescription" parameterType="java.lang.String" resultType="java.lang.String">
+        UPDATE s_dict d
+        SET d.description = #{description}
+        WHERE d.dict_code =#{dictCode};
+    </select>
+
+    <!--查询我的检测项目列表-->
+    <select id="findByMyCheckProjectList" parameterType="CheckProject" resultMap="checkProjectResultMap" >
+        SELECT <include refid="sqlColumns"/>
+        FROM p_check_project cp
+        LEFT JOIN p_check_user cu ON cp.id = cu.check_project_id
+        WHERE 1=1
+        <if test="limitSign == null or limitSign != 'check_co_manage_unseal'">
+            AND (cu.user_id =#{userId}
+                OR cp.audit_user_id = #{userId}
+                OR cp.leading_user_id = #{userId}
+                OR cp.approve_user_id = #{userId}
+                OR cp.create_user_id = #{userId}
+            )
+        </if>
+        <if test="projectId != null">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="checkProjectName != null">
+            AND cp.check_project_name LIKE CONCAT('%',#{checkProjectName},'%')
+        </if>
+        <if test="checkProjectStatus != null and checkProjectStatus != 0">
+            AND cp.check_project_status = #{checkProjectStatus}
+        </if>
+        <if test="checkProjectStatusList != null and checkProjectStatusList.size != 0">
+            AND cp.check_project_status IN
+            <foreach collection="checkProjectStatusList" item="status" index="index" open="(" close=")" separator=",">
+                #{status}
+            </foreach>
+        </if>
+        <if test="id != null and id != 0">
+            AND cp.id = #{id}
+        </if>
+        GROUP BY cp.id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!--查询我的检测项目列表数量-->
+    <select id="findByMyCheckProjectListCount" parameterType="CheckProject" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT cp.id)
+        FROM p_check_project cp
+        LEFT JOIN p_check_user cu ON cp.id = cu.check_project_id
+        WHERE 1=1
+        <if test="limitSign == null or limitSign != 'check_co_manage_unseal'">
+            AND (cu.user_id =#{userId}
+            OR cp.audit_user_id = #{userId}
+            OR cp.leading_user_id = #{userId}
+            OR cp.approve_user_id = #{userId}
+            OR cp.create_user_id = #{userId}
+            )
+        </if>
+        <if test="projectId != null">
+            AND cp.project_id = #{projectId}
+        </if>
+        <if test="checkProjectName != null">
+            AND cp.check_project_name LIKE CONCAT('%',#{checkProjectName},'%')
+        </if>
+        <if test="checkProjectStatus != null and checkProjectStatus != 0">
+            AND cp.check_project_status = #{checkProjectStatus}
+        </if>
+        <if test="id != null and id != 0">
+            AND cp.id = #{id}
+        </if>
+    </select>
+
+    <!--更新报告编号-->
+    <update id="upCheckProjectNumber" parameterType="CheckProject" >
+         UPDATE `p_check_project`
+         SET `check_project_number` = #{checkProjectNumber}
+         WHERE `id` = #{id}
+    </update>
+</mapper>

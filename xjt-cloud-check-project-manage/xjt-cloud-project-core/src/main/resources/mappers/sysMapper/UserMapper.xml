@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.project.core.dao.sys.UserDao" >
+    <resultMap id="userResultMap" type="com.xjt.cloud.project.core.entity.project.User" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="login_name" property="loginName" jdbcType="VARCHAR" />
+        <result column="user_name" property="userName" jdbcType="VARCHAR" />
+        <result column="phone" property="phone" jdbcType="VARCHAR" />
+        <result column="status" property="status" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR" />
+        <result column="role_name" property="roleName" jdbcType="VARCHAR" />
+        <result column="org_name" property="departmentName" jdbcType="VARCHAR" />
+        <result column="org_id" property="orgId" jdbcType="VARCHAR" />
+    </resultMap>
+    <sql id="userSel">
+        id, login_name, user_name, status, phone, project_id, project_name, create_time, last_modify_time
+    </sql>
+
+    <!-- 判断该登录名称与手机号码是否已存在 -->
+    <select id="findUserByLoginNameOrPhone" resultMap="userResultMap" parameterType="User" >
+        SELECT id, login_name, password,status FROM s_user
+        WHERE status &lt;= 98 AND (login_name = #{loginName} OR phone = #{phone})
+        LIMIT 1
+    </select>
+    <!--新增成员:手动添加-->
+    <insert id="saveUser" parameterType="User" useGeneratedKeys="true" keyProperty="id" >
+        INSERT INTO s_user(phone, password, user_name, login_name,  create_time,status,project_id)
+        VALUES(#{phone}, #{password}, #{userName}, #{phone},  NOW(), 1,#{projectId})
+    </insert>
+
+    <!--新增成员:手动添加-->
+    <insert id="saveUserList" parameterType="User" useGeneratedKeys="true" keyProperty="id" >
+        INSERT INTO s_user(phone, password, user_name, login_name,  create_time,status)
+        VALUES
+        <foreach collection="list" item="item" separator="," close=";">
+            (#{item.phone}, #{item.password}, #{item.userName}, #{item.loginName},NOW(), 0)
+        </foreach>
+    </insert>
+    <!-- 判断该登录名称与手机号码是否已存在 -->
+    <select id="findUserByPhones" resultMap="userResultMap" parameterType="User" >
+        SELECT u.id, IF(ISNULL(u.id),t.phone,u.phone) phone
+        FROM s_user u
+        RIGHT JOIN ( ${sql}) t ON u.login_name = t.phone OR  u.phone = t.phone
+    </select>
+
+    <!--查询用户信息-->
+    <select id="findByUser" resultMap="userResultMap" parameterType="User" >
+        SELECT u.id, u.phone, u.user_name, u.login_name, u.create_time,u.status
+        FROM s_user u
+        where
+        1=1
+        <if test="phone != null ">
+            and u.phone = #{phone}
+        </if>
+        <if test="id != null and id != 0">
+            and u.id = #{id}
+        </if>
+        limit 1
+    </select>
+
+
+    <update id="updateUser" parameterType="User">
+        UPDATE `s_user` SET
+        <if test="projectId != null and projectId != 0">
+            `project_id` = #{projectId},
+            `status` = 1,
+        </if>
+        <if test="userName != null">
+            `user_name` = #{userName},
+        </if>
+        `last_modify_time` = NOW()
+        WHERE `id` = #{id}
+    </update>
+
+<!--修改用户状态-->
+    <update id="updateUserStatus" parameterType="User">
+        UPDATE `s_user` SET
+        `project_id` = null,
+        `status` = 0,
+        `last_modify_time` = NOW()
+        WHERE id in
+        <foreach collection="userIds" item="id" separator="," close=";">
+            (#{id})
+        </foreach>
+    </update>
+</mapper>

@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.task.TaskSummaryDao" >
+    <resultMap id="taskSummaryResultMap" type="com.xjt.cloud.task.core.entity.TaskSummary" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="task_id" property="taskId" jdbcType="BIGINT" />
+        <result column="project_id" property="projectId" jdbcType="BIGINT" />
+        <result column="project_name" property="projectName" jdbcType="VARCHAR" />
+        <result column="task_name" property="taskName" jdbcType="VARCHAR" />
+        <result column="remark" property="remark" jdbcType="VARCHAR" />
+        <result column="task_type" property="taskType" jdbcType="INTEGER" />
+        <result column="period_type" property="periodType" jdbcType="INTEGER" />
+        <result column="task_period_type" property="taskPeriodType" jdbcType="INTEGER" />
+        <result column="period_start_time" property="periodStartTime" jdbcType="DATE" />
+        <result column="period_end_time" property="periodEndTime" jdbcType="DATE" />
+        <result column="remind_time" property="remindTime" jdbcType="VARCHAR" />
+        <result column="check_count" property="checkCount" jdbcType="INTEGER" />
+        <result column="check_start_time" property="checkStartTime" jdbcType="VARCHAR" />
+        <result column="check_end_time" property="checkEndTime" jdbcType="VARCHAR" />
+        <result column="interval_time" property="intervalTime" jdbcType="INTEGER" />
+        <result column="review" property="review" jdbcType="INTEGER" />
+        <result column="device_number" property="deviceNumber" jdbcType="INTEGER" />
+        <result column="task_status" property="taskStatus" jdbcType="INTEGER" />
+        <result column="type_task" property="typeTask" jdbcType="INTEGER" />
+        <result column="create_user_id" property="createUserId" jdbcType="BIGINT" />
+        <result column="create_user_name" property="createUserName" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+        <result column="last_modify_time" property="lastModifyTime" jdbcType="TIMESTAMP" />
+        <result column="completedNum" property="completedNum" jdbcType="INTEGER"/>
+        <result column="totalCount" property="totalCount" jdbcType="INTEGER"/>
+        <result column="faultNum" property="faultNum" jdbcType="INTEGER"/>
+        <result column="device_num" property="deviceNum" jdbcType="INTEGER"/>
+        <result column="check_point_num" property="checkPointNum" jdbcType="INTEGER"/>
+        <result column="check_point_normal_num" property="checkPointNormalNum" jdbcType="INTEGER"/>
+        <result column="check_point_fault_num" property="checkPointFaultNum" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="taskSummarySql">
+        ts.id, ts.task_id, ts.project_id, ts.task_name, ts.project_name, ts.task_type, ts.period_type, ts.task_period_type, ts.period_start_time,
+        ts.period_end_time, ts.remind_time, ts.check_count, ts.check_start_time, ts.check_end_time, ts.interval_time, ts.review, ts.device_number,
+        ts.task_status, ts.check_point_num, ts.check_point_normal_num, ts.check_point_fault_num
+    </sql>
+
+    <sql id="findTaskSummarySql">
+        <where>
+            1 = 1
+            <if test="id != null">
+                AND ts.id = #{id}
+            </if>
+            <if test="taskId != null and taskId > 0">
+                AND ts.task_id = #{taskId}
+            </if>
+            <if test="projectId != null">
+                AND ts.project_id = #{projectId}
+            </if>
+            <if test="taskType != null">
+                AND ts.task_type = #{taskType}
+            </if>
+            <if test="periodType != null">
+                AND ts.period_type = #{periodType}
+            </if>
+            <if test="taskPeriodType != null">
+                AND ts.task_period_type = #{taskPeriodType}
+            </if>
+            <if test="periodEndTime != null and periodStartTime != null">
+                AND ts.period_end_time between #{periodStartTime} and #{periodEndTime}
+            </if>
+            <if test="taskStatus != null">
+                AND ts.task_status = #{taskStatus}
+            </if>
+            <if test="taskStatusArr != null and taskStatusArr.length > 0">
+                AND ts.task_status IN
+                <foreach item="item" collection="taskStatusArr" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="ids != null and ids.length > 0">
+                AND ts.id IN
+                <foreach item="item" collection="ids" index="index" separator="," open="(" close=")" >
+                    #{item}
+                </foreach>
+            </if>
+            <if test="typeTask != null">
+                AND ts.type_task = #{typeTask}
+            </if>
+            <if test="taskName != null and taskName != ''">
+                AND ts.task_name LIKE CONCAT('%', #{taskName}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询 任务 列表 -->
+    <select id="findTaskList" parameterType="TaskSummary" resultMap="taskSummaryResultMap">
+        SELECT
+            ts.id task_id, ts.project_id, p.project_name, ts.parent_id, ts.task_name, ts.task_type, ts.period_type,
+            ts.task_period_type, ts.period_start_time, ts.period_end_time, ts.type_task,
+            ts.remind_time, ts.check_count, ts.check_start_time, ts.check_end_time, ts.interval_time,
+            ts.review, ts.task_status, ts.create_time, ts.create_user_id,
+            COUNT(d.id) device_number,
+            COUNT(tcp.check_point_id) check_point_num,
+            SUM(if(tcp.task_check_point_status = 2, 1, 0)) check_point_normal_num,
+            SUM(if(tcp.task_check_point_status = 1, 1, 0)) check_point_fault_um
+        FROM t_task ts
+        LEFT JOIN t_check_record cr ON cr.task_id = ts.id
+        LEFT JOIN t_task_check_point tcp ON tcp.task_id = ts.id
+        LEFT JOIN project_manage.p_project p ON ts.project_id = p.id
+        LEFT JOIN device_manage.d_device d ON d.check_point_id = tcp.check_point_id AND d.status &lt; 99
+        LEFT JOIN device_manage.d_check_point dcp ON tcp.check_point_id = dcp.id AND dcp.status &lt; 99
+        WHERE ts.period_end_time BETWEEN #{periodStartTime} AND #{periodEndTime}
+        AND ts.project_id = #{projectId}
+        AND ts.type_task = #{typeTask}
+        AND ts.deleted = 0
+        GROUP BY ts.id
+    </select>
+
+    <!-- 查询任务汇总列表总行数 -->
+    <select id="findTaskSummaryListTotalCount" parameterType="TaskSummary" resultType="java.lang.Integer">
+        SELECT COUNT(ts.id)
+        FROM t_task_summary ts
+        <include refid="findTaskSummarySql"/>
+    </select>
+
+    <!-- 任务概览 -->
+    <select id="findTaskOverview" parameterType="TaskSummary" resultType="TaskSummary">
+        SELECT COUNT(ts.id) totalCount, SUM(ts.task_status = 2) expired
+        FROM t_task_summary ts
+        <where>
+            ts.project_id = #{projectId}
+            AND ts.type_task = #{typeTask}
+            <if test="periodEndTime != null and periodStartTime != null">
+                AND ts.period_end_time between #{periodStartTime} and #{periodEndTime}
+            </if>
+        </where>
+    </select>
+
+    <!-- 巡查点概览 -->
+    <select id="findTaskOverviews" parameterType="TaskSummary" resultType="TaskSummary">
+        SELECT COUNT(tcp.id) checkPointNum, SUM(if(tcp.task_check_point_status = 2, 1, 0)) checkPointNormalNum,
+            SUM(if(tcp.task_check_point_status = 1, 1, 0)) checkPointFaultNum
+        FROM t_task_summary ts
+        LEFT JOIN t_task_check_point tcp on tcp.task_id = ts.task_id
+        <where>
+            ts.project_id = #{projectId}
+            AND ts.type_task = #{typeTask}
+            <if test="periodEndTime != null and periodStartTime != null">
+                AND ts.period_end_time between #{periodStartTime} and #{periodEndTime}
+            </if>
+        </where>
+    </select>
+
+    <!-- 任务汇总 点检情况    任务巡查点状态  0、未检  1、故障  2、正常 -->
+    <select id="checkSituation" parameterType="TaskSummary" resultType="TaskSummary">
+        SELECT COUNT(tcp.id) totalCount, SUM(if(tcp.task_check_point_status = 2, 1, 0)) normalNum,
+            SUM(if(tcp.task_check_point_status = 1, 1, 0)) faultNum
+        FROM t_task_check_point tcp
+        LEFT JOIN t_task_summary ts ON ts.task_id = tcp.task_id
+        <include refid="findTaskSummarySql"/>
+    </select>
+
+    <!-- 根据 任务 批量添加 任务汇总 -->
+    <insert id="saveTaskSummaryList" parameterType="TaskSummary" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_task_summary (project_id, parent_id, task_name, project_name, task_type, period_type,
+            task_period_type, period_start_time, period_end_time, remind_time, check_count,
+            check_start_time, check_end_time, interval_time, review, device_number,
+            task_status, type_task, create_user_id, create_time, remark, task_id,
+            check_point_num, check_point_normal_num, check_point_fault_num)
+        VALUES
+            <foreach collection="list" item="item" separator="," close=";">
+                (#{item.projectId}, #{item.parentId}, #{item.taskName}, #{item.projectName},  #{item.taskType}, #{item.periodType},
+                #{item.taskPeriodType}, #{item.periodStartTime}, #{item.periodEndTime}, #{item.remindTime}, #{item.checkCount},
+                #{item.checkStartTime}, #{item.checkEndTime}, #{item.intervalTime}, #{item.review}, #{item.deviceNumber},
+                #{item.taskStatus}, #{item.typeTask}, #{item.createUserId}, #{item.createTime}, #{item.remark}, #{item.taskId},
+                #{item.checkPointNum}, #{item.checkPointNormalNum}, #{item.checkPointFaultNum})
+            </foreach>
+    </insert>
+
+    <!-- 任务概览表 -->
+    <select id="findTaskOverviewTable" parameterType="TaskSummary" resultMap="taskSummaryResultMap">
+        SELECT <include refid="taskSummarySql"/>
+        FROM t_task_summary ts
+        <include refid="findTaskSummarySql"/>
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+    <!-- 任务概览表 导出列表 -->
+    <select id="downTaskTable" parameterType="TaskSummary" resultType="TaskSummary">
+        SELECT ts.id, ts.task_id taskId, ts.task_name taskName, ts.task_status taskStatus, ts.check_point_num checkPointNum,
+            ts.check_point_normal_num checkPointNormalNum,
+            ts.check_point_fault_num checkPointFaultNum
+        FROM t_task_summary ts
+        <include refid="findTaskSummarySql"/>
+    </select>
+
+    <!-- 查询 任务汇总 -->
+    <select id="findTaskSummaryList" parameterType="TaskSummary" resultMap="taskSummaryResultMap">
+        SELECT <include refid="taskSummarySql"/>
+        FROM t_task_summary ts
+        <include refid="findTaskSummarySql"/>
+    </select>
+
+    <!-- PC任务管理,任务工单 导出详情 查询任务 -->
+    <select id="findTaskDetails" parameterType="TaskSummary" resultMap="taskSummaryResultMap">
+        SELECT
+            t.id task_id, t.project_id, t.parent_id, t.task_name, t.project_name, t.task_type, t.period_type,
+            t.task_period_type, t.period_start_time, t.period_end_time,
+            t.remind_time, t.check_count, t.check_start_time, t.check_end_time, t.interval_time,
+            t.review, t.task_status, t.deleted, t.create_time, t.create_user_id
+        <if test="typeTask == 0 and (parentId == null or parentId == 0)">
+            ,COUNT(DISTINCT tt.id) totalCount, SUM(DISTINCT tt.task_status = 3) completedNum
+        </if>
+        <if test="typeTask == 1">
+            ,COUNT(DISTINCT cr.id) totalCount, SUM(DISTINCT cr.check_result = 1) faultNum, COUNT(DISTINCT d.id) device_num, our.user_id user_id
+        </if>
+        FROM t_task t
+        <if test="typeTask == 0 and (parentId == null or parentId == 0)">
+            LEFT JOIN t_task tt ON tt.parent_id = t.id AND tt.type_task = 1 AND t.type_task = 0 AND tt.deleted = 0
+        </if>
+        <if test="typeTask == 1">
+            LEFT JOIN t_check_record cr ON cr.task_id = t.id
+            LEFT JOIN t_task_check_point tcp ON tcp.task_id = t.id
+            LEFT JOIN device_manage.d_device d ON d.check_point_id = tcp.check_point_id AND d.status &lt; 99
+            LEFT JOIN device_manage.d_check_point dcp ON  tcp.check_point_id = dcp.id AND dcp.status &lt; 99
+            LEFT JOIN t_executor e ON e.task_id = t.id
+            LEFT JOIN project_manage.p_org_user_role our ON e.executor_type = 1 AND e.executor_id = our.id AND our.project_id = e.project_id
+        </if>
+        <include refid="findTaskSummarySql"/>
+        <if test="userId != null and userId != 0 and typeTask == 1">
+            AND e.user_id = #{userId}
+        </if>
+        <if test="ids != null">
+            AND t.id IN
+            <foreach collection="ids" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY t.id
+    </select>
+
+    <!-- APP 任务汇总 人员情况 -->
+    <select id="userOverview" parameterType="TaskSummary" resultType="TaskSummary" >
+        SELECT ts.create_user_name createUserName, COUNT(sd.id) deviceNumber
+        FROM t_task_summary ts
+        LEFT JOIN  t_summary_details sd ON ts.task_id = sd.task_id
+        <include refid="findTaskSummarySql"/>
+        GROUP BY ts.create_user_id
+        <include refid="CommonSqlDao.commonPagingHandle"/>
+    </select>
+
+</mapper>

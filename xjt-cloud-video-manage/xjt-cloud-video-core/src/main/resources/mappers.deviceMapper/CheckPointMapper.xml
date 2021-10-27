@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.xjt.cloud.task.core.dao.device.CheckPointDao" >
+
+    <resultMap id="checkPointResultMap" type="com.xjt.cloud.task.core.entity.CheckPoint" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <id column="building_id" property="buildingId" jdbcType="BIGINT" />
+        <id column="building_floor_id" property="buildingFloorId" jdbcType="BIGINT" />
+        <id column="qr_no" property="qrNo" jdbcType="VARCHAR" />
+        <id column="location_name" property="locationName" jdbcType="VARCHAR" />
+        <id column="project_id" property="projectId" jdbcType="BIGINT" />
+        <id column="org_id" property="orgId" jdbcType="BIGINT" />
+        <id column="status" property="status" jdbcType="INTEGER" />
+        <id column="point_name" property="pointName" jdbcType="VARCHAR" />
+        <id column="create_time" property="createTime" jdbcType="DATE" />
+    </resultMap>
+
+    <sql id="selColumns">
+        id, building_id, building_floor_id, qr_no, location_name, project_id, org_id, status, create_time
+    </sql>
+    <sql id="findCheckPointWhere">
+        WHERE  status &lt;= 98
+        <if test="buildingId != null">
+            and building_id = #{buildingId}
+        </if>
+        <if test="buildingFloorId != null">
+            and building_floor_id = #{buildingFloorId}
+        </if>
+    </sql>
+    <!-- 根据条件查询巡检点列表-->
+    <select id="findCheckPointList" parameterType="DeviceCheckPoint" resultMap="CheckPoint">
+        SELECT
+            c.id,c.point_name pointName,t.totalCount
+        FROM device_manage.d_check_point c
+        INNER JOIN (<include refid="deviceCount"></include>) t
+        ON c.id = t.check_point_id
+        <where>
+            <if test="orgId != null and orgId != 0">
+                AND c.org_id = #{orgId}
+            </if>
+            <if test="buildingFloorId != null and buildingFloorId != 0">
+                AND c.building_floor_id = #{buildingFloorId}
+            </if>
+            <if test="buildingId != null and buildingId != 0">
+                AND c.building_id = #{buildingId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND c.project_id = #{projectId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据条件筛选巡更点 -->
+    <select id="findCheckPoint" parameterType="TaskDevice" resultMap="CheckPoint">
+        SELECT
+            DISTINCT p.id,p.point_name pointName
+        FROM device_manage.d_check_point p
+        INNER JOIN device_manage.d_device d
+        ON p.id = d.check_point_id
+        <where>
+            1 = 1
+            <if test="checkPointId != null and checkPointId != 0">
+                AND p.id = #{checkPointId}
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND d.device_name LIKE CONCAT('%',#{deviceName},'%')
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND p.project_id = #{projectId}
+            </if>
+        </where>
+    </select>
+    <!-- 根据设备类型id查询巡更点列表 -->
+    <select id="findCheckPointByDeviceTypeId" parameterType="TaskDevice" resultType="CheckPoint">
+        SELECT
+            p.id,p.point_name
+        FROM device_manage.d_check_point p
+        INNER JOIN (SELECT
+                        DISTINCT d.check_point_id
+                    FROM device_manage.d_device d
+                    WHERE d.device_type_id = #{id}
+                    AND d.project_id = #{projectId}
+                    ) t
+        ON t.check_point_id = p.id
+    </select>
+
+    <sql id="deviceCount">
+        SELECT
+            d.check_point_id,COUNT(d.id) totalCount
+        FROM device_manage.d_device d
+        INNER JOIN device_manage.d_check_point p
+        ON d.check_point_id = p.id
+        <where>
+            <if test="projectId != null and projectId != 0">
+                AND d.project_id = #{projectId}
+            </if>
+        </where>
+    </sql>
+</mapper>
