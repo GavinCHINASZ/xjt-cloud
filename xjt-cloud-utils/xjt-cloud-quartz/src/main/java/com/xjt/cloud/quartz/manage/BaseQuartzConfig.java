@@ -2,11 +2,11 @@ package com.xjt.cloud.quartz.manage;
 
 import java.io.Serializable;
 
-
 /**
+ * 任务配置信息
+ *
  * @Auther: wangzhiwen
  * @Date: 2019/4/29 0029 13:45
- * @Description:任务配置信息
  */
 public class BaseQuartzConfig implements Serializable {
     private Long id;//主键id
