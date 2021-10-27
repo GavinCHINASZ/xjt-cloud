@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.xjt.cloud.task.core.dao.device.TaskDeviceTypeDao" >
+<mapper namespace="com.xjt.cloud.task.core.dao.device.TaskDeviceTypeDao">
 
-    <resultMap id="deviceTypeResultMap" type="com.xjt.cloud.task.core.entity.device.DeviceType" >
-        <id column="id" property="id" jdbcType="INTEGER" />
-        <result column="parent_id" property="parentId" jdbcType="INTEGER" />
-        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR" />
-        <result column="use_method" property="useMethod" jdbcType="VARCHAR" />
-        <result column="description" property="description" jdbcType="VARCHAR" />
-        <result column="pressure_monitor" property="pressureMonitor" jdbcType="INTEGER" />
-        <result column="sys_pressure" property="sysPressure" jdbcType="INTEGER" />
-        <result column="status" property="status" jdbcType="INTEGER" />
-        <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <resultMap id="deviceTypeResultMap" type="com.xjt.cloud.task.core.entity.device.DeviceType">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="parent_id" property="parentId" jdbcType="INTEGER"/>
+        <result column="device_sys_name" property="deviceSysName" jdbcType="VARCHAR"/>
+        <result column="use_method" property="useMethod" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="pressure_monitor" property="pressureMonitor" jdbcType="INTEGER"/>
+        <result column="sys_pressure" property="sysPressure" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="findDeviceTypeWhere">
@@ -22,24 +22,21 @@
             AND parent_id = #{parentId}
         </if>
     </sql>
+
     <sql id="selColumns">
-        id, parent_id, device_sys_name, use_method, description, pressure_monitor, sys_pressure, create_time, status
+        id, parent_id, device_sys_name, use_method, description, pressure_monitor, sys_pressure,
+        create_time, status
     </sql>
+
     <!-- 根据项目id查询设备系统-->
     <select id="findDeviceSysByProjectId" parameterType="TaskDevice" resultType="TaskDeviceType">
-        SELECT DISTINCT
-        s.id,
-        s.device_sys_name deviceSysName
+        SELECT DISTINCT s.id, s.device_sys_name deviceSysName
         FROM device_manage.d_device_type s
-        INNER JOIN device_manage.d_device_type dt
-        ON   s.id = dt.parent_id
+        INNER JOIN device_manage.d_device_type dt ON s.id = dt.parent_id
         AND s.type = 1 and dt.type=9
-        INNER JOIN device_manage.d_device d
-        on d.device_type_id = dt.id
-        INNER JOIN device_manage.d_check_point cp
-        on cp.id = d.check_point_id AND cp.status &lt; 99
-        WHERE d.project_id = #{projectId}
-        AND d.status &lt; 99
+        INNER JOIN device_manage.d_device d ON d.device_type_id = dt.id
+        INNER JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id AND cp.status &lt; 99
+        WHERE d.project_id = #{projectId} AND d.status &lt; 99
         <if test="deviceName != null and deviceName != ''">
             AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
         </if>
@@ -59,69 +56,65 @@
             AND dt.id = #{deviceTypeId}
         </if>
     </select>
+
     <select id="findDeviceSysByProjectIdSelOrNotSel" parameterType="TaskDevice" resultType="TaskDeviceType">
-        SELECT
-            s.id,s.deviceSysName,min(sel) sel,min(notSel) notSel
+        SELECT s.id, s.deviceSysName, min(sel) sel, min(notSel) notSel
         FROM(
-                SELECT
-                    s.id,s.device_sys_name deviceSysName,if(cp.id = t.id,-1,0) sel,if(isnull(t.id),-2,0) notSel
-                FROM device_manage.d_device_type s
-                INNER JOIN device_manage.d_device_type dt
-                ON   s.id = dt.parent_id
-                AND s.type = 1 and dt.type=9
-                INNER JOIN device_manage.d_device d
-                on d.device_type_id = dt.id
-                INNER JOIN device_manage.d_check_point cp
-                on cp.id = d.check_point_id AND cp.status &lt; 99
-                left join (
-                            select cp.id  from device_manage.d_check_point cp
-                            where cp.status &lt;= 98
-                            AND cp.id IN
-                            <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
-                               #{item}
-                            </foreach>
-                            <if test="projectId != null and projectId != 0">
-                                AND cp.project_id = #{projectId}
-                            </if>
-                          ) t on cp.id = t.id
-                WHERE d.project_id = #{projectId}
-                AND d.status &lt; 99
-                <if test="deviceName != null and deviceName != ''">
-                    AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
-                </if>
-                <if test="checkPointId != null and checkPointId != 0">
-                    AND d.check_point_id = #{checkPointId}
-                </if>
-                <if test="qrNo != null and qrNo != ''">
-                    AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
-                </if>
-                <if test="pointName != null and pointName != ''">
-                    AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
-                </if>
-                <if test="deviceSysName != null and deviceSysName != ''">
-                    AND s.device_sys_name = #{deviceSysName}
-                </if>
-                <if test="deviceTypeId != null and deviceTypeId != 0">
-                    AND dt.id = #{deviceTypeId}
-                </if>
+            SELECT s.id, s.device_sys_name deviceSysName, if(cp.id = t.id,-1,0) sel,
+                if(isnull(t.id),-2,0) notSel
+            FROM device_manage.d_device_type s
+            INNER JOIN device_manage.d_device_type dt ON s.id = dt.parent_id
+            AND s.type = 1 and dt.type = 9
+            INNER JOIN device_manage.d_device d ON d.device_type_id = dt.id
+            INNER JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id AND cp.status &lt; 99
+            left join (
+                select cp.id
+                from device_manage.d_check_point cp
+                where cp.status &lt;= 98
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
                 <if test="projectId != null and projectId != 0">
                     AND cp.project_id = #{projectId}
                 </if>
-                GROUP BY s.id,sel,notSel
-            )s
-            GROUP BY s.id
+            ) t on cp.id = t.id
+            WHERE d.project_id = #{projectId}
+            AND d.status &lt; 99
+            <if test="deviceName != null and deviceName != ''">
+                AND dt.device_sys_name LIKE CONCAT('%',#{deviceName},'%')
+            </if>
+            <if test="checkPointId != null and checkPointId != 0">
+                AND d.check_point_id = #{checkPointId}
+            </if>
+            <if test="qrNo != null and qrNo != ''">
+                AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+            </if>
+            <if test="pointName != null and pointName != ''">
+                AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+            </if>
+            <if test="deviceSysName != null and deviceSysName != ''">
+                AND s.device_sys_name = #{deviceSysName}
+            </if>
+            <if test="deviceTypeId != null and deviceTypeId != 0">
+                AND dt.id = #{deviceTypeId}
+            </if>
+            <if test="projectId != null and projectId != 0">
+                AND cp.project_id = #{projectId}
+            </if>
+            GROUP BY s.id,sel,notSel
+        )s
+        GROUP BY s.id
     </select>
+
+    <!--  -->
     <select id="findDeviceTypeBySysId" parameterType="TaskDevice" resultType="TaskDeviceType">
-        SELECT
-            DISTINCT count(d.id) totalCount,dt.id,dt.device_sys_name deviceSysName
+        SELECT DISTINCT count(d.id) totalCount, dt.id, dt.device_sys_name deviceSysName
         FROM device_manage.d_device_type s
-        INNER JOIN device_manage.d_device_type dt
-        ON   s.id = dt.parent_id
-        AND s.type = 1 and dt.type = 9
-        INNER JOIN device_manage.d_device d
-        on d.device_type_id = dt.id
-        INNER JOIN device_manage.d_check_point cp
-        on cp.id = d.check_point_id
+        INNER JOIN device_manage.d_device_type dt ON s.id = dt.parent_id
+        AND s.type = 1 AND dt.type = 9
+        INNER JOIN device_manage.d_device d ON d.device_type_id = dt.id
+        INNER JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
         <where>
             d.status &lt; 99
             AND cp.status &lt; 99
@@ -140,69 +133,65 @@
         </where>
         group by dt.id
     </select>
+
+    <!--  -->
     <select id="findDeviceTypeBySysIdSelOrNotSel" parameterType="TaskDevice" resultType="TaskDeviceType">
-        SELECT
-            dt.totalCount,dt.id,dt.deviceSysName,min(sel) sel,min(notSel) notSel
+        SELECT dt.totalCount, dt.id, dt.deviceSysName, min(sel) sel, min(notSel) notSel
         FROM(
-                SELECT
-                    count(d.id) totalCount,dt.id,dt.device_sys_name deviceSysName,if(cp.id = t.id,-1,0) sel,if(isnull(t.id),-2,0) notSel
-                FROM device_manage.d_device_type s
-                INNER JOIN device_manage.d_device_type dt
-                ON   s.id = dt.parent_id
-                AND s.type = 1 and dt.type = 9
-                INNER JOIN device_manage.d_device d
-                on d.device_type_id = dt.id
-                INNER JOIN device_manage.d_check_point cp
-                on cp.id = d.check_point_id
-                left join (
-                            select cp.id  from device_manage.d_check_point cp
-                            where cp.status &lt;= 98
-                            AND cp.id IN
-                            <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")" >
-                                #{item}
-                            </foreach>
-                            <if test="projectId != null and projectId != 0">
-                                AND cp.project_id = #{projectId}
-                            </if>
-                            ) t on cp.id = t.id
-                <where>
-                    d.status &lt; 99
-                    AND cp.status &lt; 99
-                    <if test="projectId != null and projectId != 0">
-                        AND d.project_id = #{projectId}
-                    </if>
-                    <if test="id != null and id != 0">
-                        AND dt.parent_id = #{id}
-                    </if>
-                    <if test="pointName != null and pointName != ''">
-                        AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
-                    </if>
-                    <if test="qrNo != null and qrNo != ''">
-                        AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
-                    </if>
-                    <if test="projectId != null and projectId != 0">
-                        AND cp.project_id = #{projectId}
-                    </if>
-                </where>
-                GROUP BY dt.id,sel,notSel
-            )dt
+            SELECT COUNT(d.id) totalCount, dt.id, dt.device_sys_name deviceSysName,
+                if(cp.id = t.id,-1,0) sel, if(isnull(t.id),-2,0) notSel
+            FROM device_manage.d_device_type s
+            INNER JOIN device_manage.d_device_type dt ON s.id = dt.parent_id
+            AND s.type = 1 and dt.type = 9
+            INNER JOIN device_manage.d_device d ON d.device_type_id = dt.id
+            INNER JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+            left join (
+                SELECT cp.id
+                FROM device_manage.d_check_point cp
+                WHERE cp.status &lt;= 98
+                AND cp.id IN
+                <foreach item="item" collection="checkPointIds" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id = #{projectId}
+                </if>
+            ) t on cp.id = t.id
+            <where>
+                d.status &lt; 99
+                AND cp.status &lt; 99
+                <if test="projectId != null and projectId != 0">
+                    AND d.project_id = #{projectId}
+                </if>
+                <if test="id != null and id != 0">
+                    AND dt.parent_id = #{id}
+                </if>
+                <if test="pointName != null and pointName != ''">
+                    AND cp.point_name LIKE CONCAT('%',#{pointName},'%')
+                </if>
+                <if test="qrNo != null and qrNo != ''">
+                    AND cp.qr_no LIKE CONCAT('%',#{qrNo},'%')
+                </if>
+                <if test="projectId != null and projectId != 0">
+                    AND cp.project_id = #{projectId}
+                </if>
+            </where>
+            GROUP BY dt.id,sel,notSel
+        )dt
         GROUP BY dt.id
     </select>
+
     <select id="findDeviceTypeByCheckPointId" resultType="TaskDeviceType">
-        SELECT
-        DISTINCT count(d.id) totalCount,dt.id,dt.device_sys_name deviceSysName,d.qr_no deviceQrNo
+        SELECT DISTINCT count(d.id) totalCount, dt.id, dt.device_sys_name deviceSysName,
+            d.qr_no deviceQrNo
         FROM device_manage.d_device_type s
-        INNER JOIN device_manage.d_device_type dt
-        ON   s.id = dt.parent_id
-        AND s.type = 1 and dt.type = 9
-        INNER JOIN device_manage.d_device d
-        on d.device_type_id = dt.id
-        INNER JOIN device_manage.d_check_point cp
-        on cp.id = d.check_point_id
-        WHERE
-        cp.id = #{checkPointId}
+        INNER JOIN device_manage.d_device_type dt ON s.id = dt.parent_id AND s.type = 1 and dt.type = 9
+        INNER JOIN device_manage.d_device d ON d.device_type_id = dt.id
+        INNER JOIN device_manage.d_check_point cp ON cp.id = d.check_point_id
+        WHERE cp.id = #{checkPointId}
         AND d.status &lt; 99
         AND cp.status &lt; 99
         group by dt.id
     </select>
+
 </mapper>
